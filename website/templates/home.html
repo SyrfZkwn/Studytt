@@ -24,10 +24,11 @@
           .sidebar {
             padding: 0;
             width: 200px;
-            background-color: #f1f1f1;
+            background-color: #fbf3e2;
             position: fixed;
             height: 100%;
             overflow: auto;
+            border-right: #1b4f83 5px solid;
           }
           
           .sidebar a {
@@ -52,6 +53,12 @@
             margin-left: 200px;
             padding: 1px 16px;
             height: 1000px;
+          }
+
+          div.top {
+            background-color: #fbf3e2;
+            position: sticky;
+            top: 0;
           }
           
           @media screen and (max-width: 700px) {
@@ -83,25 +90,29 @@
         <title>{% block title %}Home{% endblock %}</title>
     </head>
 
-    <body>
-      <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; position: sticky; top: 0;">
+    <body style="background-color: #fbf3e2;">
 
-      <hr class="custom-divider">
-
-      <div class="sidebar">
-        <a class="active" href="home">Home</a>
-        <a href="login">Login</a>
-        <a href="logout">Logout</a>
-        <a href="sign-up">Sign Up</a>
-      </div>
-      
-      <div class="content" style="border: 1px; border-style: dotted;">
-        <h2>Responsive Sidebar Example</h2>
-        <p>This example use media queries to transform the sidebar to a top navigation bar when the screen size is 700px or less.</p>
-        <p>We have also added a media query for screens that are 400px or less, which will vertically stack and center the navigation links.</p>
-        <h3>Resize the browser window to see the effect.</h3>
+      <div class="top">
+        <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; position: sticky; top: 0; margin-left: 65px;">
       </div>
 
+      <div class="main">
+        <hr class="custom-divider">
+
+        <div class="sidebar">
+          <a class="active" href="home">Home</a>
+          <a href="login">Login</a>
+          <a href="logout">Logout</a>
+          <a href="sign-up">Sign Up</a>
+        </div>
+        
+        <div class="content">
+          <h2>Responsive Sidebar Example</h2>
+          <p>This example use media queries to transform the sidebar to a top navigation bar when the screen size is 700px or less.</p>
+          <p>We have also added a media query for screens that are 400px or less, which will vertically stack and center the navigation links.</p>
+          <h3>Resize the browser window to see the effect.</h3>
+        </div>
+      </div>
 
 
 

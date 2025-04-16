@@ -19,8 +19,8 @@
     }
 
     .logo img {
-      width: 100px;
-      margin-bottom: 20px;
+      width: 150px;
+      margin-bottom: 10px;
     }
 
     .login-card {
@@ -74,7 +74,7 @@
 <body>
 
   <div class="logo">
-    <img src="your-logo-path.png" alt="Logo">
+    <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Logo">
   </div>
 
   <div class="login-card">
@@ -83,7 +83,7 @@
       <input type="text" class="form-control" placeholder="USERNAME" required>
       <input type="password" class="form-control" placeholder="PASSWORD" required>
       <button type="submit" class="btn btn-primary btn-block">LOGIN</button>
-      <a href="/signup" class="btn btn-secondary btn-block">SIGN UP</a>
+      <a href="/sign-up" class="btn btn-secondary btn-block">SIGN UP</a>
     </form>
   </div>
 

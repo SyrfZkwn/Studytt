@@ -11,6 +11,7 @@ def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
+    app.config['UPLOAD_FOLDER'] = 'static/notes'
     db.init_app(app)
 
     from .views import views

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studytt Login</title>
+  {% block title %}<title>Studytt Login</title>{% endblock %}
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet">
   <style>
@@ -16,6 +16,14 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
+    }
+
+    .flash-container {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      z-index: 9999;
+      padding: 0 20px;
     }
 
     .logo img {
@@ -74,19 +82,19 @@
 
 <body>
 
-<div class="container-fluid px-4 text-center">
+<div class="container-fluid px-4 text-center flash-container">
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
     {% if category == 'error' %}
-    <div class="alert alert-danger alert-dismissable fade show" role="alert">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
       {{ message }}
       <button type="button" class="close" data-dismiss="alert">
         <span aria-hidden="true">&times;</span>
       </button>
     </div>
     {% else %}
-    <div class="alert alert-success alert-dismissable fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
       {{ message }}
       <button type="button" class="close" data-dismiss="alert">
         <span aria-hidden="true">&times;</span>

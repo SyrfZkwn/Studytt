@@ -1,0 +1,14 @@
+{% extends "base.html" %} 
+<title>{% block title %}Post{% endblock %}</title>
+
+{% block content %}
+
+<form method='POST' enctype="multipart/form-data">
+    {{ form.subject }}
+    {{ form.chapter }}
+    {{ form.date }}
+    {{ form.publisher }}
+    {{ form.file }}
+</form>
+
+{% endblock %}

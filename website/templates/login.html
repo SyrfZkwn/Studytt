@@ -79,11 +79,27 @@
 
   <div class="login-card">
     <h1>STUDYTT</h1>
-    <form>
-      <input type="text" class="form-control" placeholder="USERNAME" required>
-      <input type="password" class="form-control" placeholder="PASSWORD" required>
+    <form method="POST">
+      <input 
+        type="email"
+        name="email"
+        class="form-control" 
+        placeholder="EMAIL" 
+        required
+      />
+      <input 
+        type="password" 
+        name="password"
+        class="form-control" 
+        placeholder="PASSWORD" 
+        required
+      />
+
       <button type="submit" class="btn btn-primary btn-block">LOGIN</button>
-      <a href="/sign-up" class="btn btn-secondary btn-block">SIGN UP</a>
+
+      <div>
+        <p>New to Studytt? <a href="/sign-up">Sign Up</a></p>
+      </div>
     </form>
   </div>
 

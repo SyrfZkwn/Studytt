@@ -91,6 +91,12 @@
     </head>
 
     <body style="background-color: #fbf3e2;">
+      <div class="topbar">
+        <div class="search-container">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="SEARCH" />
+        </div>
+      </div>
 
       <div class="top">
         <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; position: sticky; top: 0; margin-left: 65px;">
@@ -101,7 +107,7 @@
 
         <div class="sidebar">
           <a class="active" href="home">Home</a>
-          <a href="login">Login</a>
+          <a href="login.html">Login</a>
           <a href="logout">Logout</a>
           <a href="sign-up">Sign Up</a>
         </div>

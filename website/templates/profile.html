@@ -1,0 +1,168 @@
+{% extends "base.html" %} 
+<title>{% block title %}Profile{% endblock %}</title>
+
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Profile - InstaReddit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Baloo 2', cursive;
+      background-color: #fbf3e2;
+      color: #1b4f83;
+    }
+
+    .profile-header {
+      background-color: #ffffff;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      border-bottom: 3px solid #1b4f83;
+    }
+
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: #ddd;
+      margin-right: 2rem;
+    }
+
+    .profile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .username {
+      font-size: 2rem;
+      color: #f15c22;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .stat {
+      font-size: 1rem;
+    }
+
+    .edit-btn {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #173c67;
+      color: #fdf3de;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      background-color: #1b4f83;
+      color: #fbf3e2;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .tab:hover {
+      background-color: #f15c22;
+    }
+
+    .content-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .post {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .post-img {
+      width: 100%;
+      height: 200px;
+      background-color: #ccc;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .post-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .post-footer {
+      font-size: 0.9rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 600px) {
+      .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-header">
+    <div class="profile-pic"></div>
+    <div class="profile-info">
+      <div class="username">@Matgila</div>
+      <div class="stats">
+        <div class="stat">Posts: 0</div>
+        <div class="stat">Followers: 0</div>
+      </div>
+      <button class="edit-btn">Edit Profile</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab">Posts</div>
+    <div class="tab">Saved</div>
+  </div>
+
+  <div class="content-section">
+    <div class="post">
+      <div class="post-img"></div>
+      <div class="post-title">Motivation Tips?</div>
+      <div class="post-footer">
+        <span>Likes 187</span>
+        <span>💬 33</span>
+      </div>
+    </div>
+    <!-- Add more .post elements as needed -->
+  </div>
+  
+</body>
+</html>
+
+
+{% endblock %}

@@ -4,9 +4,11 @@ from sqlalchemy.sql import func
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    data = db.Column(db.String(10000))
+    subject = db.Column(db.String(100))
+    chapter = db.Column(db.String(100))
+    file_name = db.Column(db.String(100))
     date = db.Column(db.DateTime(timezone=True), default=func.now())
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

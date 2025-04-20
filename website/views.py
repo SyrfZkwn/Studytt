@@ -1,18 +1,16 @@
 from flask import Blueprint, render_template, current_app
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
-from wtforms import FileField, SubmitField, StringField, DateField
+from wtforms import FileField, SubmitField, StringField, DateField, BooleanField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired
 
 class UploadFileForm(FlaskForm):
-    subject = StringField("Subject", validators=[InputRequired()])
-    chapter = StringField("Chapter", validators=[InputRequired()])
-    date = DateField("Date", validators=[InputRequired()])
-    publisher = StringField("Publisher", validators=[InputRequired()])
-    file = FileField("File", validators=[InputRequired()])
-    submit = SubmitField("Upload File")
+    subject = StringField("subject", validators=[InputRequired()])
+    chapter = StringField("chapter", validators=[InputRequired()])
+    file = FileField("file", validators=[InputRequired()])
+    submit = SubmitField("POST")
 
 views = Blueprint('views', __name__)
 

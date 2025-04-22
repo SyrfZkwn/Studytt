@@ -1,14 +1,77 @@
 {% extends "base.html" %} 
 <title>{% block title %}Post{% endblock %}</title>
 
+<style>
+    .input {
+        border-radius: 20px;
+    }
+</style>
+
 {% block content %}
 
 <form method="POST" enctype="multipart/form-data">
 
     {{form.hidden_tag()}}
-    {{form.file()}}
+
+    <input 
+    type="text"
+    name="title"
+    class="form-control input" 
+    placeholder="Subject Title" 
+    required
+    />
+    <input 
+    type="text"
+    name="code"
+    class="form-control input" 
+    placeholder="Subject Code" 
+    required
+    />
+    <input 
+    type="text" 
+    name="chapter"
+    class="form-control input" 
+    placeholder="Chapter" 
+    required
+    />
+
+    {{form.file(id="fileInput")}}
+
+    <div id="filePreview" style="margin-top: 10px;"></div>
+
     {{form.submit()}}
 
 </form>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const preview = document.getElementById('filePreview');
+        preview.innerHTML = ''; 
+    
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        const fileType = file.type;
+    
+        if (fileType.startsWith('image/')) {
+            
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.style.maxWidth = '300px';
+            img.style.marginTop = '10px';
+            preview.appendChild(img);
+        } else if (fileType === 'application/pdf') {
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = URL.createObjectURL(file);
+            iframe.width = '100%';
+            iframe.height = '400px';
+            preview.appendChild(iframe);
+        } else {
+            
+            preview.innerHTML = `<p>File selected: ${file.name}</p>`;
+        }
+    });
+</script>
 
 {% endblock %}

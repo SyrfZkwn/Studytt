@@ -4,9 +4,9 @@ from sqlalchemy.sql import func
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    subject = db.Column(db.String(100))
+    title = db.Column(db.String(100))
+    code = db.Column(db.String(100))
     chapter = db.Column(db.String(100))
-    file_name = db.Column(db.String(100))
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 

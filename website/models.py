@@ -7,6 +7,7 @@ class Note(db.Model):
     title = db.Column(db.String(100))
     code = db.Column(db.String(100))
     chapter = db.Column(db.String(100))
+    description = db.Column(db.String(500))
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 

@@ -28,6 +28,7 @@ def post():
         title = request.form.get('title')
         code = request.form.get('code')
         chapter = request.form.get('chapter')
+        description = request.form.get('description')
 
         if form.validate_on_submit():
             file = form.file.data
@@ -37,6 +38,7 @@ def post():
             title=title,
             chapter=chapter,
             code=code,
+            description=description,
             publisher=current_user.id
         )
 

@@ -9,9 +9,10 @@ followers = db.Table('followers',
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    subject = db.Column(db.String(100))
+    title = db.Column(db.String(100))
+    code = db.Column(db.String(100))
     chapter = db.Column(db.String(100))
-    file_name = db.Column(db.String(100))
+    description = db.Column(db.String(500))
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 

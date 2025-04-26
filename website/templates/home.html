@@ -3,6 +3,26 @@
 
 {% block content %}
 
+<style>
+  .post-section {
+    max-width: 70%;
+    margin-left: 5%;
+    color: antiquewhite;
+  }
+
+  .post-content {
+    border-radius: 30px;
+    border: #1b4f83 solid 3px;
+    background-color: #1b4f83;
+    margin-bottom: 4rem;
+    padding: 1rem;
+  }
+
+  img {
+    max-width: 70%;
+  }
+</style>
+
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <div class="flash">
@@ -27,16 +47,21 @@
   {% endif %}
 {% endwith %}
 
-<h1>This is the homepage</h1>
-<p>Welecome to the homepage</p>
+<div class="post-section">
 
-{% for note in notes %}
-    <h2>{{ note.title }}</h2>
-    <p>{{ note.description }}</p>
+  {% for note in notes|sort(attribute='date', reverse=true) %}
+    <div class="post-content">
+      <h2>{{ note.title }}</h2>
+      <p>{{ note.description }}</p>
 
-    {% if note.file_path %}
-      <img src="{{ '/' + note.file_path }}" alt="Uploaded File">
-    {% endif %}
-{% endfor %}
+      {% if note.file_path %}
+        <embed src="{{ '/' + note.file_path }}" type="application/pdf" width="100%" height="500px" />
+      {% else %}
+        <img src="{{ '/' + note.file_path }}">
+      {% endif %}
+    </div>
+  {% endfor %}
+
+</div>
 
 {% endblock %}

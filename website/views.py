@@ -29,3 +29,8 @@ def post():
         file.save(os.path.join(os.path.abspath(os.path.dirname(__file__)),current_app.config['UPLOAD_FOLDER'],secure_filename(file.filename)))
         return "File has been uploaded."
     return render_template("post.html", form=form)
+
+@views.route('/qna', methods=['GET', 'POST'])
+@login_required
+def qna():
+    return render_template("qna.html", user=current_user)

@@ -2,7 +2,30 @@
 <title>{% block title %}QnA{% endblock %}</title>
 
 {% block content %}
-
+<divclass="jumbotron">
+    <h1>Ask a Question</h1>
+    <form method="POST">
+        <label>Title:</label><br>
+        <input type="text" name="title" required><br><br>
+        <label>Body:</label><br>
+        <textarea name="body" required></textarea><br><br>
+        <button type="submit">Submit</button>
+    </form>
+    
+    <hr>
+    
+    <h2>All Questions</h2>
+    <ul>
+        {% for question in questions %}
+            <li>
+                <strong>{{ question.title }}</strong><br>
+                {{ question.body }}
+            </li>
+        {% else %}
+            <li>No questions yet.</li>
+        {% endfor %}
+    </ul>
+</divclass>
 
 
 

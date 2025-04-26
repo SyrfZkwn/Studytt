@@ -60,4 +60,10 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-    return render_template("profile.html", user=current_user)
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count)
+
+@views.route('/saved')
+@login_required
+def saved(): return render_template("saved.html", user=current_user)

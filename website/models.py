@@ -7,7 +7,7 @@ class Note(db.Model):
     title = db.Column(db.String(100))
     code = db.Column(db.String(100))
     chapter = db.Column(db.String(100))
-    description = db.Column(db.String(500))
+    description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
@@ -16,4 +16,5 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
+    file = db.Column(db.LargeBinary)
     notes = db.relationship('Note')

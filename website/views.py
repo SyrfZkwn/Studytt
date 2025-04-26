@@ -19,7 +19,8 @@ class UploadFileForm(FlaskForm):
 @views.route('/home')
 @login_required
 def home():
-    return render_template("home.html", user=current_user)
+    notes = Note.query.all()
+    return render_template("home.html", user=current_user, notes=notes)
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
@@ -34,15 +35,19 @@ def post():
         if form.validate_on_submit():
             description = form.description.data
             file = form.file.data
-            file.save(os.path.join(os.path.abspath(os.path.dirname(__file__)),current_app.config['UPLOAD_FOLDER'],secure_filename(file.filename)))
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
+            absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
+            file.save(absolute_path)
 
-        new_note = Note(
-            title=title,
-            chapter=chapter,
-            code=code,
-            description=description,
-            publisher=current_user.id
-        )
+            new_note = Note(
+                title=title,
+                chapter=chapter,
+                code=code,
+                description=description,
+                publisher=current_user.id,
+                file_path=file_path
+            )
 
         db.session.add(new_note)
         db.session.commit()

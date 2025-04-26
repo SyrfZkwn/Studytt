@@ -9,6 +9,7 @@ class Note(db.Model):
     chapter = db.Column(db.String(100))
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=func.now())
+    file_path = db.Column(db.String(255))
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
 class User(db.Model, UserMixin):

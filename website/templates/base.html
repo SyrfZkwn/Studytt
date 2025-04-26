@@ -16,8 +16,7 @@
         />
         <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"
         />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add_circle"
-        />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
         <style>
           body {
@@ -107,26 +106,29 @@
           div.content {
             margin-top: 0px;
             margin-left: 200px;
-            padding: 1px 16px;
+            padding: 40px 40px;
             height: 1000px;
           }
 
           div.top {
             background-color: #fbf3e2;
             position: sticky;
-            justify-content: center;
-            align-items: center;
             top: 0;
             border-bottom: #1b4f83 4px solid;
             max-height: 80px;
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
           }
+
 
           .search-bar {
             display: flex;
             justify-content: center;
             margin: 20px auto;
             max-width: 400px;
+            max-height: 45px;
           }
 
           .search-bar input[type="text"] {
@@ -189,6 +191,51 @@
             'opsz' 24
           }
 
+          .dropdown {
+            position: relative;
+            display: inline-block;
+          }
+
+          .dropdown-button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px 25px 25px 25px;
+            cursor: pointer;
+          }
+
+          .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 140px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            border-radius: 6px;
+            z-index: 1;
+          }
+
+          .dropdown-content a {
+            color: black;
+            padding: 10px 16px;
+            text-decoration: none;
+            display: block;
+          }
+
+          .dropdown-content a:hover {
+            background-color: #f1f1f1;
+          }
+
+          .dropdown:hover .dropdown-content {
+            display: block;
+          }
+
+          .dropdown:hover .dropdown-button {
+            background-color: #2980b9;
+          }
+
+
         </style>
 
 <title>{% block title %}Home{% endblock %}</title>
@@ -201,12 +248,16 @@
         <a href="home">
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
-
+      
         <form action="/search" method="GET" class="search-bar">
           <input type="text" name="query" placeholder="Search..." required>
-          <button type="submit">🔍</button>
+          <button type="submit">
+            <span class="material-symbols-outlined">
+              search
+              </span>
+          </button>
         </form>
-
+      
         <div class="button">
           <a href="post">
             <span class="material-symbols-outlined">
@@ -214,7 +265,19 @@
             </span>
           POST</a>
         </div>
+      
+          <div class="dropdown mx-3">
+            <button class="dropdown-button">Menu</button>
+            <div class="dropdown-content">
+              <a href="profile">Profile</a>
+              <a href="logout">Logout</a>
+              <a href="#">Settings</a>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      
 
       <div class="main">
 

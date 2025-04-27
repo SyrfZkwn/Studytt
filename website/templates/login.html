@@ -81,7 +81,8 @@
 </head>
 
 <div class="container-fluid px-4 text-center flash-container">
-  {% with messages = get_flashed_messages(with_categories=true) %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
     {% if category == 'error' %}
@@ -101,7 +102,8 @@
     {% endif %}
     {% endfor %}
   {% endif %}
-  {% endwith %}
+{% endwith %}
+
 </div>
 
 <body>

@@ -7,6 +7,11 @@ followers = db.Table('followers',
     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
 )
 
+saved_posts = db.Table('saved_posts',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('note_id', db.Integer, db.ForeignKey('note.id'))
+)
+
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
@@ -17,6 +22,13 @@ class Note(db.Model):
     file_path = db.Column(db.String(255))
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    message = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime(timezone=True), default=func.now())
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True)
@@ -24,6 +36,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(150))
     file = db.Column(db.LargeBinary)
     notes = db.relationship('Note')
+    saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
 
     followed = db.relationship(
         'User', secondary=followers,

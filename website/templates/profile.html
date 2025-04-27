@@ -150,14 +150,25 @@
   </div>
 
   <div class="content-section">
+    {% for post in posts %}
     <div class="post">
-      <div class="post-img"></div>
-      <div class="post-title">Motivation Tips?</div>
+      <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
+        <div class="post-img">
+          {% if post.file_path %}
+            <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% else %}
+            <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+          {% endif %}
+        </div>
+        <div class="post-title">{{ post.title }}</div>
+      </a>
       <div class="post-footer">
-        <span>Likes 187</span>
-        <span>💬 33</span>
+        <span>Likes 0</span>
+        <span>💬 0</span>
       </div>
     </div>
-    <!-- Add more .post elements as needed -->
+    {% else %}
+    <p>No posts to show.</p>
+    {% endfor %}
   </div>
 {% endblock %}

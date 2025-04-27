@@ -94,31 +94,37 @@
     display: flex;
     align-items: center;
   }
+
+  .flash {
+    margin-top: 10px;
+  }
 </style>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="flash">
-        {% for category, message in messages %}
-        {% if category == 'error' %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        </div>
-        {% else %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="close" data-dismiss="alert">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
 
 <div class="post-section">
 
@@ -141,7 +147,7 @@
       {% endif %}
       
       <div class="description-container">
-        <p>{{ note.description }}</p>
+        <p>{{ note.description|safe }}</p>
       </div>
     </div>
   {% endfor %}

@@ -60,4 +60,29 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-    return render_template("profile.html", user=current_user)
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    posts = current_user.notes
+    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts)
+
+@views.route('/saved')
+@login_required
+def saved():
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    saved_posts = current_user.saved
+    return render_template("saved.html", user=current_user, follower_count=follower_count, following_count=following_count, saved_posts=saved_posts)
+
+@views.route('/post/<int:post_id>')
+@login_required
+def post_detail(post_id):
+    post = Note.query.get_or_404(post_id)
+    return render_template("post_detail.html", post=post)
+
+@views.route('/chat')
+@login_required
+def chat():
+    # Fetch followers and following for chat user list
+    followers = current_user.followers.all()
+    following = current_user.followed.all()
+    return render_template("chat.html", user=current_user, followers=followers, following=following)

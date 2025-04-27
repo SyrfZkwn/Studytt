@@ -33,6 +33,7 @@
             overflow: auto;
             border-right: #1b4f83 4px solid;
             align-items: center;
+            z-index: 999;
           }
           
           .sidebar a {
@@ -106,8 +107,8 @@
           div.content {
             margin-top: 0px;
             margin-left: 200px;
-            padding: 40px 40px;
-            height: 1000px;
+            padding: 1px 16px;
+            min-height: 600px;
           }
 
           div.top {
@@ -120,6 +121,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
+            z-index: 999;
           }
 
 
@@ -196,44 +198,45 @@
             display: inline-block;
           }
 
-          .dropdown-button {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 16px;
-            font-size: 16px;
-            border: none;
-            border-radius: 25px 25px 25px 25px;
-            cursor: pointer;
-          }
+    .dropdown-button {
+      background-color: #173c67;
+      color: #f15c22;
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 25px 25px 25px 25px;
+      cursor: pointer;
+    }
 
-          .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            min-width: 140px;
-            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
-            border-radius: 6px;
-            z-index: 1;
-          }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #173c67;
+      min-width: 140px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      border-radius: 6px;
+      z-index: 1;
+    }
 
-          .dropdown-content a {
-            color: black;
-            padding: 10px 16px;
-            text-decoration: none;
-            display: block;
-          }
+    .dropdown-content a {
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      display: block;
+    }
 
-          .dropdown-content a:hover {
-            background-color: #f1f1f1;
-          }
+    .dropdown-content a:hover {
+      background-color: #f15c22;
+    }
 
           .dropdown:hover .dropdown-content {
             display: block;
           }
 
-          .dropdown:hover .dropdown-button {
-            background-color: #2980b9;
-          }
+    .dropdown:hover .dropdown-button {
+      background-color: #f15c22;
+      color: #f1f1f1;
+    }
 
 
         </style>
@@ -302,12 +305,6 @@
         </div>
 
       </div>
-
-
-
-
-
-
 
       <script
         src="https://code.jquery.com/jquery-3.2.1.slim.min.js"

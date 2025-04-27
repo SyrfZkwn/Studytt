@@ -66,40 +66,61 @@
 
         {{ form.file(id="fileInput") }}
 
-        <div id="filePreview" style="margin-top: 10px;"></div>
+        <div id="filePreview" style="position: relative; margin: 10px 0; border-radius: 20px; overflow: hidden;">
+            <div id="previewBackground" style="filter: blur(15px); position: absolute; width: 105%; height: 105%; top: 0; left: 0; z-index: 1;"></div>
+            <div id="previewImage" style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center;"></div>
+        </div>
 
-        {{form.submit(class="btn btn-primary")}}
+        {{form.submit(class="btn btn-primary", style="margin: 10px 0 20px 0;")}}
 
     </form>
 </div>
 
 <script>
     document.getElementById('fileInput').addEventListener('change', function(event) {
-        const preview = document.getElementById('filePreview');
-        preview.innerHTML = ''; 
-    
+        const background = document.getElementById('previewBackground');
+        const imageContainer = document.getElementById('previewImage');
+
+        background.innerHTML = ''; 
+        imageContainer.innerHTML = '';
+
         const file = event.target.files[0];
         if (!file) return;
-    
+
         const fileType = file.type;
-    
+
         if (fileType.startsWith('image/')) {
-            
-            const img = document.createElement('img');
-            img.src = URL.createObjectURL(file);
-            img.style.maxWidth = '300px';
-            img.style.marginTop = '10px';
-            preview.appendChild(img);
+            const imgBlur = document.createElement('img');
+            imgBlur.src = URL.createObjectURL(file);
+            imgBlur.style.width = '105%';
+            imgBlur.style.height = '105%';
+            imgBlur.style.objectFit = 'cover';
+            imgBlur.style.position = 'absolute';
+            imgBlur.style.top = '0';
+            imgBlur.style.left = '0';
+            imgBlur.style.overflow = 'hidden';
+            imgBlur.style.border = 'solid 2px #f9f9f9'
+
+            const imgClear = document.createElement('img');
+            imgClear.src = imgBlur.src;
+            imgClear.style.width = 'auto';
+            imgClear.style.height = 'auto';
+            imgClear.style.maxWidth = '350px';
+            imgClear.style.maxHeight = '350px';
+            imgClear.style.zIndex = '2';
+
+            background.appendChild(imgBlur);
+            imageContainer.appendChild(imgClear);
+
         } else if (fileType === 'application/pdf') {
-            
+            // If PDF, show iframe without blur
             const iframe = document.createElement('iframe');
             iframe.src = URL.createObjectURL(file);
             iframe.width = '100%';
-            iframe.height = '400px';
-            preview.appendChild(iframe);
+            iframe.height = '500px';
+            background.appendChild(iframe); 
         } else {
-            
-            preview.innerHTML = `<p>File selected: ${file.name}</p>`;
+            background.innerHTML = `<p>File selected: ${file.name}</p>`;
         }
     });
 </script>

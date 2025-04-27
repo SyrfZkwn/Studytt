@@ -1,0 +1,45 @@
+{% extends "base.html" %} 
+<title>{% block title %}Post{% endblock %}</title>
+
+{% block content %}
+
+    <h1>Chat Room</h1>
+    <div id="messages"></div>
+    <input id="messageInput" autocomplete="off" /><button id="sendBtn">Send</button>
+
+    <script>
+        const socket = io();
+
+        const username = "{{ user.username }}";
+        const room = "default";
+
+        socket.emit('join', {username: username, room: room});
+
+        socket.on('message', function(data) {
+            const messages = document.getElementById('messages');
+            let messageText = '';
+            if (typeof data === 'string') {
+                messageText = data;
+            } else {
+                messageText = data.username + ': ' + data.message;
+            }
+            const p = document.createElement('p');
+            p.textContent = messageText;
+            messages.appendChild(p);
+        });
+
+        document.getElementById('sendBtn').onclick = function() {
+            const input = document.getElementById('messageInput');
+            const message = input.value;
+            if (message) {
+                socket.emit('message', {username: username, room: room, message: message});
+                input.value = '';
+            }
+        };
+
+        window.onbeforeunload = function() {
+            socket.emit('leave', {username: username, room: room});
+        };
+    </script>
+
+{% endblock %}

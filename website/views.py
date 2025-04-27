@@ -60,3 +60,7 @@ def profile():
 @views.route('/saved')
 @login_required
 def saved(): return render_template("saved.html", user=current_user)
+
+@views.route('/chat')
+@login_required
+def chat(): return render_template("chat.html", user=current_user )

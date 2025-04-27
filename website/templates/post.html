@@ -62,18 +62,13 @@
             />
         </div>
 
-        <input 
-        type="text"
-        name="description"
-        class="description"
-        placeholder="Write a description"
-        >
+        {{ form.description(class="form-control", rows="5", placeholder="Type a description") }}
 
-        {{form.file(id="fileInput")}}
+        {{ form.file(id="fileInput") }}
 
         <div id="filePreview" style="margin-top: 10px;"></div>
 
-        {{form.submit(style="border-radius: 20px;")}}
+        {{form.submit(class="btn btn-primary")}}
 
     </form>
 </div>

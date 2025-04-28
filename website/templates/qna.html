@@ -3,6 +3,158 @@
 
 {% block content %}
 
+<style>
+    /* Form styles */
+    .question-form {
+        width: 80%;
+        max-width: 800px;
+        margin: 0 auto 30px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 20px;
+    }
+    
+    .question-form h1 {
+        color: #f15c22;
+        margin-bottom: 20px;
+    }
+    
+    .form-field {
+        margin-bottom: 15px;
+    }
+    
+    .form-field label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    .form-field input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: 15px;
+        border: 1px solid #ced4da;
+        font-size: 16px;
+    }
+    
+    .form-field input[type="text"]:focus {
+        outline: none;
+        border-color: #f15c22;
+        box-shadow: 0 0 5px rgba(241, 92, 34, 0.5);
+    }
+    
+    /* Simple editor styles */
+    .editor-container {
+        margin-bottom: 15px;
+        border-radius: 15px;
+        overflow: hidden;
+        border: 1px solid #ced4da;
+    }
+    
+    .toolbar {
+        background-color: #f0f0f0;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .toolbar button {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 5px 10px;
+        margin-right: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .toolbar button:hover {
+        background-color: #f8d7c9;
+        color: #333;
+    }
+    
+    .toolbar button.active {
+        background-color: #f15c22;
+        color: white;
+    }
+    
+    .editor-content {
+        padding: 15px;
+        background-color: #fff;
+        min-height: 150px;
+        border-radius: 0 0 15px 15px;
+        overflow-y: auto;
+    }
+    
+    .editor-content:empty:before {
+        content: attr(placeholder);
+        color: #aaa;
+    }
+    
+    #hidden-body {
+        display: none;
+    }
+    
+    /* Submit button */
+    .submit-btn {
+        background-color: #f15c22;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .submit-btn:hover {
+        background-color: #d84a14;
+    }
+    
+    /* Questions list */
+    .questions-section {
+        width: 80%;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .questions-section h2 {
+        color: #1b4f83;
+        margin: 20px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f15c22;
+    }
+    
+    .question-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .question-item {
+        background-color: #f9f9f9;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 15px;
+        border-left: 4px solid #1b4f83;
+    }
+    
+    .question-title {
+        color: #1b4f83;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+    
+    .question-body {
+        color: #333;
+    }
+    
+    .no-questions {
+        color: #666;
+        font-style: italic;
+    }
+</style>
+
 <div class="flash">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -29,32 +181,111 @@
     {% endwith %}
 </div>
 
-<divclass="jumbotron">
+<div class="question-form">
     <h1>Ask a Question</h1>
-    <form method="POST">
-        <label>Title:</label><br>
-        <input type="text" name="title" required><br><br>
-        <label>Body:</label><br>
-        <textarea name="body" required></textarea><br><br>
-        <button type="submit">Submit</button>
+    <form method="POST" id="question-form">
+        <div class="form-field">
+            <label for="title">Title:</label>
+            <input type="text" name="title" id="title" required placeholder="What's your question?">
+        </div>
+        
+        <div class="form-field">
+            <label for="body">Body:</label>
+            <!-- Hidden textarea that will store the HTML content -->
+            <textarea name="body" id="hidden-body" required></textarea>
+            
+            <!-- Simple editor -->
+            <div class="editor-container">
+                <div class="toolbar">
+                    <button type="button" class="format-btn" data-format="italic" title="Italic"><em>I</em></button>
+                    <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
+                    <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
+                </div>
+                <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Provide details about your question..."></div>
+            </div>
+        </div>
+        
+        <button type="submit" class="submit-btn">Submit Question</button>
     </form>
+</div>
     
-    <hr>
-    
+<div class="questions-section">
     <h2>All Questions</h2>
-    <ul>
+    <ul class="question-list">
         {% for question in question %}
-            <li>
-                <strong>{{ question.title }}</strong><br>
-                {{ question.body }}
+            <li class="question-item">
+                <div class="question-title">{{ question.title }}</div>
+                <div class="question-body">{{ question.body|safe }}</div>
             </li>
         {% else %}
-            <li>No questions yet.</li>
+            <li class="no-questions">No questions yet.</li>
         {% endfor %}
     </ul>
-</divclass>
+</div>
 
-
-
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editor = document.getElementById('editor-content');
+        const form = document.getElementById('question-form');
+        const hiddenTextarea = document.getElementById('hidden-body');
+        const formatButtons = document.querySelectorAll('.format-btn');
+        
+        // Map of format names to their execCommand names
+        const formatCommands = {
+            'italic': 'italic',
+            'underline': 'underline',
+            'strikethrough': 'strikeThrough'
+        };
+        
+        // Format button handling
+        formatButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const format = this.getAttribute('data-format');
+                const command = formatCommands[format];
+                
+                // Apply the formatting command
+                document.execCommand(command, false, null);
+                
+                // Focus back on the editor
+                editor.focus();
+                
+                // Update button states
+                updateButtonStates();
+            });
+        });
+        
+        // When the form is submitted, copy the HTML to the hidden textarea
+        form.addEventListener('submit', function(e) {
+            hiddenTextarea.value = editor.innerHTML;
+            if (editor.innerHTML.trim() === '') {
+                e.preventDefault();
+                alert('Please enter details for your question');
+                editor.focus();
+            }
+        });
+        
+        // Function to update button states based on current selection
+        function updateButtonStates() {
+            formatButtons.forEach(button => {
+                const format = button.getAttribute('data-format');
+                const command = formatCommands[format];
+                
+                // Check if this format is currently active
+                const isActive = document.queryCommandState(command);
+                button.classList.toggle('active', isActive);
+            });
+        }
+        
+        // Update buttons when selection or cursor position changes
+        ['mouseup', 'keyup', 'mousedown', 'keydown', 'focus', 'click'].forEach(eventType => {
+            editor.addEventListener(eventType, updateButtonStates);
+        });
+        
+        // Initial focus to set everything up
+        setTimeout(() => {
+            updateButtonStates();
+        }, 100);
+    });
+</script>
 
 {% endblock %}

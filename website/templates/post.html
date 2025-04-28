@@ -73,6 +73,42 @@
         content: attr(placeholder);
         color: #aaa;
     }
+    
+    /* File preview containers */
+    #filePreview {
+        position: relative;
+        margin: 10px 0; 
+        border-radius: 20px;
+        overflow: hidden;
+        min-height: 5px;
+    }
+    
+    /* Image preview specific styles */
+    #previewBackground {
+        filter: blur(15px);
+        position: absolute;
+        width: 105%;
+        height: 105%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    
+    #previewImage {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* PDF preview specific styles */
+    #pdfPreview {
+        width: 100%;
+        height: 500px;
+        border-radius: 20px;
+        overflow: hidden;
+    }
 </style>
 
 <div class="container">
@@ -121,10 +157,7 @@
 
         {{ form.file(id="fileInput") }}
 
-        <div id="filePreview" style="position: relative; margin: 10px 0; border-radius: 20px; overflow: hidden;">
-            <div id="previewBackground" style="filter: blur(15px); position: absolute; width: 105%; height: 105%; top: 0; left: 0; z-index: 1;"></div>
-            <div id="previewImage" style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center;"></div>
-        </div>
+        <div id="filePreview" style="position: relative; margin: 10px 0; overflow: hidden;"></div>
 
         <button type="submit" class="btn btn-primary" style="margin: 10px 0 20px 0;">Submit</button>
 
@@ -197,20 +230,25 @@
     });
 
     document.getElementById('fileInput').addEventListener('change', function(event) {
-        const background = document.getElementById('previewBackground');
-        const imageContainer = document.getElementById('previewImage');
-
-        background.innerHTML = ''; 
-        imageContainer.innerHTML = '';
-
+        const filePreview = document.getElementById('filePreview');
+        filePreview.innerHTML = ''; // Clear previous preview
+        
         const file = event.target.files[0];
         if (!file) return;
 
         const fileType = file.type;
+        const fileUrl = URL.createObjectURL(file);
 
         if (fileType.startsWith('image/')) {
+            // For image files - create blur effect and centered image
+            const previewBackground = document.createElement('div');
+            previewBackground.id = 'previewBackground';
+            
+            const previewImage = document.createElement('div');
+            previewImage.id = 'previewImage';
+            
             const imgBlur = document.createElement('img');
-            imgBlur.src = URL.createObjectURL(file);
+            imgBlur.src = fileUrl;
             imgBlur.style.width = '105%';
             imgBlur.style.height = '105%';
             imgBlur.style.objectFit = 'cover';
@@ -218,28 +256,49 @@
             imgBlur.style.top = '0';
             imgBlur.style.left = '0';
             imgBlur.style.overflow = 'hidden';
-            imgBlur.style.border = 'solid 2px #f9f9f9'
+            imgBlur.style.border = 'solid 2px #f9f9f9';
 
             const imgClear = document.createElement('img');
-            imgClear.src = imgBlur.src;
+            imgClear.src = fileUrl;
             imgClear.style.width = 'auto';
             imgClear.style.height = 'auto';
             imgClear.style.maxWidth = '350px';
             imgClear.style.maxHeight = '350px';
             imgClear.style.zIndex = '2';
 
-            background.appendChild(imgBlur);
-            imageContainer.appendChild(imgClear);
-
+            previewBackground.appendChild(imgBlur);
+            previewImage.appendChild(imgClear);
+            
+            filePreview.appendChild(previewBackground);
+            filePreview.appendChild(previewImage);
+            
         } else if (fileType === 'application/pdf') {
-            // If PDF, show iframe without blur
+            // For PDF files - create a proper embedded PDF viewer
+            const pdfContainer = document.createElement('div');
+            pdfContainer.id = 'pdfPreview';
+            
             const iframe = document.createElement('iframe');
-            iframe.src = URL.createObjectURL(file);
+            iframe.src = fileUrl;
             iframe.width = '100%';
             iframe.height = '500px';
-            background.appendChild(iframe); 
+            iframe.style.border = 'none';
+            
+            pdfContainer.appendChild(iframe);
+            filePreview.appendChild(pdfContainer);
+            
+            // Add PDF filename above the preview
+            const fileInfo = document.createElement('p');
+            fileInfo.style.marginBottom = '10px';
+            filePreview.insertBefore(fileInfo, pdfContainer);
+            
         } else {
-            background.innerHTML = `<p>File selected: ${file.name}</p>`;
+            // For other file types
+            const fileInfo = document.createElement('div');
+            fileInfo.style.padding = '20px';
+            fileInfo.style.backgroundColor = '#f0f0f0';
+            fileInfo.style.borderRadius = '10px';
+            fileInfo.innerHTML = `<p>File selected: <strong>${file.name}</strong></p>`;
+            filePreview.appendChild(fileInfo);
         }
     });
 </script>

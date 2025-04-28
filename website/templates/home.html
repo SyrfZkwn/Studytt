@@ -132,7 +132,7 @@
     <div class="post-content">
 
       <div class="title-container">
-        <h2>{{ note.title }}</h2>
+        <h2>{{ note.title|safe }}</h2>
       </div>
 
       {% if note.file_path.endswith('.pdf') %}

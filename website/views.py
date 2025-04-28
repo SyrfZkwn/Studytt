@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
-from wtforms import FileField, SubmitField, StringField
+from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note
+from .models import Note, Question
 from . import db
 from wtforms.widgets import TextArea
 
@@ -14,7 +14,7 @@ views = Blueprint('views', __name__)
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired()])
     submit = SubmitField("Upload")
-    description = StringField("description", widget=TextArea()) 
+    description = TextAreaField("description") 
 
 @views.route('/home')
 @login_required
@@ -82,7 +82,6 @@ def post_detail(post_id):
 @views.route('/chat')
 @login_required
 def chat():
-    # Fetch followers and following for chat user list
     followers = current_user.followers.all()
     following = current_user.followed.all()
     return render_template("chat.html", user=current_user, followers=followers, following=following)
@@ -91,4 +90,21 @@ def chat():
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
 def qna():
-    return render_template("qna.html", user=current_user)
+    if request.method == 'POST':
+        title = request.form.get('title')
+        body = request.form.get('body')
+
+        new_question = Question(
+            title=title,
+            body=body,
+            publisher=current_user.id
+        )
+
+        db.session.add(new_question)
+        db.session.commit()
+
+        flash('Question posted!', category='success')
+        return redirect(url_for('views.qna'))
+    
+    question = Question.query.all()
+    return render_template("qna.html", user=current_user, question=question)

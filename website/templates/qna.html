@@ -2,6 +2,33 @@
 <title>{% block title %}QnA{% endblock %}</title>
 
 {% block content %}
+
+<div class="flash">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash">
+            {% for category, message in messages %}
+            {% if category == 'error' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            {% else %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="close" data-dismiss="alert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+</div>
+
 <divclass="jumbotron">
     <h1>Ask a Question</h1>
     <form method="POST">
@@ -16,7 +43,7 @@
     
     <h2>All Questions</h2>
     <ul>
-        {% for question in questions %}
+        {% for question in question %}
             <li>
                 <strong>{{ question.title }}</strong><br>
                 {{ question.body }}

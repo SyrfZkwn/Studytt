@@ -22,6 +22,13 @@ class Note(db.Model):
     file_path = db.Column(db.String(255))
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Text)
+    body = db.Column(db.Text)
+    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    publisher = db.Column(db.String, db.ForeignKey('user.id'))
+
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Room{% endblock %}
+
+{% block content %}
+<div class="message-box">
+    <form method="POST" action="{{ url_for('views.room') }}"></form>
+    <h2>Room Code: {{ room }}</h2>
+
+    <div class="messages" id="messages">
+        {% for msg in messages %}
+            <div class="text">
+                <span><strong>{{ msg.name }}</strong>: {{ msg.message }}</span>
+                <span class="muted">{{ loop.index0 }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="inputs">
+        <input type="text" id="message" name="message" placeholder="Your message..." autocomplete="off" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var socketio = io();
+
+    const messages = document.getElementById("messages");
+
+    const createMessage = (name, message) => {
+        const content = `
+            <div class="text">
+                <span><strong>${name}</strong>: ${message}</span>
+                <span class="muted">${new Date().toLocaleString()}</span>
+            </div>
+        `;
+        messages.innerHTML += content;
+    };
+
+    socketio.on("message", (data) => {
+        createMessage(data.name, data.message);
+    });
+
+    const sendMessage = () => {
+        const message = document.getElementById("message");
+        if (message.value === "") return;
+        socketio.emit("message", {data: message.value});
+        message.value = "";
+    };
+</script>
+{% endblock %}

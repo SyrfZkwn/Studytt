@@ -3,12 +3,126 @@
 
 {% block content %}
 
-<form method='POST' enctype="multipart/form-data">
-    {{ form.subject }}
-    {{ form.chapter }}
-    {{ form.date }}
-    {{ form.publisher }}
-    {{ form.file }}
-</form>
+<style>
+    .form-control {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 50px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #f15c22;
+        box-shadow: 0 0 10px #f15c22;
+    }
+
+    .description {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 200px;
+        width: 100%;
+    }
+
+</style>
+
+<div class="container">
+    <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;">
+
+        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Create Post</h1>
+
+        <div class="form-inline container-fluid">
+            {{form.hidden_tag()}}
+
+            <input 
+            type="text"
+            name="title"
+            class="form-control" 
+            placeholder="Subject Title"
+            required
+            />
+            <input 
+            type="text"
+            name="code"
+            class="form-control mx-auto" 
+            placeholder="Subject Code" 
+            required
+            />
+            <input 
+            type="text" 
+            name="chapter"
+            class="form-control" 
+            placeholder="Chapter" 
+            required
+            />
+        </div>
+
+        {{ form.description(class="form-control", rows="5", placeholder="Type a description") }}
+
+        {{ form.file(id="fileInput") }}
+
+        <div id="filePreview" style="position: relative; margin: 10px 0; border-radius: 20px; overflow: hidden;">
+            <div id="previewBackground" style="filter: blur(15px); position: absolute; width: 105%; height: 105%; top: 0; left: 0; z-index: 1;"></div>
+            <div id="previewImage" style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center;"></div>
+        </div>
+
+        {{form.submit(class="btn btn-primary", style="margin: 10px 0 20px 0;")}}
+
+    </form>
+</div>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const background = document.getElementById('previewBackground');
+        const imageContainer = document.getElementById('previewImage');
+
+        background.innerHTML = ''; 
+        imageContainer.innerHTML = '';
+
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const fileType = file.type;
+
+        if (fileType.startsWith('image/')) {
+            const imgBlur = document.createElement('img');
+            imgBlur.src = URL.createObjectURL(file);
+            imgBlur.style.width = '105%';
+            imgBlur.style.height = '105%';
+            imgBlur.style.objectFit = 'cover';
+            imgBlur.style.position = 'absolute';
+            imgBlur.style.top = '0';
+            imgBlur.style.left = '0';
+            imgBlur.style.overflow = 'hidden';
+            imgBlur.style.border = 'solid 2px #f9f9f9'
+
+            const imgClear = document.createElement('img');
+            imgClear.src = imgBlur.src;
+            imgClear.style.width = 'auto';
+            imgClear.style.height = 'auto';
+            imgClear.style.maxWidth = '350px';
+            imgClear.style.maxHeight = '350px';
+            imgClear.style.zIndex = '2';
+
+            background.appendChild(imgBlur);
+            imageContainer.appendChild(imgClear);
+
+        } else if (fileType === 'application/pdf') {
+            // If PDF, show iframe without blur
+            const iframe = document.createElement('iframe');
+            iframe.src = URL.createObjectURL(file);
+            iframe.width = '100%';
+            iframe.height = '500px';
+            background.appendChild(iframe); 
+        } else {
+            background.innerHTML = `<p>File selected: ${file.name}</p>`;
+        }
+    });
+</script>
 
 {% endblock %}

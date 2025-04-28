@@ -1,0 +1,107 @@
+{% extends "base.html" %} 
+<title>{% block title %}Post{% endblock %}</title>
+
+{% block content %}
+
+<style>
+    .form-control {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 50px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #f15c22;
+        box-shadow: 0 0 10px #f15c22;
+    }
+
+    .description {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 200px;
+        width: 100%;
+    }
+
+</style>
+
+<div class="container">
+    <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;">
+
+        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Create Post</h1>
+
+        <div class="form-inline container-fluid">
+            {{form.hidden_tag()}}
+
+            <input 
+            type="text"
+            name="title"
+            class="form-control" 
+            placeholder="Subject Title"
+            required
+            />
+            <input 
+            type="text"
+            name="code"
+            class="form-control mx-auto" 
+            placeholder="Subject Code" 
+            required
+            />
+            <input 
+            type="text" 
+            name="chapter"
+            class="form-control" 
+            placeholder="Chapter" 
+            required
+            />
+        </div>
+
+        {{ form.description(class="form-control", rows="5", placeholder="Type a description") }}
+
+        {{ form.file(id="fileInput") }}
+
+        <div id="filePreview" style="margin-top: 10px;"></div>
+
+        {{form.submit(class="btn btn-primary")}}
+
+    </form>
+</div>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const preview = document.getElementById('filePreview');
+        preview.innerHTML = ''; 
+    
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        const fileType = file.type;
+    
+        if (fileType.startsWith('image/')) {
+            
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.style.maxWidth = '300px';
+            img.style.marginTop = '10px';
+            preview.appendChild(img);
+        } else if (fileType === 'application/pdf') {
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = URL.createObjectURL(file);
+            iframe.width = '100%';
+            iframe.height = '400px';
+            preview.appendChild(iframe);
+        } else {
+            
+            preview.innerHTML = `<p>File selected: ${file.name}</p>`;
+        }
+    });
+</script>
+
+{% endblock %}

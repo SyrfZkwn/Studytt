@@ -1,0 +1,6 @@
+bson
+werkzeug
+flask
+flask-socketio
+eventlet
+flask-login

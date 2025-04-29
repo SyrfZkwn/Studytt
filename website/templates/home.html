@@ -17,6 +17,7 @@
     background-color: #1b4f83;
     margin-bottom: 4rem;
     padding: 1rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
   }
 
   .image-container {
@@ -79,6 +80,15 @@
 
   .title-container {
     width: 80%;
+    margin: 5px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .username-container {
+    width: 80%;
     margin: 10px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -88,7 +98,7 @@
 
   .description-container {
     width: 80%;
-    margin: 10px auto;
+    margin: 5px auto;
     border-radius: 10px;
     overflow: hidden;
     display: flex;
@@ -131,8 +141,11 @@
   {% for note in notes|sort(attribute='date', reverse=true) %}
     <div class="post-content">
 
+      <div class="username-container">
+        Posted by {{ note.user.username }}
+      </div>
       <div class="title-container">
-        <h2>{{ note.title }}</h2>
+        Title: {{ note.title }} | Code: {{ note.code }} | Chapter: {{ note.chapter }}
       </div>
 
       {% if note.file_path.endswith('.pdf') %}

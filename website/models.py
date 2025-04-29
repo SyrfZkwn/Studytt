@@ -20,7 +20,8 @@ class Note(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     file_path = db.Column(db.String(255))
-    publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comments = db.relationship('Comment', backref='note', lazy=True)
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -35,7 +36,8 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
     file = db.Column(db.LargeBinary)
-    notes = db.relationship('Note')
+    notes = db.relationship('Note', backref='user', lazy=True)
+    comments = db.relationship('Comment', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
 
     followed = db.relationship(
@@ -61,3 +63,11 @@ class User(db.Model, UserMixin):
 
     def following_count(self):
         return self.followed.count()
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
+
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

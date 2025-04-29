@@ -15,7 +15,7 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = 'static/notes'
 
     db.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(app, cors_allowed_origins="*")
 
     from .views import views
     from .auth import auth

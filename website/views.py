@@ -79,39 +79,52 @@ def chat_home():
 def room():
     room = session.get("room")
     if room is None or session.get("name") is None or room not in rooms:
-        return redirect(url_for("chat"))
+        return redirect(url_for("views.chat_home"))  # Fixed redirect
 
     return render_template("room.html", code=room, messages=rooms[room]["messages"])
 
 @socketio.on("message")
 def message(data):
     room = session.get("room")
-    if room not in rooms:
+    name = session.get("name")
+    
+    print(f"Message received: {data}")
+    print(f"Session room: {room}, name: {name}")
+    
+    if not room or room not in rooms:
+        print(f"Room {room} not found or not in session")
         return 
     
     content = {
-        "name": session.get("name"),
+        "name": name,
         "message": data["data"]
     }
+    
+    print(f"Sending message to room {room}: {content}")
     send(content, to=room)
     rooms[room]["messages"].append(content)
-    print(f"{session.get('name')} said: {data['data']}")
 
 @socketio.on("connect")
-def connect(auth):
+def connect():
     room = session.get("room")
     name = session.get("name")
+    
+    print(f"Socket connected. Session data: room={room}, name={name}")
+    
     if not room or not name:
+        print("No room or name in session")
         return
+    
     if room not in rooms:
-        leave_room(room)
+        print(f"Room {room} not found")
         return
     
     join_room(room)
-    send({"name": name, "message": "has entered the room"}, to=room)
-    rooms[room]["members"] += 1
     print(f"{name} joined room {room}")
+    send({"name": "System", "message": f"{name} has joined the room"}, to=room)
+    rooms[room]["members"] += 1
 
+    
 @socketio.on("disconnect")
 def disconnect():
     room = session.get("room")

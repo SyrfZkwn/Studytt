@@ -38,7 +38,8 @@ class Question(db.Model):
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Can be null for room messages
+    room_code = db.Column(db.String(10), nullable=True)  # For room-based messages
     message = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
 

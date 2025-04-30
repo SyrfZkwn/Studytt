@@ -2,6 +2,168 @@
 <title>{% block title %}Home{% endblock %}</title>
 
 {% block content %}
-<h1>This is the homepage</h1>
-<p>Welecome to the homepage</p>
+
+<style>
+  .post-section {
+    max-width: 70%;
+    margin-left: 5%;
+    color: antiquewhite;
+    padding: 2rem;
+  }
+
+  .post-content {
+    border-radius: 30px;
+    border: #1b4f83 solid 3px;
+    background-color: #1b4f83;
+    margin-bottom: 4rem;
+    padding: 1rem;
+  }
+
+  .image-container {
+    width: 80%;         /* fixed width */
+    height: auto;         /* allow height to adjust */
+    max-height: 450px;    /* limit max height */
+    margin: 10px auto;
+    border-radius: 15px;
+    text-align: center;   /* center content horizontally */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .uploaded-image {
+    width: 100%;
+    max-height: 450px;
+    height: auto;
+    object-fit: contain; /* <-- THIS ensures no cropping */
+    display: block;
+    border-radius: 15px;
+    z-index: 2;
+  }
+
+  .background-image {
+    position: absolute;
+    width: 105%;
+    max-height: 500px;
+    height: auto;
+    object-fit: cover; /* <-- THIS ensures no cropping */
+    display: block;
+    border-radius: 15px;
+    z-index: 2;
+    filter: blur(50px);  /* Apply blur effect */
+  }
+
+  .file-container {
+    width: 80%;
+    margin: 10px auto;
+    background-color: transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .file-container {
+    width: 80%;
+    margin: 10px auto;
+    background-color: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .title-container {
+    width: 80%;
+    margin: 10px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .publisher-container {
+    width: 80%;
+    margin: 10px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .description-container {
+    width: 80%;
+    margin: 10px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .flash {
+    margin-top: 10px;
+  }
+</style>
+
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<div class="post-section">
+
+  {% for note in notes|sort(attribute='date', reverse=true) %}
+    <div class="post-content">
+
+        <div class="publisher-container">
+            <h2>Posted by {{ note.user.username }}</h2>
+        </div>
+        <div class="title-container">  
+            <h2>{{ note.title|safe }}</h2>
+        </div>
+
+      {% if note.file_path.endswith('.pdf') %}
+        <div class="file-container">
+          <embed class="uploaded-pdf" src="{{ '/' + note.file_path }}" type="application/pdf" width="100%" height="500px" />
+        </div>
+      {% else %}
+        <div class="image-container">
+          <img class="background-image" src="{{ '/' + note.file_path }}">
+          <img class="uploaded-image" src="{{ '/' + note.file_path }}">
+        </div>
+      {% endif %}
+      
+      <div class="description-container">
+        <p>{{ note.description|safe }}</p>
+      </div>
+    </div>
+  {% endfor %}
+
+</div>
+
 {% endblock %}

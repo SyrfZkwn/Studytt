@@ -3,12 +3,304 @@
 
 {% block content %}
 
-<form method='POST' enctype="multipart/form-data">
-    {{ form.subject }}
-    {{ form.chapter }}
-    {{ form.date }}
-    {{ form.publisher }}
-    {{ form.file }}
-</form>
+<style>
+    .form-control {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 50px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #f15c22;
+        box-shadow: 0 0 10px #f15c22;
+    }
+    
+    /* Simple editor styles */
+    .editor-container {
+        margin-bottom: 2rem;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid #ced4da;
+        position: relative;
+    }
+    
+    .toolbar {
+        background-color: #f0f0f0;
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .toolbar button {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 5px 10px;
+        margin-right: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .toolbar button:hover {
+        background-color: #f8d7c9;
+        color: #333;
+    }
+    
+    .toolbar button.active {
+        background-color: #f15c22;
+        color: white;
+    }
+    
+    .editor-content {
+        padding: 15px;
+        background-color: #f9f9f9;
+        min-height: 200px;
+        border-radius: 0 0 20px 20px;
+        overflow-y: auto;
+    }
+    
+    #hidden-description {
+        display: none;
+    }
+    
+    /* Added for empty editor state */
+    .editor-content:empty:before {
+        content: attr(placeholder);
+        color: #aaa;
+    }
+    
+    /* File preview containers */
+    #filePreview {
+        position: relative;
+        margin: 10px 0; 
+        border-radius: 20px;
+        overflow: hidden;
+        min-height: 5px;
+    }
+    
+    /* Image preview specific styles */
+    #previewBackground {
+        filter: blur(15px);
+        position: absolute;
+        width: 105%;
+        height: 105%;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    
+    #previewImage {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* PDF preview specific styles */
+    #pdfPreview {
+        width: 100%;
+        height: 500px;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+</style>
+
+<div class="container">
+    <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;" id="post-form">
+
+        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Create Post</h1>
+
+        <div class="form-inline container-fluid">
+            {{form.hidden_tag()}}
+
+            <input 
+            type="text"
+            name="title"
+            class="form-control" 
+            placeholder="Subject Title"
+            required
+            />
+            <input 
+            type="text"
+            name="code"
+            class="form-control mx-auto" 
+            placeholder="Subject Code" 
+            required
+            />
+            <input 
+            type="text" 
+            name="chapter"
+            class="form-control" 
+            placeholder="Chapter" 
+            required
+            />
+        </div>
+
+        <!-- Hidden textarea that will store the HTML content -->
+        {{ form.description(id="hidden-description") }}
+        
+        <!-- Simple editor -->
+        <div class="editor-container">
+            <div class="toolbar">
+                <button type="button" class="format-btn" data-format="italic" title="Italic"><em>I</em></button>
+                <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
+                <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
+            </div>
+            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a description"></div>
+        </div>
+
+        {{ form.file(id="fileInput") }}
+
+        <div id="filePreview" style="position: relative; margin: 10px 0; overflow: hidden;"></div>
+
+        <button type="submit" class="btn btn-primary" style="margin: 10px 0 20px 0;">Submit</button>
+
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editor = document.getElementById('editor-content');
+        const form = document.getElementById('post-form');
+        const hiddenTextarea = document.getElementById('hidden-description');
+        const formatButtons = document.querySelectorAll('.format-btn');
+        
+        // Map of format names to their execCommand names
+        const formatCommands = {
+            'italic': 'italic',
+            'underline': 'underline',
+            'strikethrough': 'strikeThrough'
+        };
+        
+        // Format button handling
+        formatButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const format = this.getAttribute('data-format');
+                const command = formatCommands[format];
+                
+                // Apply the formatting command
+                document.execCommand(command, false, null);
+                
+                // Focus back on the editor
+                editor.focus();
+                
+                // Update button states
+                updateButtonStates();
+            });
+        });
+        
+        // When the form is submitted, copy the HTML to the hidden textarea
+        form.addEventListener('submit', function(e) {
+            hiddenTextarea.value = editor.innerHTML;
+            if (editor.innerHTML.trim() === '') {
+                e.preventDefault();
+                alert('Please enter a description');
+                editor.focus();
+            }
+        });
+        
+        // Function to update button states based on current selection
+        function updateButtonStates() {
+            formatButtons.forEach(button => {
+                const format = button.getAttribute('data-format');
+                const command = formatCommands[format];
+                
+                // Check if this format is currently active
+                const isActive = document.queryCommandState(command);
+                button.classList.toggle('active', isActive);
+            });
+        }
+        
+        // Update buttons when selection or cursor position changes
+        ['mouseup', 'keyup', 'mousedown', 'keydown', 'focus', 'click'].forEach(eventType => {
+            editor.addEventListener(eventType, updateButtonStates);
+        });
+        
+        // Initial focus to set everything up
+        setTimeout(() => {
+            editor.focus();
+            updateButtonStates();
+        }, 100);
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+        const filePreview = document.getElementById('filePreview');
+        filePreview.innerHTML = ''; // Clear previous preview
+        
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const fileType = file.type;
+        const fileUrl = URL.createObjectURL(file);
+
+        if (fileType.startsWith('image/')) {
+            // For image files - create blur effect and centered image
+            const previewBackground = document.createElement('div');
+            previewBackground.id = 'previewBackground';
+            
+            const previewImage = document.createElement('div');
+            previewImage.id = 'previewImage';
+            
+            const imgBlur = document.createElement('img');
+            imgBlur.src = fileUrl;
+            imgBlur.style.width = '105%';
+            imgBlur.style.height = '105%';
+            imgBlur.style.objectFit = 'cover';
+            imgBlur.style.position = 'absolute';
+            imgBlur.style.top = '0';
+            imgBlur.style.left = '0';
+            imgBlur.style.overflow = 'hidden';
+            imgBlur.style.border = 'solid 2px #f9f9f9';
+
+            const imgClear = document.createElement('img');
+            imgClear.src = fileUrl;
+            imgClear.style.width = 'auto';
+            imgClear.style.height = 'auto';
+            imgClear.style.maxWidth = '350px';
+            imgClear.style.maxHeight = '350px';
+            imgClear.style.zIndex = '2';
+
+            previewBackground.appendChild(imgBlur);
+            previewImage.appendChild(imgClear);
+            
+            filePreview.appendChild(previewBackground);
+            filePreview.appendChild(previewImage);
+            
+        } else if (fileType === 'application/pdf') {
+            // For PDF files - create a proper embedded PDF viewer
+            const pdfContainer = document.createElement('div');
+            pdfContainer.id = 'pdfPreview';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = fileUrl;
+            iframe.width = '100%';
+            iframe.height = '500px';
+            iframe.style.border = 'none';
+            
+            pdfContainer.appendChild(iframe);
+            filePreview.appendChild(pdfContainer);
+            
+            // Add PDF filename above the preview
+            const fileInfo = document.createElement('p');
+            fileInfo.style.marginBottom = '10px';
+            filePreview.insertBefore(fileInfo, pdfContainer);
+            
+        } else {
+            // For other file types
+            const fileInfo = document.createElement('div');
+            fileInfo.style.padding = '20px';
+            fileInfo.style.backgroundColor = '#f0f0f0';
+            fileInfo.style.borderRadius = '10px';
+            fileInfo.innerHTML = `<p>File selected: <strong>${file.name}</strong></p>`;
+            filePreview.appendChild(fileInfo);
+        }
+    });
+</script>
 
 {% endblock %}

@@ -16,8 +16,7 @@
         />
         <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"
         />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=add_circle"
-        />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
         <style>
           body {
@@ -34,6 +33,7 @@
             overflow: auto;
             border-right: #1b4f83 4px solid;
             align-items: center;
+            z-index: 999;
           }
           
           .sidebar a {
@@ -108,25 +108,29 @@
             margin-top: 0px;
             margin-left: 200px;
             padding: 1px 16px;
-            height: 1000px;
+            min-height: 600px;
           }
 
           div.top {
             background-color: #fbf3e2;
             position: sticky;
-            justify-content: center;
-            align-items: center;
             top: 0;
             border-bottom: #1b4f83 4px solid;
             max-height: 80px;
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 999;
           }
+
 
           .search-bar {
             display: flex;
             justify-content: center;
             margin: 20px auto;
             max-width: 400px;
+            max-height: 45px;
           }
 
           .search-bar input[type="text"] {
@@ -189,7 +193,56 @@
             'opsz' 24
           }
 
-        </style>
+          .dropdown {
+            position: relative;
+            display: inline-block;
+          }
+
+    .dropdown-button {
+      background-color: #173c67;
+      color: #f15c22;
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 25px 25px 25px 25px;
+      cursor: pointer;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #173c67;
+      min-width: 140px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      border-radius: 6px;
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: white;
+      padding: 10px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f15c22;
+    }
+
+          .dropdown:hover .dropdown-content {
+            display: block;
+          }
+
+    .dropdown:hover .dropdown-button {
+      background-color: #f15c22;
+      color: #f1f1f1;
+    }
+
+    .flash {
+      margin-top: 10px;
+    }
+
+</style>
 
 <title>{% block title %}Home{% endblock %}</title>
 
@@ -201,12 +254,16 @@
         <a href="home">
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
-
+      
         <form action="/search" method="GET" class="search-bar">
           <input type="text" name="query" placeholder="Search..." required>
-          <button type="submit">🔍</button>
+          <button type="submit">
+            <span class="material-symbols-outlined">
+              search
+              </span>
+          </button>
         </form>
-
+      
         <div class="button">
           <a href="post">
             <span class="material-symbols-outlined">
@@ -214,7 +271,19 @@
             </span>
           POST</a>
         </div>
+      
+          <div class="dropdown mx-3">
+            <button class="dropdown-button">Menu</button>
+            <div class="dropdown-content">
+              <a href="profile">Profile</a>
+              <a href="logout">Logout</a>
+              <a href="#">Settings</a>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      
 
       <div class="main">
 
@@ -223,7 +292,7 @@
             <a href="explore">EXPLORE</a>
             <a class="active" href="home">HOME</a>
             <hr>
-            <a href="discuss">DISCUSSION</a>
+            <a href="qna">DISCUSSION</a>
             <a href="chat">CHATS</a>
             <a href="notify" style="width: 90%;">NOTIFICATION</a>
           </div>
@@ -240,12 +309,6 @@
 
       </div>
 
-
-
-
-
-
-
       <script
         src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
         integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
@@ -261,6 +324,10 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"
       ></script>
+
+      <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
     </body>
+
 
 </html?

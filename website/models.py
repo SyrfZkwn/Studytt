@@ -49,7 +49,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
     file = db.Column(db.LargeBinary)
-    notes = db.relationship('Note')
+    notes = db.relationship('Note', backref='user', lazy='dynamic')
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
 
     followed = db.relationship(

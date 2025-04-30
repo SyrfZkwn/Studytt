@@ -180,16 +180,32 @@ def post():
 def profile():
     follower_count = current_user.follower_count()
     following_count = current_user.following_count()
-    posts = current_user.notes
-    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts)
+    # Handle both cases - query object or list
+    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+    notes_count = len(posts)
+    
+    return render_template("profile.html", user=current_user, 
+                          follower_count=follower_count, 
+                          following_count=following_count, 
+                          posts=posts,
+                          notes_count=notes_count)
 
 @views.route('/saved')
 @login_required
 def saved():
     follower_count = current_user.follower_count()
     following_count = current_user.following_count()
+    # Don't call .all() on current_user.saved since it's already a list
     saved_posts = current_user.saved
-    return render_template("saved.html", user=current_user, follower_count=follower_count, following_count=following_count, saved_posts=saved_posts)
+    # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
+    notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
+    
+    return render_template("saved.html", user=current_user, 
+                          follower_count=follower_count, 
+                          following_count=following_count, 
+                          saved_posts=saved_posts,
+                          notes_count=notes_count)
+
 
 @views.route('/post/<int:post_id>')
 @login_required
@@ -197,5 +213,25 @@ def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
     return render_template("post_detail.html", post=post)
 
+@views.route('/qna', methods=['GET', 'POST'])
+@login_required
+def qna():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        body = request.form.get('body')
 
+        new_question = Question(
+            title=title,
+            body=body,
+            publisher=current_user.id
+        )
+
+        db.session.add(new_question)
+        db.session.commit()
+
+        flash('Question posted!', category='success')
+        return redirect(url_for('views.qna'))
+    
+    question = Question.query.all()
+    return render_template("qna.html", user=current_user, question=question)
 

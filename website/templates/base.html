@@ -240,8 +240,11 @@
       color: #f1f1f1;
     }
 
+    .flash {
+      margin-top: 10px;
+    }
 
-        </style>
+</style>
 
 <title>{% block title %}Home{% endblock %}</title>
 
@@ -289,6 +292,9 @@
             <a href="#">EXPLORE</a>
             <a class="active" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
+            <a href="qna">DISCUSSION</a>
+            <a href="chat">CHATS</a>
+            <a href="notify" style="width: 90%;">NOTIFICATION</a>
             <a href="#">DISCUSSION</a>
             <a href="{{ url_for('views.chat') }}">CHATS</a>
             <a href="#" style="width: 90%;">NOTIFICATION</a>
@@ -318,6 +324,10 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"
       ></script>
+
+      <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
     </body>
+
 
 </html?

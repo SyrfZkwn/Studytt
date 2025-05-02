@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Room{% endblock %}
+
+{% block content %}
+<h2>Room: {{ code }}</h2>
+
+<div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px;">
+    {% for msg in messages %}
+        <p><strong>{{ msg.name }}</strong>: {{ msg.message }}</p>
+    {% endfor %}
+</div>
+
+<input type="text" id="message-input" placeholder="Type a message...">
+<button id="send-button">Send</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+    const socket = io();
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    
+    // Debug connection
+    socket.on('connect', () => {
+        console.log('Connected to Socket.IO');
+        messagesDiv.innerHTML += '<p><em>Connected to chat</em></p>';
+    });
+    
+    // Send message when button is clicked
+    sendButton.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        if (message) {
+            console.log('Sending message:', message);
+            socket.emit('message', { data: message });
+            messageInput.value = '';
+        }
+    });
+    
+    // Handle enter key
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendButton.click();
+        }
+    });
+    
+    // Receive messages
+    socket.on('message', (data) => {
+        console.log('Received message:', data);
+        messagesDiv.innerHTML += `<p><strong>${data.name}</strong>: ${data.message}</p>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+</script>
+{% endblock %}

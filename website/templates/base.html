@@ -14,14 +14,16 @@
           href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
           crossorigin="anonymous"
         />
-        <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"
-        />
+
+        <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"/> 
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
         <style>
           body {
             margin: 0;
             font-family: 'Baloo 2', cursive;
+            font-weight: 700;
           }
           
           .sidebar {
@@ -248,7 +250,7 @@
     <body style="background-color: #fbf3e2;">
 
       <div class="top">
-        <a href="home">
+        <a href="{{ url_for('views.home') }}">
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
@@ -262,7 +264,7 @@
         </form>
       
         <div class="button">
-          <a href="post">
+          <a href="{{ url_for('views.post') }}">
             <span class="material-symbols-outlined">
               add_circle
             </span>
@@ -272,35 +274,30 @@
           <div class="dropdown mx-3">
             <button class="dropdown-button">Menu</button>
             <div class="dropdown-content">
-              <a href="profile">Profile</a>
-              <a href="logout">Logout</a>
+              <a href="{{ url_for('views.profile') }}">Profile</a>
+              <a href="{{ url_for('auth.logout') }}">Logout</a>
               <a href="#">Settings</a>
             </div>
           </div>
         </div>
       </div>
       
-      
-
       <div class="main">
 
         <div class="sidebar">
           <div class="sidebar-btn">
-            <a href="explore">EXPLORE</a>
-            <a class="active" href="home">HOME</a>
+            <a href="#">EXPLORE</a>
+            <a class="active" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
-            <a href="discuss">DISCUSSION</a>
-            <a href="chat">CHATS</a>
-            <a href="notify" style="width: 90%;">NOTIFICATION</a>
+            <a href="#">DISCUSSION</a>
+            <a href="{{ url_for('views.chat') }}">CHATS</a>
+            <a href="#" style="width: 90%;">NOTIFICATION</a>
           </div>
         </div>
         
         <div class="content">
           {% block content %}
-            <h2>Responsive Sidebar Example</h2>
-            <p>This example use media queries to transform the sidebar to a top navigation bar when the screen size is 700px or less.</p>
-            <p>We have also added a media query for screens that are 400px or less, which will vertically stack and center the navigation links.</p>
-            <h3>Resize the browser window to see the effect.</h3>
+            <h2>You shouldn't be able to see this</h2>
           {% endblock %}
         </div>
 

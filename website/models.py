@@ -4,6 +4,8 @@ from sqlalchemy.sql import func
 from datetime import datetime, timezone
 import pytz
 
+
+
 def get_local_time():
     local_tz = pytz.timezone('Asia/Singapore')
     return datetime.now(local_tz)
@@ -36,6 +38,7 @@ class Question(db.Model):
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
 
+
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -49,11 +52,13 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
+    image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
     file = db.Column(db.LargeBinary)
     points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True)
     comments = db.relationship('Comment', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
+
 
     followed = db.relationship(
         'User', secondary=followers,

@@ -256,3 +256,35 @@ def qna():
     question = Question.query.all()
     return render_template("qna.html", user=current_user, question=question)
 
+import secrets
+from PIL import Image
+
+@views.route("/edit_profile", methods=["GET", "POST"])
+@login_required
+def edit_profile():
+    if request.method == "POST":
+        if "image_profile" not in request.files:
+            flash("No file part", "error")
+            return redirect(request.url)
+        file = request.files["image_profile"]
+        if file.filename == "":
+            flash("No selected file", "error")
+            return redirect(request.url)
+        if file:
+            random_hex = secrets.token_hex(8)
+            _, f_ext = os.path.splitext(file.filename)
+            picture_fn = random_hex + f_ext
+            picture_path = os.path.join(current_app.root_path, "static/profile_pics", picture_fn)
+
+            # Resize image to 125x125 pixels
+            output_size = (125, 125)
+            i = Image.open(file)
+            i.thumbnail(output_size)
+            i.save(picture_path)
+
+            current_user.image_profile = picture_fn
+            db.session.commit()
+            flash("Your profile picture has been updated!", "success")
+            return redirect(url_for("views.profile"))
+    image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
+    return render_template('edit_profile.html', title='edit_profile')

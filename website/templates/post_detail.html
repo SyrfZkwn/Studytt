@@ -14,64 +14,165 @@
   .post-title {
     font-size: 2rem;
     font-weight: bold;
-    margin-bottom: 1rem;
+    margin-bottom: 10px;
     color: #f15c22;
   }
+  .post-publisher {
+    font-size: 1.2rem;
+  }
   .post-meta {
-    color: #888;
     margin-bottom: 1rem;
+    font-size: 1.2rem;
   }
   .post-description {
     font-size: 1.2rem;
-    margin-bottom: 1rem;
   }
-  .post-file {
-    max-width: 100%;
-    max-height: 400px;
-    border-radius: 10px;
+  .uploaded-image {
+    width: 100%;
+    max-height: 450px;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    border-radius: 15px;
+    z-index: 2;
+  }
+  .background-image {
+    position: absolute;
+    width: 105%;
+    max-height: 500px;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    border-radius: 15px;
+    z-index: 2;
+    filter: blur(15px);
+  }
+  .image-container {
+    width: 100%;
+    height: auto;
+    max-height: 450px;
+    margin: 10px auto;
+    border-radius: 15px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .rating-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .expand {
+    display: flex;
+    gap: 10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: scale(0);
+    transform-origin: left center;
+    background-color: #1b4f83;
+    padding: 10px 10px;
+    border-radius: 20px;
+    z-index: 10;
+  }
+
+  .rating-container:hover .expand {
+    transform: scale(1);
+  }
+
+  .rating {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding-top: 5px;
+    transition: transform 0.2s, background-color 0.2s;
+    border-radius: 20px;
+    color: #f15c22;
+  }
+
+  .rating:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.2);
   }
 </style>
 
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
 <div class="post-detail">
-  <div class="post-title">{{ post.title }}</div>
+  <div class="post-publisher">By {{ post.user.username }}</div>
+  <div class="post-title">{{ post.title }} {{ post.code }} | Chapter: {{ post.chapter }}</div>
   <div class="post-meta">
-    Code: {{ post.code }} | Chapter: {{ post.chapter }} | Published on: {{ post.date.strftime('%Y-%m-%d') }}
+    Published on {{ post.date.strftime('%Y-%m-%d') }}
   </div>
-  <div class="post-description">{{ post.description }}</div>
   {% if post.file_path %}
     {% if post.file_path.endswith('.pdf') %}
       <iframe src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" width="100%" height="400px"></iframe>
     {% else %}
-      <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" class="post-file" />
+      <div class="image-container">
+        <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" class="background-image" />
+        <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" class="uploaded-image" />
+      </div>
     {% endif %}
   {% endif %}
+
+  <form action="{{ url_for('views.post_detail', post_id=post.id) }}" method="POST">
+
+    <div class="rating-container">
+      <span class="material-symbols-outlined" style="font-size: 3rem; color: #f15c22;">add_reaction</span>
+      <div class="expand">
+        <button type="submit" name="rating" value="{{ 1 }}" class="rating" title="Very Dissatisfied">
+          <span class="material-symbols-outlined">sentiment_sad</span>
+        </button>
+        <button type="submit" name="rating" value="{{ 2 }}" class="rating" title="Dissatisfied">
+          <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+        </button>
+        <button type="submit" name="rating" value="{{ 3 }}" class="rating" title="Neutral">
+          <span class="material-symbols-outlined">mood</span>
+        </button>
+        <button type="submit" name="rating" value="{{ 4 }}" class="rating" title="Satisfied">
+          <span class="material-symbols-outlined">sentiment_satisfied</span>
+        </button>
+        <button type="submit" name="rating" value="{{ 5 }}" class="rating" title="Very Satisfied">
+          <span class="material-symbols-outlined">sentiment_very_satisfied</span>
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+  <div class="post-description">{{ post.description | safe }}</div>
+
 </div>
 
 <div class="post-section">
-
-  {% for note in notes|sort(attribute='date', reverse=true) %}
-    <div class="post-content">
-
-      <div class="title-container">
-        <h2>{{ note.title }}</h2>
-      </div>
-
-      {% if note.file_path.endswith('.pdf') %}
-        <div class="file-container">
-          <embed class="uploaded-pdf" src="{{ '/' + note.file_path }}" type="application/pdf" width="100%" height="500px" />
-        </div>
-      {% else %}
-        <div class="image-container">
-          <img class="background-image" src="{{ '/' + note.file_path }}">
-          <img class="uploaded-image" src="{{ '/' + note.file_path }}">
-        </div>
-      {% endif %}
-      
-      <div class="description-container">
-        <p>{{ note.description }}</p>
-      </div>
-    </div>
-  {% endfor %}
 
 </div>
 {% endblock %}

@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question
+from .models import Note, ChatMessage, User, Question, Rating
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -207,10 +207,31 @@ def saved():
                           notes_count=notes_count)
 
 
-@views.route('/post/<int:post_id>')
+@views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
+    if request.method == 'POST':
+        rating_value = int(request.form.get("rating"))
+    
+        if post.publisher == current_user.id:
+            flash("You can't rate your own post!", category="error")
+            return redirect(url_for('views.post_detail', post_id=post_id))
+        
+        existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
+        if existing:
+            existing.value = rating_value
+        else:
+            new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
+            db.session.add(new_rating)
+
+        post_author = User.query.get(post.publisher)
+        post_author.points += rating_value
+
+        db.session.commit()
+        flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
+        return redirect(url_for('views.post_detail', post_id=post_id))
+    
     return render_template("post_detail.html", post=post)
 
 @views.route('/qna', methods=['GET', 'POST'])

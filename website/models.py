@@ -50,6 +50,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
     file = db.Column(db.LargeBinary)
+    points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True)
     comments = db.relationship('Comment', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
@@ -77,6 +78,12 @@ class User(db.Model, UserMixin):
 
     def following_count(self):
         return self.followed.count()
+
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rater_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)

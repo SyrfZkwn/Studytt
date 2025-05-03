@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+<title>{% block title %}Edit Profile{% endblock %}</title>
+
+{% block content %}
+<h2>Edit Profile</h2>
+
+<form method="POST" action="{{ url_for('views.edit_profile') }}" enctype="multipart/form-data">
+    <label for="image_profile">Change Profile Picture:</label><br>
+    <input type="file" name="image_profile" id="image_profile" accept="image/*" required><br><br>
+    <input type="submit" value="Update Profile">
+</form>
+
+{% endblock %}

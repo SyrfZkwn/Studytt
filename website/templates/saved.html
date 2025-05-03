@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+<title>{% block title %}Profile{% endblock %}</title>
+
+{% block content %}
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Baloo 2', cursive;
+    background-color: #fbf3e2;
+    color: #1b4f83;
+  }
+
+  .profile-header {
+    background-color: #fbf3e2;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 3px solid #1b4f83;
+  }
+
+  .profile-pic {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #ddd;
+    margin-right: 2rem;
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .username {
+    font-size: 2rem;
+    color: #f15c22;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .stat {
+    font-size: 1rem;
+  }
+
+  .edit-btn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #173c67;
+    color: #fdf3de;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+}
+
+  .tab a {
+  display: block;
+  padding: 0.5rem 1.5rem;
+  background-color: #1b4f83;
+  color: #fdf3de;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+  .tab a:hover {
+  background-color: #f15c22;
+}
+
+.tab a.active {
+  background-color: #f15c22;
+  color: #fff;
+}
+
+  .content-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+  .post {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+
+  .post-img {
+    width: 100%;
+    height: 200px;
+    background-color: #ccc;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-footer {
+    font-size: 0.9rem;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 600px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+  .tabs a.active {
+            background-color: #f15c22;
+            color: #1b4f83;
+            border-radius: 20px;
+            width: 80%;
+            margin: 0 auto;
+          }
+
+</style>
+
+<div class="profile-header">
+  <img class="rounded-circle account-img profile-pic" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+  
+  <div class="profile-info">
+    <div class="username">@{{ user.username }}</div>
+    <div class="stats">
+      <div class="stat">Posts: {{ notes_count }}</div>
+      <div class="stat">Followers: {{ follower_count }}</div>
+      <div class="stat">Following: {{ following_count }}</div>
+    </div>
+    <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+  </div>
+</div>
+
+  <div class="tabs">
+    <div class="tab">
+      <a href="profile">POSTED</a>
+    </div>
+    <div class="tab">
+      <a href="saved" class="active">SAVED</a>
+    </div>
+</div>
+
+  <div class="content-section">
+    {% for post in saved_posts %}
+    <div class="post">
+      <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
+        <div class="post-img">
+          {% if post.file_path %}
+            <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% else %}
+            <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+          {% endif %}
+        </div>
+        <div class="post-title">{{ post.title }}</div>
+      </a>
+      <div class="post-footer">
+        <span>Likes 0</span>
+        <span>💬 0</span>
+      </div>
+    </div>
+    {% else %}
+    <p>No saved posts to show.</p>
+    {% endfor %}
+  </div>
+{% endblock %}

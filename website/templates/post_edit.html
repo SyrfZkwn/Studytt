@@ -1,5 +1,5 @@
 {% extends "base.html" %} 
-<title>{% block title %}Post{% endblock %}</title>
+<title>{% block title %}Edit Post{% endblock %}</title>
 
 {% block content %}
 
@@ -21,7 +21,7 @@
     
     /* Simple editor styles */
     .editor-container {
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         border-radius: 20px;
         overflow: hidden;
         border: 1px solid #ced4da;
@@ -77,48 +77,59 @@
         content: attr(placeholder);
         color: #aaa;
     }
-    
-    /* File preview containers */
-    #filePreview {
-        position: relative;
-        margin: 10px 0; 
-        border-radius: 20px;
-        overflow: hidden;
-        min-height: 5px;
+
+    .uploaded-image {
+        width: 100%;
+        max-height: 450px;
+        height: auto;
+        object-fit: contain; /* <-- THIS ensures no cropping */
+        display: block;
+        border-radius: 15px;
+        z-index: 2;
     }
-    
-    /* Image preview specific styles */
-    #previewBackground {
-        filter: blur(15px);
+
+    .background-image {
         position: absolute;
         width: 105%;
-        height: 105%;
-        top: 0;
-        left: 0;
-        z-index: 1;
-    }
-    
-    #previewImage {
-        position: relative;
+        max-height: 500px;
+        height: auto;
+        object-fit: cover; /* <-- THIS ensures no cropping */
+        display: block;
+        border-radius: 15px;
         z-index: 2;
+        filter: blur(15px);  /* Apply blur effect */
+    }
+
+    .image-container {
+        width: 100%;         /* fixed width */
+        height: auto;         /* allow height to adjust */
+        max-height: 450px;    /* limit max height */
+        margin: 10px auto;
+        border-radius: 15px;
+        text-align: center;   /* center content horizontally */
         display: flex;
         justify-content: center;
         align-items: center;
-    }
-    
-    /* PDF preview specific styles */
-    #pdfPreview {
-        width: 100%;
-        height: 500px;
-        border-radius: 20px;
+        position: relative;
         overflow: hidden;
+    }
+
+    .file-container {
+        width: 100%;
+        margin: 10px auto;
+        background-color: transparent;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>
 
 <div class="container">
     <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;" id="post-form">
 
-        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Create Post</h1>
+        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Edit Post</h1>
 
         <div class="form-inline container-fluid">
             {{form.hidden_tag()}}
@@ -128,6 +139,7 @@
             name="title"
             class="form-control" 
             placeholder="Subject Title"
+            value="{{ post.title }}"
             required
             />
             <input 
@@ -135,13 +147,15 @@
             name="code"
             class="form-control mx-auto" 
             placeholder="Subject Code" 
+            value="{{ post.code }}"
             required
             />
             <input 
             type="text" 
             name="chapter"
             class="form-control" 
-            placeholder="Chapter" 
+            placeholder="Chapter"
+            value="{{ post.chapter }}"
             required
             />
         </div>
@@ -157,14 +171,23 @@
                 <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
                 <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
             </div>
-            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a description"></div>
+            <div class="editor-content" id="editor-content" contenteditable="true">{{ post.description|safe }}</div>
         </div>
 
-        {{ form.file(id="fileInput") }}
+        <div>
+            {% if post.file_path.endswith('.pdf') %}
+            <div class="file-container">
+                <embed class="uploaded-pdf" src="{{ '/' + post.file_path }}" type="application/pdf" width="100%" height="500px" />
+            </div>
+            {% else %}
+            <div class="image-container">
+                <img class="background-image" src="{{ '/' + post.file_path }}">
+                <img class="uploaded-image" src="{{ '/' + post.file_path }}">
+            </div>
+            {% endif %}
+        </div>
 
-        <div id="filePreview" style="position: relative; margin: 10px 0; overflow: hidden;"></div>
-
-        <button type="submit" class="btn btn-primary" style="margin: 10px 0 20px 0;">Submit</button>
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 15px;">Submit</button>
 
     </form>
 </div>
@@ -228,79 +251,6 @@
             editor.focus();
             updateButtonStates();
         }, 100);
-    });
-
-    document.getElementById('fileInput').addEventListener('change', function(event) {
-        const filePreview = document.getElementById('filePreview');
-        filePreview.innerHTML = ''; // Clear previous preview
-        
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const fileType = file.type;
-        const fileUrl = URL.createObjectURL(file);
-
-        if (fileType.startsWith('image/')) {
-            // For image files - create blur effect and centered image
-            const previewBackground = document.createElement('div');
-            previewBackground.id = 'previewBackground';
-            
-            const previewImage = document.createElement('div');
-            previewImage.id = 'previewImage';
-            
-            const imgBlur = document.createElement('img');
-            imgBlur.src = fileUrl;
-            imgBlur.style.width = '105%';
-            imgBlur.style.height = '105%';
-            imgBlur.style.objectFit = 'cover';
-            imgBlur.style.position = 'absolute';
-            imgBlur.style.top = '0';
-            imgBlur.style.left = '0';
-            imgBlur.style.overflow = 'hidden';
-            imgBlur.style.border = 'solid 2px #f9f9f9';
-
-            const imgClear = document.createElement('img');
-            imgClear.src = fileUrl;
-            imgClear.style.width = 'auto';
-            imgClear.style.height = 'auto';
-            imgClear.style.maxWidth = '350px';
-            imgClear.style.maxHeight = '350px';
-            imgClear.style.zIndex = '2';
-
-            previewBackground.appendChild(imgBlur);
-            previewImage.appendChild(imgClear);
-            
-            filePreview.appendChild(previewBackground);
-            filePreview.appendChild(previewImage);
-            
-        } else if (fileType === 'application/pdf') {
-            // For PDF files - create a proper embedded PDF viewer
-            const pdfContainer = document.createElement('div');
-            pdfContainer.id = 'pdfPreview';
-            
-            const iframe = document.createElement('iframe');
-            iframe.src = fileUrl;
-            iframe.width = '100%';
-            iframe.height = '500px';
-            iframe.style.border = 'none';
-            
-            pdfContainer.appendChild(iframe);
-            filePreview.appendChild(pdfContainer);
-            
-            // Add PDF filename above the preview
-            const fileInfo = document.createElement('p');
-            fileInfo.style.marginBottom = '10px';
-            filePreview.insertBefore(fileInfo, pdfContainer);
-            
-        } else {
-            // For other file types
-            const fileInfo = document.createElement('div');
-            fileInfo.style.padding = '20px';
-            fileInfo.style.backgroundColor = '#f0f0f0';
-            fileInfo.style.borderRadius = '10px';
-            fileInfo.innerHTML = `<p>File selected: <strong>${file.name}</strong></p>`;
-            filePreview.appendChild(fileInfo);
-        }
     });
 </script>
 

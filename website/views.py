@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, session 
+from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, session, abort
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField, StringField, TextAreaField
@@ -288,3 +288,48 @@ def edit_profile():
             return redirect(url_for("views.profile"))
     image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
     return render_template('edit_profile.html', title='edit_profile')
+
+@views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def post_edit(post_id):
+    post = Note.query.get_or_404(post_id)
+    if post.publisher != current_user.id:
+        abort(403)
+
+    form = UploadFileForm()
+
+    if request.method == 'POST':
+        post.title = request.form.get('title')
+        post.code = request.form.get('code')
+        post.chapter = request.form.get('chapter')
+        post.description = form.description.data
+
+        db.session.commit()
+
+        flash('Note Edited!', category='success')
+        return redirect(url_for('views.post_detail', post_id=post.id))
+        
+    return render_template("post_edit.html", form=form, post=post)
+
+@views.route("/delete/<int:post_id>", methods=['POST'])
+@login_required
+def delete(post_id):
+    post = Note.query.get_or_404(post_id)
+
+    if post.publisher != current_user.id:
+        abort(403)
+
+    if post.file_path:
+        try:
+            file_path = os.path.join(current_app.root_path, post.file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            else:
+                flash('File not found, but note deleted!', category='error')
+        except Exception as e:
+            flash(f"Failed to delete file: {e}", category='error')
+
+    db.session.delete(post)
+    db.session.commit()
+    flash('Note Deleted!', category='success')
+    return redirect(url_for('views.home'))

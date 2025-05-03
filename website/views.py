@@ -180,15 +180,11 @@ def post():
 def profile():
     follower_count = current_user.follower_count()
     following_count = current_user.following_count()
-    # Handle both cases - query object or list
+    points = current_user.points
     posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
     notes_count = len(posts)
     
-    return render_template("profile.html", user=current_user, 
-                          follower_count=follower_count, 
-                          following_count=following_count, 
-                          posts=posts,
-                          notes_count=notes_count)
+    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
 @views.route('/saved')
 @login_required
@@ -318,6 +314,10 @@ def delete(post_id):
 
     if post.publisher != current_user.id:
         abort(403)
+
+    for rating in post.ratings:
+        post_author = User.query.get(post.publisher)
+        post_author.points -= rating.value
 
     if post.file_path:
         try:

@@ -30,6 +30,7 @@ class Note(db.Model):
     file_path = db.Column(db.String(255))
     publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
     comments = db.relationship('Comment', backref='note', lazy=True)
+    ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -87,7 +88,7 @@ class User(db.Model, UserMixin):
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rater_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=False)
     value = db.Column(db.Integer, nullable=False)
 
 class Comment(db.Model):

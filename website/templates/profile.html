@@ -48,7 +48,18 @@
   }
 
   .stat {
-    font-size: 1rem;
+    font-size: 0.8rem;
+    display: block;
+  padding: 0.5rem 1.5rem;
+  background-color: #1b4f83;
+  color: #fdf3de;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  width: 100%;
+  outline-style: solid;
+  outline-color: #f15c22;
   }
 
   .edit-btn {
@@ -186,9 +197,25 @@
           Total Rating: 0
           {% endif %}
         </div>
-        <div class="stats">Bio : {{biography}}</div>
+       
       </div>
-      <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      <div class="stats">{{user.biography}}</div>
+      {% if user.id != current_user.id %}
+        <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;">
+          {% if is_following %}
+            <button type="button" class="edit-btn" disabled>Followed</button>
+          {% else %}
+            <button type="submit" class="edit-btn">Follow</button>
+          {% endif %}
+        </form>
+        {% if is_following %}
+          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="edit-btn" style="background-color: #ff0000; margin-left: 10px;">Unfollow</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      {% endif %}
     </div>
   </div>
 

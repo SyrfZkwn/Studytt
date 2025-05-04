@@ -13,6 +13,9 @@ from flask_socketio import SocketIO, join_room, leave_room, send
 from . import socketio
 from string import ascii_uppercase
 import random
+import secrets
+import os
+from PIL import Image
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -187,6 +190,44 @@ def profile():
     
     return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
+@views.route('/profile/<int:user_id>')
+@login_required
+def user_profile(user_id):
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+    return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+
+@views.route('/follow/<int:user_id>', methods=['POST'])
+@login_required
+def follow(user_id):
+    user = User.query.get_or_404(user_id)
+    if user == current_user:
+        flash("You cannot follow yourself.", "error")
+        return redirect(url_for('views.user_profile', user_id=user_id))
+    if not current_user.is_following(user):
+        current_user.follow(user)
+        db.session.commit()
+        flash(f"You are now following {user.username}.", "success")
+    return redirect(url_for('views.user_profile', user_id=user_id))
+
+@views.route('/unfollow/<int:user_id>', methods=['POST'])
+@login_required
+def unfollow(user_id):
+    user = User.query.get_or_404(user_id)
+    if user == current_user:
+        flash("You cannot unfollow yourself.", "error")
+        return redirect(url_for('views.user_profile', user_id=user_id))
+    if current_user.is_following(user):
+        current_user.unfollow(user)
+        db.session.commit()
+        flash(f"You have unfollowed {user.username}.", "success")
+    return redirect(url_for('views.user_profile', user_id=user_id))
+
 @views.route('/saved')
 @login_required
 def saved():
@@ -286,7 +327,12 @@ def edit_profile():
                 random_hex = secrets.token_hex(8)
                 _, f_ext = os.path.splitext(file.filename)
                 picture_fn = random_hex + f_ext
-                picture_path = os.path.join(current_app.root_path, "static/profile_pics", picture_fn)
+
+                # Make sure the directory exists
+                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                os.makedirs(profile_pics_folder, exist_ok=True)
+
+                picture_path = os.path.join(profile_pics_folder, picture_fn)
 
                 # Resize image to 125x125 pixels
                 output_size = (125, 125)

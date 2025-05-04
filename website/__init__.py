@@ -6,16 +6,50 @@ from flask_socketio import SocketIO
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 import sqlite3
+from flask_migrate import Migrate
+from datetime import datetime
+import pytz
 
 db = SQLAlchemy()
+migrate = Migrate()
 socketio = SocketIO()
 DB_NAME = "database.db"
+
+def get_local_time():
+    local_tz = pytz.timezone('Asia/Singapore')
+    return datetime.now(local_tz)
+
+def time_ago(value):
+    if isinstance(value, datetime):
+        # Ensure the value is timezone-aware, using Asia/Singapore timezone if not already
+        if value.tzinfo is None:
+            local_tz = pytz.timezone('Asia/Singapore')
+            value = local_tz.localize(value)  # Localize naive datetime to Singapore timezone
+
+        # Get the current time in Asia/Singapore timezone as a timezone-aware object
+        now = get_local_time()
+
+        # Calculate the time difference
+        delta = now - value
+        days = delta.days
+        if days > 0:
+            return f"{days} day{'s' if days > 1 else ''} ago"
+        else:
+            hours = delta.seconds // 3600
+            if hours > 0:
+                return f"{hours} hour{'s' if hours > 1 else ''} ago"
+            minutes = (delta.seconds % 3600) // 60
+            if minutes > 0:
+                return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+            return "Posted just now"
+    return value
 
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     app.config['UPLOAD_FOLDER'] = 'static/notes'
+    app.jinja_env.filters['time_ago'] = time_ago
 
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins="*")
@@ -28,6 +62,8 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/')
 
     create_database(app)
+
+    migrate.init_app(app, db)
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'

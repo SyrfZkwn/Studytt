@@ -4,8 +4,6 @@ from sqlalchemy.sql import func
 from datetime import datetime, timezone
 import pytz
 
-
-
 def get_local_time():
     local_tz = pytz.timezone('Asia/Singapore')
     return datetime.now(local_tz)

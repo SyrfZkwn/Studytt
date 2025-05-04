@@ -14,7 +14,8 @@ from . import socketio
 from string import ascii_uppercase
 import random
 
-views = Blueprint('views', __name__)
+views = Blueprint('views', __name__, template_folder='../templates')
+
 
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired()])
@@ -212,6 +213,18 @@ def saved():
 def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
     return render_template("post_detail.html", post=post)
+
+@views.route('/save_post/<int:post_id>', methods=['POST'])
+@login_required
+def save_post(post_id):
+    post = Note.query.get_or_404(post_id)
+    if post not in current_user.saved:
+        current_user.saved.append(post)
+        db.session.commit()
+        flash('Post saved successfully!', 'success')
+    else:
+        flash('Post already saved.', 'info')
+    return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required

@@ -4,8 +4,40 @@
 {% block content %}
 <h2>Edit Profile</h2>
 
+
+<div class="login-card">
+    <form method="POST">
+        <input 
+        type="text" 
+        name="username" 
+        class="form-control" 
+        placeholder="USERNAME" 
+        required
+      />
+      <input 
+        type="password" 
+        name="password"
+        class="form-control" 
+        placeholder="NEW PASSWORD" 
+        required
+      />
+      <input 
+        type="password" 
+        name="password2"
+        class="form-control" 
+        placeholder="PASSWORD CONFIRMATION" 
+        required
+       />
+        
+
+
+      <button type="submit" class="btn btn-primary btn-block">SUBMIT</button>
+
+    </form>
+    
+</div>
 <form method="POST" action="{{ url_for('views.edit_profile') }}" enctype="multipart/form-data">
-    <label for="image_profile">Change Profile Picture:</label><br>
+    placeholder=<label for="image_profile">Change Profile Picture:</label><br>
     <input type="file" name="image_profile" id="image_profile" accept="image/*" required><br><br>
     <input type="submit" value="Update Profile">
 </form>

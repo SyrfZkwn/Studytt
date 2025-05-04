@@ -158,10 +158,15 @@
         </div>
       {% endif %}
       
+      <form method="POST" action="{{ url_for('views.save_post', post_id=note.id) }}">
+        <input type="image" src="{{ url_for('static', filename='image/saved_bttn.png') }}" alt="Studytt" class="img-fluid" style="width: 40px; height: 40px;">
+        </form>
+
       <div class="description-container">
         <p>{{ note.description|safe }}</p>
       </div>
     </div>
+    
   {% endfor %}
 
 </div>

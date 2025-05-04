@@ -311,7 +311,7 @@
   </div>
   <div class="post-title">{{ post.title }} {{ post.code }} | Chapter: {{ post.chapter }}</div>
   <div class="post-meta">
-    Published on {{ post.date.strftime('%Y-%m-%d') }}
+    Posted {{ post.date | time_ago }}
   </div>
   {% if post.file_path %}
     {% if post.file_path.endswith('.pdf') %}

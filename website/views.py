@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, session 
+from flask import Blueprint, render_template, current_app, request, flash, redirect, url_for, session, abort
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question
+from .models import Note, ChatMessage, User, Question, Rating
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -181,15 +181,11 @@ def post():
 def profile():
     follower_count = current_user.follower_count()
     following_count = current_user.following_count()
-    # Handle both cases - query object or list
+    points = current_user.points
     posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
     notes_count = len(posts)
     
-    return render_template("profile.html", user=current_user, 
-                          follower_count=follower_count, 
-                          following_count=following_count, 
-                          posts=posts,
-                          notes_count=notes_count)
+    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
 @views.route('/saved')
 @login_required
@@ -208,10 +204,31 @@ def saved():
                           notes_count=notes_count)
 
 
-@views.route('/post/<int:post_id>')
+@views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
+    if request.method == 'POST':
+        rating_value = int(request.form.get("rating"))
+    
+        if post.publisher == current_user.id:
+            flash("You can't rate your own post!", category="error")
+            return redirect(url_for('views.post_detail', post_id=post_id))
+        
+        existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
+        if existing:
+            existing.value = rating_value
+        else:
+            new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
+            db.session.add(new_rating)
+
+        post_author = User.query.get(post.publisher)
+        post_author.points += rating_value
+
+        db.session.commit()
+        flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
+        return redirect(url_for('views.post_detail', post_id=post_id))
+    
     return render_template("post_detail.html", post=post)
 
 @views.route('/save_post/<int:post_id>', methods=['POST'])
@@ -280,3 +297,52 @@ def edit_profile():
             return redirect(url_for("views.profile"))
     image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
     return render_template('edit_profile.html', title='edit_profile')
+
+@views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def post_edit(post_id):
+    post = Note.query.get_or_404(post_id)
+    if post.publisher != current_user.id:
+        abort(403)
+
+    form = UploadFileForm()
+
+    if request.method == 'POST':
+        post.title = request.form.get('title')
+        post.code = request.form.get('code')
+        post.chapter = request.form.get('chapter')
+        post.description = form.description.data
+
+        db.session.commit()
+
+        flash('Note Edited!', category='success')
+        return redirect(url_for('views.post_detail', post_id=post.id))
+        
+    return render_template("post_edit.html", form=form, post=post)
+
+@views.route("/delete/<int:post_id>", methods=['POST'])
+@login_required
+def delete(post_id):
+    post = Note.query.get_or_404(post_id)
+
+    if post.publisher != current_user.id:
+        abort(403)
+
+    for rating in post.ratings:
+        post_author = User.query.get(post.publisher)
+        post_author.points -= rating.value
+
+    if post.file_path:
+        try:
+            file_path = os.path.join(current_app.root_path, post.file_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            else:
+                flash('File not found, but note deleted!', category='error')
+        except Exception as e:
+            flash(f"Failed to delete file: {e}", category='error')
+
+    db.session.delete(post)
+    db.session.commit()
+    flash('Note Deleted!', category='success')
+    return redirect(url_for('views.home'))

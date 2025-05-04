@@ -355,6 +355,10 @@
 
   </form>
 
+  <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}" style="display:inline;">
+    <input type="image" src="{{ url_for('static', filename='saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
+  </form>
+
   <div class="post-description">{{ post.description | safe }}</div>
 
 </div>
@@ -371,6 +375,9 @@
               <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
           </div>
           <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a comment"></div>
+          <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
+            <input type="image" src="{{ url_for('static', filename='saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
+          </form>
       </div>
       <button type="submit" class="btn btn-primary">Comment</button>
     </form>

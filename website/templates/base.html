@@ -1,202 +1,205 @@
 <!DOCTYPE html>
 </html>
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width">
-        <link
-        rel="stylesheet"
-        href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
-        crossorigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
-          crossorigin="anonymous"
-        />
-        <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"
-        />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width">
+    <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+    crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+      crossorigin="anonymous"
+    />
 
-        <style>
-          body {
-            margin: 0;
-            font-family: 'Baloo 2', cursive;
-          }
-          
-          .sidebar {
-            padding: 0;
-            width: 200px;
-            background-color: #fbf3e2;
-            position: fixed;
-            height: 100%;
-            overflow: auto;
-            border-right: #1b4f83 4px solid;
-            align-items: center;
-            z-index: 999;
-          }
-          
-          .sidebar a {
-            font-weight: bold;
-            display: block;
-            color: #f15c22;
-            padding: 10px;
-            text-decoration: none;
-            text-align: center;
-            width: 80%;
-            margin: 10px auto;
-            border-radius: 20px;
-          }
-           
-          .sidebar a.active {
-            background-color: #1b4f83;
-            color: #f15c22;
-            border-radius: 20px;
-            width: 80%;
-            margin: 0 auto;
-          }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700&display=swap" rel="stylesheet"/> 
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
-          .button a {
-            font-weight: bold;
-            background-color: #173c67;
-            color: #f15c22;
-            padding: 10px;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 20px;
-            font-size: 1.5rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-          }
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Baloo 2', cursive;
+      font-weight: 700;
+    }
+    
+    .sidebar {
+      padding: 0;
+      width: 200px;
+      background-color: #fbf3e2;
+      position: fixed;
+      height: 100%;
+      overflow: auto;
+      border-right: #1b4f83 4px solid;
+      align-items: center;
+      z-index: 999;
+    }
+    
+    .sidebar a {
+      font-weight: bold;
+      display: block;
+      color: #f15c22;
+      padding: 10px;
+      text-decoration: none;
+      text-align: center;
+      width: 80%;
+      margin: 10px auto;
+      border-radius: 20px;
+    }
+      
+    .sidebar a.active {
+      background-color: #1b4f83;
+      color: #f15c22;
+      border-radius: 20px;
+      width: 80%;
+      margin: 0 auto;
+    }
 
-          .button a .material-symbols-outlined {
-            font-size: 2rem;
-            vertical-align: middle;
-            color: #f15c22;
-          }
+    .button a {
+      font-weight: bold;
+      background-color: #173c67;
+      color: #f15c22;
+      padding: 10px;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 20px;
+      font-size: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-          .button a:hover {
-            background-color: #f15c22;
-            color: #ffffff;
-            transition: all 0.3s ease;
-          }
+    .button a .material-symbols-outlined {
+      font-size: 2rem;
+      vertical-align: middle;
+      color: #f15c22;
+    }
 
-          .button a:hover .material-symbols-outlined {
-            color: #ffffff;
-            transition: all 0.3s ease;
-          }
+    .button a:hover {
+      background-color: #f15c22;
+      color: #ffffff;
+      transition: all 0.3s ease;
+    }
 
-          .sidebar a:hover:not(.active) {
-            background-color: #ffd38a ;
-            color: #5a3e36;
-            transition: all 0.3s ease;
-          }
+    .button a:hover .material-symbols-outlined {
+      color: #ffffff;
+      transition: all 0.3s ease;
+    }
 
-          .sidebar a.active:hover {
-            background-color: #f15c22;
-            color: #ffffff;
-            transition: all 0.3s ease;
-          }
+    .sidebar a:hover:not(.active) {
+      background-color: #ffd38a ;
+      color: #5a3e36;
+      transition: all 0.3s ease;
+    }
 
-          .sidebar-btn {
-            font-size: 1.5rem;
-            text-align: center;
-          }
-          
-          div.content {
-            margin-top: 0px;
-            margin-left: 200px;
-            padding: 1px 16px;
-            min-height: 600px;
-          }
+    .sidebar a.active:hover {
+      background-color: #f15c22;
+      color: #ffffff;
+      transition: all 0.3s ease;
+    }
 
-          div.top {
-            background-color: #fbf3e2;
-            position: sticky;
-            top: 0;
-            border-bottom: #1b4f83 4px solid;
-            max-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            z-index: 999;
-          }
+    .sidebar-btn {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    
+    div.content {
+      margin-top: 0px;
+      margin-left: 200px;
+      padding: 1px 16px;
+      min-height: 600px;
+    }
+
+    div.top {
+      background-color: #fbf3e2;
+      position: sticky;
+      top: 0;
+      border-bottom: #1b4f83 4px solid;
+      max-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 999;
+    }
 
 
-          .search-bar {
-            display: flex;
-            justify-content: center;
-            margin: 20px auto;
-            max-width: 400px;
-            max-height: 45px;
-          }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin: 20px auto;
+      max-width: 400px;
+      max-height: 45px;
+    }
 
-          .search-bar input[type="text"] {
-            flex: 1;
-            padding: 10px 15px;
-            border: 3px solid #1b4f83;
-            border-radius: 25px 0 0 25px;
-            outline: none;
-            font-size: 16px;
-            color: #1b4f83;
-            background-color: #fdf3de;
-          }
+    .search-bar input[type="text"] {
+      flex: 1;
+      padding: 10px 15px;
+      border: 3px solid #1b4f83;
+      border-radius: 25px 0 0 25px;
+      outline: none;
+      font-size: 16px;
+      color: #1b4f83;
+      background-color: #fdf3de;
+    }
 
-          .search-bar button {
-            padding: 10px 20px;
-            border: 2px solid #1b4f83;
-            border-left: none;
-            background-color: #1b4f83;
-            color: #fdf3de;
-            border-radius: 0 25px 25px 0;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: background-color 0.3s;
-          }
+    .search-bar button {
+      padding: 10px 20px;
+      border: 2px solid #1b4f83;
+      border-left: none;
+      background-color: #1b4f83;
+      color: #fdf3de;
+      border-radius: 0 25px 25px 0;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
 
-          .search-bar button:hover {
-            background-color: #f15c22;
-            color: #fff;
-          }
+    .search-bar button:hover {
+      background-color: #f15c22;
+      color: #fff;
+    }
 
-          hr {
-            border: 2px solid #173c67;
-            width: 80%;
-            margin: 10px auto;
-          }
-          
-          @media screen and (max-width: 700px) {
-            .sidebar {
-              width: 100%;
-              height: auto;
-              position: relative;
-            }
-            .sidebar a {float: left;}
-            div.content {margin-left: 0;}
-          }
-          
-          @media screen and (max-width: 400px) {
-            .sidebar a {
-              text-align: center;
-              float: none;
-            }
-          }
+    hr {
+      border: 2px solid #173c67;
+      width: 80%;
+      margin: 10px auto;
+    }
+    
+    @media screen and (max-width: 700px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .sidebar a {float: left;}
+      div.content {margin-left: 0;}
+    }
+    
+    @media screen and (max-width: 400px) {
+      .sidebar a {
+        text-align: center;
+        float: none;
+      }
+    }
 
-          .material-symbols-outlined {
-            font-variation-settings:
-            'FILL' 0,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 24
-          }
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
 
-          .dropdown {
-            position: relative;
-            display: inline-block;
-          }
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
 
     .dropdown-button {
       background-color: #173c67;
@@ -241,8 +244,7 @@
     .flash {
       margin-top: 10px;
     }
-
-</style>
+  </style>
 
 <title>{% block title %}Home{% endblock %}</title>
 
@@ -251,7 +253,7 @@
     <body style="background-color: #fbf3e2;">
 
       <div class="top">
-        <a href="home">
+        <a href="{{ url_for('views.home') }}">
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
@@ -265,45 +267,40 @@
         </form>
       
         <div class="button">
-          <a href="post">
+          <a href="{{ url_for('views.post') }}">
             <span class="material-symbols-outlined">
               add_circle
             </span>
-          POST</a>
+          ADD</a>
         </div>
       
           <div class="dropdown mx-3">
             <button class="dropdown-button">Menu</button>
             <div class="dropdown-content">
-              <a href="profile">Profile</a>
-              <a href="logout">Logout</a>
+              <a href="{{ url_for('views.profile') }}">Profile</a>
+              <a href="{{ url_for('auth.logout') }}">Logout</a>
               <a href="#">Settings</a>
             </div>
           </div>
         </div>
       </div>
       
-      
-
       <div class="main">
 
         <div class="sidebar">
           <div class="sidebar-btn">
-            <a href="explore">EXPLORE</a>
-            <a class="active" href="home">HOME</a>
+            <a href="#">EXPLORE</a>
+            <a class="active" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
-            <a href="qna">DISCUSSION</a>
-            <a href="chat">CHATS</a>
-            <a href="notify" style="width: 90%;">NOTIFICATION</a>
+            <a href="{{ url_for('views.qna') }}">DISCUSSION</a>
+            <a href="{{ url_for('views.chat_home') }}">CHATS</a>
+            <a href="#" style="width: 90%;">NOTIFICATION</a>
           </div>
         </div>
         
         <div class="content">
           {% block content %}
-            <h2>Responsive Sidebar Example</h2>
-            <p>This example use media queries to transform the sidebar to a top navigation bar when the screen size is 700px or less.</p>
-            <p>We have also added a media query for screens that are 400px or less, which will vertically stack and center the navigation links.</p>
-            <h3>Resize the browser window to see the effect.</h3>
+            <h2>You shouldn't be able to see this</h2>
           {% endblock %}
         </div>
 

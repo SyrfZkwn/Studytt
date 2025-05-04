@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating
+from .models import Note, ChatMessage, User, Question, Rating, Answer
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -233,6 +233,8 @@ def post_detail(post_id):
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
 def qna():
+
+
     if request.method == 'POST':
         title = request.form.get('title')
         body = request.form.get('body')
@@ -333,3 +335,42 @@ def delete(post_id):
     db.session.commit()
     flash('Note Deleted!', category='success')
     return redirect(url_for('views.home'))
+
+
+@views.route('/add-answer/<int:question_id>', methods=['POST'])
+@login_required
+def add_answer (question_id):
+    question = Question.query.get_or_404(question_id)
+    
+    if request.method == 'POST':
+        answer_body = request.form.get('answer_body')
+
+        new_answer= Answer(
+            body=answer_body,
+            question_id=question.id,
+            user_id=current_user.id
+        )
+
+        db.session.add(new_answer)
+        db.session.commit()
+        flash('Comment added!', 'success')
+    else:
+        flash('Please enter a comment.', 'error')
+
+    return redirect(url_for('views.qna'))
+
+@views.route('/delete-answer/<int:answer_id>', methods=['POST'])
+@login_required
+def delete_answer (answer_id):
+    answer = Answer.query.get_or_404(answer_id)
+
+    if answer.user_id != current_user.id:
+        flash ('You can only delete your own comments.', 'error')
+        return redirect(url_for('views.qna'))
+    
+
+    db.session.delete(answer)
+    db.session.commit()
+    flash('Comment deleted!', 'success')
+
+    return redirect(url_for('views.qna'))

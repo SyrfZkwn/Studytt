@@ -34,6 +34,7 @@ class Question(db.Model):
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -26,7 +26,9 @@ class Note(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
-    publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comments = db.relationship('Comment', backref='note', lazy=True)
+    ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,6 +36,9 @@ class Question(db.Model):
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    answers = db.relationship('Answer', backref='question', lazy=True)
+    
+
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,9 +53,14 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
+    biography = db.Column(db.Text, nullable=True)       # New field for biography
+    image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
     file = db.Column(db.LargeBinary)
-    notes = db.relationship('Note', backref='user', lazy='dynamic')
+    points = db.Column(db.Integer, default=0)
+    notes = db.relationship('Note', backref='user', lazy=True)
+    comments = db.relationship('Comment', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
+
 
     followed = db.relationship(
         'User', secondary=followers,
@@ -75,3 +85,24 @@ class User(db.Model, UserMixin):
 
     def following_count(self):
         return self.followed.count()
+
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rater_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=False)
+    value = db.Column(db.Integer, nullable=False)
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
+
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class Answer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref=db.backref('user_answers', lazy=True))

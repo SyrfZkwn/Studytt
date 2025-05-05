@@ -1,12 +1,27 @@
 {% extends "base.html" %} 
-<title>{% block title %}QnA{% endblock %}</title>
+<title>{% block title %}Edit Post{% endblock %}</title>
 
 {% block content %}
 
 <style>
+    .form-control {
+        padding: 15px;
+        border-radius: 20px;
+        font-size: 18px;
+        background-color: #f9f9f9;
+        margin-bottom: 2rem;
+        height: 50px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #f15c22;
+        box-shadow: 0 0 10px #f15c22;
+    }
+    
     /* Simple editor styles */
     .editor-container {
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
         border-radius: 20px;
         overflow: hidden;
         border: 1px solid #ced4da;
@@ -53,7 +68,7 @@
         font-weight: 400;
     }
     
-    #hidden-body {
+    #hidden-description {
         display: none;
     }
     
@@ -63,62 +78,92 @@
         color: #aaa;
     }
 
-    .comments-section {
-        margin-top: 10px;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 5px;
+    .uploaded-image {
+        width: 100%;
+        max-height: 450px;
+        height: auto;
+        object-fit: contain; /* <-- THIS ensures no cropping */
+        display: block;
+        border-radius: 15px;
+        z-index: 2;
     }
 
-    .comment {
-        padding: 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid #eee;
+    .background-image {
+        position: absolute;
+        width: 105%;
+        max-height: 500px;
+        height: auto;
+        object-fit: cover; /* <-- THIS ensures no cropping */
+        display: block;
+        border-radius: 15px;
+        z-index: 2;
+        filter: blur(15px);  /* Apply blur effect */
     }
 
-    .comment p {
-        margin-bottom: 5px;
+    .image-container {
+        width: 100%;         /* fixed width */
+        height: auto;         /* allow height to adjust */
+        max-height: 450px;    /* limit max height */
+        margin: 10px auto;
+        border-radius: 15px;
+        text-align: center;   /* center content horizontally */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
     }
 
-    .comment small {
-        color: #333;
+    .file-container {
+        width: 100%;
+        margin: 10px auto;
+        background-color: transparent;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 </style>
-    
 
-<div class="flash">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash">
-            {% for category, message in messages %}
-            {% if category == 'error' %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            {% else %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            {% endif %}
-            {% endfor %}
+<div class="container">
+    <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;" id="post-form">
+
+        <h1 style="color: #f15c22; margin: 1rem 0 1rem 0;">Edit Post</h1>
+
+        <div class="form-inline container-fluid">
+            {{form.hidden_tag()}}
+
+            <input 
+            type="text"
+            name="title"
+            class="form-control" 
+            placeholder="Subject Title"
+            value="{{ post.title }}"
+            required
+            />
+            <input 
+            type="text"
+            name="code"
+            class="form-control mx-auto" 
+            placeholder="Subject Code" 
+            value="{{ post.code }}"
+            required
+            />
+            <input 
+            type="text" 
+            name="chapter"
+            class="form-control" 
+            placeholder="Chapter"
+            value="{{ post.chapter }}"
+            required
+            />
         </div>
-      {% endif %}
-    {% endwith %}
-</div>
 
-<div>
-    <h1>Ask a Question</h1>
-    <form method="POST" id="post-form">
-        <label>Title:</label><br>
-        <input type="text" name="title" required><br><br>
-        <textarea id="hidden-body" name="body" style="display:none;"></textarea>
+        <!-- Hidden textarea that will store the HTML content -->
+        {{ form.description(id="hidden-description") }}
+        
+        <!-- Simple editor -->
         <div class="editor-container">
             <div class="toolbar">
                 <button type="button" class="format-btn" data-format="bold" title="Bold"><strong>B</strong></button>
@@ -126,16 +171,32 @@
                 <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
                 <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
             </div>
-            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a question"></div>
+            <div class="editor-content" id="editor-content" contenteditable="true">{{ post.description|safe }}</div>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+
+        <div>
+            {% if post.file_path.endswith('.pdf') %}
+            <div class="file-container">
+                <embed class="uploaded-pdf" src="{{ '/' + post.file_path }}" type="application/pdf" width="100%" height="500px" />
+            </div>
+            {% else %}
+            <div class="image-container">
+                <img class="background-image" src="{{ '/' + post.file_path }}">
+                <img class="uploaded-image" src="{{ '/' + post.file_path }}">
+            </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 15px;">Submit</button>
+
     </form>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const editor = document.getElementById('editor-content');
         const form = document.getElementById('post-form');
-        const hiddenTextarea = document.getElementById('hidden-body');
+        const hiddenTextarea = document.getElementById('hidden-description');
         const formatButtons = document.querySelectorAll('.format-btn');
         
         // Map of format names to their execCommand names
@@ -166,11 +227,6 @@
         // When the form is submitted, copy the HTML to the hidden textarea
         form.addEventListener('submit', function(e) {
             hiddenTextarea.value = editor.innerHTML;
-            if (editor.innerHTML.trim() === '') {
-                e.preventDefault();
-                alert('Please enter a description');
-                editor.focus();
-            }
         });
         
         // Function to update button states based on current selection
@@ -197,50 +253,5 @@
         }, 100);
     });
 </script>
-
-    <hr>
-
-    <h2>All Questions</h2>
-    {% for question in question %}
-    <li>
-        <strong>{{ question.title }}</strong>
-        <p>{{ question.body | safe }}</p>
-        
-        <!-- Comment form -->
-        {% if current_user.is_authenticated %}
-        <form action="{{ url_for('views.add_answer', question_id=question.id) }}" method="post">
-            <div class="form-group">
-                <textarea name="answer_body" class="form-control" rows="2" placeholder="Add a comment..."></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
-        </form>
-        {% else %}
-            <p>Please <a href="{{ url_for('login') }}">login</a> to comment.</p>
-        {% endif %}
-
-        <!-- Display comments -->
-        <div class="comments-section">
-            <h5>Comments:</h5>
-            {% if question.answers %}
-                {% for answer in question.answers %}
-                    <div class="comment">
-                        <p>{{ answer.body }}</p>
-                        <small>By {{ answer.user.username }}</small>
-                        
-                        <!-- Delete button (only for comment author) -->
-                        {% if current_user.is_authenticated and current_user.id == answer.user_id %}
-                            <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No answers yet.</p>
-            {% endif %}
-            
-        </div>
-    </li>
-{% endfor %}
 
 {% endblock %}

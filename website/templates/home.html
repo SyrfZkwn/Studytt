@@ -73,7 +73,6 @@
   .title-container {
     width: 80%;
     margin: 5px auto;
-    border-radius: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -82,7 +81,6 @@
   .username-container {
     width: 80%;
     margin: 10px auto;
-    border-radius: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -182,7 +180,7 @@
         <div class="post-content">
 
           <div class="username-container">
-            by {{ note.user.username }}
+            pfp {{ note.user.username }} <span class="mx-2">·</span> {{ note.date | time_ago }}
           </div>
           <div class="title-container">
             {{ note.title }} {{ note.code }} | Chapter : {{ note.chapter }}

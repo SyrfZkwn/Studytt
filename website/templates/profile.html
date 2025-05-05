@@ -48,7 +48,18 @@
   }
 
   .stat {
-    font-size: 1rem;
+    font-size: 0.8rem;
+    display: block;
+  padding: 0.5rem 1.5rem;
+  background-color: #1b4f83;
+  color: #fdf3de;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  width: 100%;
+  outline-style: solid;
+  outline-color: #f15c22;
   }
 
   .edit-btn {
@@ -104,7 +115,7 @@
 }
 
   .post {
-  background-color: #fff;
+  background-color: #1b4f83;
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -123,7 +134,7 @@
 .post-img {
   width: 100%;
   aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
-  background-color: #ccc;
+  background-color: #1b4f83;
   border-radius: 10px;
   margin-bottom: 0.5rem;
   overflow: hidden;
@@ -186,8 +197,25 @@
           Total Rating: 0
           {% endif %}
         </div>
+       
       </div>
-      <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      <div class="stats">{{user.biography}}</div>
+      {% if user.id != current_user.id %}
+        <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;">
+          {% if is_following %}
+            <button type="button" class="edit-btn" disabled>Followed</button>
+          {% else %}
+            <button type="submit" class="edit-btn">Follow</button>
+          {% endif %}
+        </form>
+        {% if is_following %}
+          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="edit-btn" style="background-color: #ff0000; margin-left: 10px;">Unfollow</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      {% endif %}
     </div>
   </div>
 
@@ -201,24 +229,24 @@
 </div>
 
 
-  <div class="content-section">
-    {% for post in posts %}
-    <div class="post">
-      <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
-        <div class="post-img">
-          {% if post.file_path %}
-            <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% else %}
-            <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
-          {% endif %}
-        </div>
-        <div class="post-title">{{ post.title }}</div>
-      </a>
-      <div class="post-footer">
-        <span>Likes 0</span>
-        <span>💬 0</span>
+<div class="content-section">
+  {% for post in posts %}
+  <div class="post">
+    <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
+      <div class="post-img">
+        {% if post.file_path %}
+          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% else %}
+          <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+        {% endif %}
       </div>
+      <div class="post-title">{{ post.title }}</div>
+    </a>
+    <div class="post-footer">
+      <span>Likes 0</span>
+      <span>💬 0</span>
     </div>
+  </div>
     {% else %}
     <p>No posts to show.</p>
     {% endfor %}

@@ -16,6 +16,7 @@ import random
 import secrets
 import os
 from PIL import Image
+from sqlalchemy.sql import func
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -250,6 +251,11 @@ def saved():
 def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
     post_author = User.query.get(post.publisher)
+
+    ratings = post.ratings  # List of Rating objects
+    ratings_count = len(ratings)
+    total_points = sum(r.value for r in ratings)
+
     if request.method == 'POST':
         rating_value = int(request.form.get("rating"))
     
@@ -269,9 +275,9 @@ def post_detail(post_id):
 
         db.session.commit()
         flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
-        return redirect(url_for('views.post_detail', post_id=post_id))
+        return redirect(url_for('views.post_detail', post_id=post_id ))
     
-    return render_template("post_detail.html", post=post)
+    return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points)
 
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
@@ -392,7 +398,7 @@ def delete(post_id):
             if os.path.exists(file_path):
                 os.remove(file_path)
             else:
-                flash('File not found, but note deleted!', category='error')
+                flash('File not found, but post deleted!', category='error')
         except Exception as e:
             flash(f"Failed to delete file: {e}", category='error')
 

@@ -96,9 +96,9 @@ class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
-
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('user_comments', lazy=True))
 
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

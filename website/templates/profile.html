@@ -192,7 +192,7 @@
         <div class="stat">Points: {{ points }}</div>
         <div class="stat">
           {% if notes_count > 0 %}
-            Total Rating: {{ (points / notes_count) }}
+            Total Rating: {{ ((points / notes_count) | round(1)) if ratings_count != 0 else '' }}
           {% else %}
           Total Rating: 0
           {% endif %}

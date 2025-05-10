@@ -261,6 +261,24 @@
     text-decoration: none;
     outline: none;
   }
+
+  .rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .rating-summary h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    color: #f15c22
+  }
+
+  .rating-summary .material-symbols-outlined {
+    font-size: 3rem;
+    color: #f15c22;
+  }
 </style>
 
 <div class="flash">
@@ -327,36 +345,41 @@
     {% endif %}
   {% endif %}
 
-  <form action="{{ url_for('views.post_detail', post_id=post.id) }}" method="POST">
+    <form action="{{ url_for('views.post_detail', post_id=post.id) }}" method="POST">
 
-    <div class="rating-container">
-      <span class="material-symbols-outlined" style="font-size: 3rem; color: #f15c22;">add_reaction</span>
-      <div class="rating-expand">
-        <button type="submit" name="rating" value="{{ 1 }}" class="rating" title="Very Dissatisfied">
-          <span class="material-symbols-outlined">sentiment_sad</span>
-        </button>
-        <button type="submit" name="rating" value="{{ 2 }}" class="rating" title="Dissatisfied">
-          <span class="material-symbols-outlined">sentiment_dissatisfied</span>
-        </button>
-        <button type="submit" name="rating" value="{{ 3 }}" class="rating" title="Neutral">
-          <span class="material-symbols-outlined">mood</span>
-        </button>
-        <button type="submit" name="rating" value="{{ 4 }}" class="rating" title="Satisfied">
-          <span class="material-symbols-outlined">sentiment_satisfied</span>
-        </button>
-        <button type="submit" name="rating" value="{{ 5 }}" class="rating" title="Very Satisfied">
-          <span class="material-symbols-outlined">sentiment_very_satisfied</span>
+      <div class="rating-container">
+
+        <div class="rating-summary">
+          <span class="material-symbols-outlined">add_reaction</span>
+          <h1>{{ ((total_points / ratings_count) | round(1)) if ratings_count != 0 else '' }}</h1>
+        </div>
+
+        <div class="rating-expand">
+          <button type="submit" name="rating" value="{{ 1 }}" class="rating" title="Very Dissatisfied">
+            <span class="material-symbols-outlined">sentiment_sad</span>
+          </button>
+          <button type="submit" name="rating" value="{{ 2 }}" class="rating" title="Dissatisfied">
+            <span class="material-symbols-outlined">sentiment_dissatisfied</span>
+          </button>
+          <button type="submit" name="rating" value="{{ 3 }}" class="rating" title="Neutral">
+            <span class="material-symbols-outlined">mood</span>
+          </button>
+          <button type="submit" name="rating" value="{{ 4 }}" class="rating" title="Satisfied">
+            <span class="material-symbols-outlined">sentiment_satisfied</span>
+          </button>
+          <button type="submit" name="rating" value="{{ 5 }}" class="rating" title="Very Satisfied">
+            <span class="material-symbols-outlined">sentiment_very_satisfied</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="comment-container">
+        <button type="button" class="comment-button">
+          <i class="fa-regular fa-comment comment-icon" title="Comment"></i>
         </button>
       </div>
-    </div>
 
-    <div class="comment-container">
-      <button type="button" class="comment-button">
-        <i class="fa-regular fa-comment comment-icon" title="Comment"></i>
-      </button>
-    </div>
-
-  </form>
+    </form>
 
   <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}" style="display:inline;">
     <input type="image" src="{{ url_for('static', filename='saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">

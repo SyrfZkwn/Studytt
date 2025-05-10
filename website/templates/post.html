@@ -261,11 +261,12 @@
 
             const imgClear = document.createElement('img');
             imgClear.src = fileUrl;
-            imgClear.style.width = 'auto';
+            imgClear.style.width = '100%';
             imgClear.style.height = 'auto';
-            imgClear.style.maxWidth = '350px';
-            imgClear.style.maxHeight = '350px';
+            imgClear.style.maxHeight = '400px';
+            imgClear.style.minHeight = '400px';
             imgClear.style.zIndex = '2';
+            imgClear.style.objectFit = 'contain';
 
             previewBackground.appendChild(imgBlur);
             previewImage.appendChild(imgClear);

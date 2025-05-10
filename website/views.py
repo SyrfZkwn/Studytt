@@ -207,6 +207,7 @@ def saved():
 @login_required
 def post_detail(post_id):
     post = Note.query.get_or_404(post_id)
+    post_author = User.query.get(post.publisher)
     if request.method == 'POST':
         rating_value = int(request.form.get("rating"))
     
@@ -216,12 +217,12 @@ def post_detail(post_id):
         
         existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
         if existing:
+            post_author.points -= existing.value
             existing.value = rating_value
         else:
             new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
             db.session.add(new_rating)
 
-        post_author = User.query.get(post.publisher)
         post_author.points += rating_value
 
         db.session.commit()

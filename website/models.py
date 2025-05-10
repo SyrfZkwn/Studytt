@@ -36,6 +36,8 @@ class Question(db.Model):
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    answers = db.relationship('Answer', backref='question', lazy=True)
+    
 
 
 class ChatMessage(db.Model):
@@ -51,6 +53,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
+    biography = db.Column(db.Text, nullable=True)       # New field for biography
     image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
     file = db.Column(db.LargeBinary)
     points = db.Column(db.Integer, default=0)
@@ -96,3 +99,10 @@ class Comment(db.Model):
 
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class Answer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref=db.backref('user_answers', lazy=True))

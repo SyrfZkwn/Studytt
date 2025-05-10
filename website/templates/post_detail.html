@@ -291,7 +291,10 @@
 
 <div class="post-detail">
   <div class="post-publisher">
-    By {{ post.user.username }}
+    <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}">
+      <img src="{{ url_for('static', filename='profile_pics/' + (post.user.image_profile if post.user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+    </a>
+    By <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}">{{ post.user.username }}</a>
 
       {% if current_user.is_authenticated and current_user.id == post.user.id %}
       <div class="dots-container">
@@ -355,6 +358,10 @@
 
   </form>
 
+  <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}" style="display:inline;">
+    <input type="image" src="{{ url_for('static', filename='saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
+  </form>
+
   <div class="post-description">{{ post.description | safe }}</div>
 
 </div>
@@ -371,6 +378,9 @@
               <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
           </div>
           <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a comment"></div>
+          <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
+            <input type="image" src="{{ url_for('static', filename='image/saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
+          </form>
       </div>
       <button type="submit" class="btn btn-primary">Comment</button>
     </form>

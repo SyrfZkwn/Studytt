@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating
+from .models import Note, ChatMessage, User, Question, Rating, Answer
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -13,8 +13,12 @@ from flask_socketio import SocketIO, join_room, leave_room, send
 from . import socketio
 from string import ascii_uppercase
 import random
+import secrets
+import os
+from PIL import Image
 
-views = Blueprint('views', __name__)
+views = Blueprint('views', __name__, template_folder='../templates')
+
 
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired()])
@@ -186,6 +190,44 @@ def profile():
     
     return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
+@views.route('/profile/<int:user_id>')
+@login_required
+def user_profile(user_id):
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+    return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+
+@views.route('/follow/<int:user_id>', methods=['POST'])
+@login_required
+def follow(user_id):
+    user = User.query.get_or_404(user_id)
+    if user == current_user:
+        flash("You cannot follow yourself.", "error")
+        return redirect(url_for('views.user_profile', user_id=user_id))
+    if not current_user.is_following(user):
+        current_user.follow(user)
+        db.session.commit()
+        flash(f"You are now following {user.username}.", "success")
+    return redirect(url_for('views.user_profile', user_id=user_id))
+
+@views.route('/unfollow/<int:user_id>', methods=['POST'])
+@login_required
+def unfollow(user_id):
+    user = User.query.get_or_404(user_id)
+    if user == current_user:
+        flash("You cannot unfollow yourself.", "error")
+        return redirect(url_for('views.user_profile', user_id=user_id))
+    if current_user.is_following(user):
+        current_user.unfollow(user)
+        db.session.commit()
+        flash(f"You have unfollowed {user.username}.", "success")
+    return redirect(url_for('views.user_profile', user_id=user_id))
+
 @views.route('/saved')
 @login_required
 def saved():
@@ -231,9 +273,23 @@ def post_detail(post_id):
     
     return render_template("post_detail.html", post=post)
 
+@views.route('/save_post/<int:post_id>', methods=['POST'])
+@login_required
+def save_post(post_id):
+    post = Note.query.get_or_404(post_id)
+    if post not in current_user.saved:
+        current_user.saved.append(post)
+        db.session.commit()
+        flash('Post saved successfully!', 'success')
+    else:
+        flash('Post already saved.', 'info')
+    return redirect(url_for('views.post_detail', post_id=post_id))
+
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
 def qna():
+
+
     if request.method == 'POST':
         title = request.form.get('title')
         body = request.form.get('body')
@@ -260,29 +316,39 @@ from PIL import Image
 @login_required
 def edit_profile():
     if request.method == "POST":
-        if "image_profile" not in request.files:
-            flash("No file part", "error")
-            return redirect(request.url)
-        file = request.files["image_profile"]
-        if file.filename == "":
-            flash("No selected file", "error")
-            return redirect(request.url)
-        if file:
-            random_hex = secrets.token_hex(8)
-            _, f_ext = os.path.splitext(file.filename)
-            picture_fn = random_hex + f_ext
-            picture_path = os.path.join(current_app.root_path, "static/profile_pics", picture_fn)
+        username = request.form.get("username")
+        biography = request.form.get("biography")
 
-            # Resize image to 125x125 pixels
-            output_size = (125, 125)
-            i = Image.open(file)
-            i.thumbnail(output_size)
-            i.save(picture_path)
+        if username:
+            current_user.username = username
+        if biography:
+            current_user.biography = biography
 
-            current_user.image_profile = picture_fn
-            db.session.commit()
-            flash("Your profile picture has been updated!", "success")
-            return redirect(url_for("views.profile"))
+        if "image_profile" in request.files:
+            file = request.files["image_profile"]
+            if file and file.filename != "":
+                random_hex = secrets.token_hex(8)
+                _, f_ext = os.path.splitext(file.filename)
+                picture_fn = random_hex + f_ext
+
+                # Make sure the directory exists
+                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                os.makedirs(profile_pics_folder, exist_ok=True)
+
+                picture_path = os.path.join(profile_pics_folder, picture_fn)
+
+                # Resize image to 125x125 pixels
+                output_size = (125, 125)
+                i = Image.open(file)
+                i.thumbnail(output_size)
+                i.save(picture_path)
+
+                current_user.image_profile = picture_fn
+
+        db.session.commit()
+        flash("Your profile has been updated!", "success")
+        return redirect(url_for("views.profile"))
+
     image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
     return render_template('edit_profile.html', title='edit_profile')
 
@@ -334,3 +400,42 @@ def delete(post_id):
     db.session.commit()
     flash('Note Deleted!', category='success')
     return redirect(url_for('views.home'))
+
+
+@views.route('/add-answer/<int:question_id>', methods=['POST'])
+@login_required
+def add_answer (question_id):
+    question = Question.query.get_or_404(question_id)
+    
+    if request.method == 'POST':
+        answer_body = request.form.get('answer_body')
+
+        new_answer= Answer(
+            body=answer_body,
+            question_id=question.id,
+            user_id=current_user.id
+        )
+
+        db.session.add(new_answer)
+        db.session.commit()
+        flash('Comment added!', 'success')
+    else:
+        flash('Please enter a comment.', 'error')
+
+    return redirect(url_for('views.qna'))
+
+@views.route('/delete-answer/<int:answer_id>', methods=['POST'])
+@login_required
+def delete_answer (answer_id):
+    answer = Answer.query.get_or_404(answer_id)
+
+    if answer.user_id != current_user.id:
+        flash ('You can only delete your own comments.', 'error')
+        return redirect(url_for('views.qna'))
+    
+
+    db.session.delete(answer)
+    db.session.commit()
+    flash('Comment deleted!', 'success')
+
+    return redirect(url_for('views.qna'))

@@ -47,6 +47,10 @@
         min-height: 200px;
         border-radius: 0 0 20px 20px;
         overflow-y: auto;
+        font-family: 'Noto Sans', Arial, sans-serif;
+        font-size: 1rem;
+        line-height: 1.5;
+        font-weight: 400;
     }
     
     #hidden-body {
@@ -57,6 +61,28 @@
     .editor-content:empty:before {
         content: attr(placeholder);
         color: #aaa;
+    }
+
+    .comments-section {
+        margin-top: 10px;
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+    }
+
+    .comment {
+        padding: 8px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .comment p {
+        margin-bottom: 5px;
+    }
+
+    .comment small {
+        color: #333;
     }
 </style>
     
@@ -175,18 +201,46 @@
     <hr>
 
     <h2>All Questions</h2>
-    <ul>
-        {% for question in question %}
-            <li>
-                <strong>{{ question.title }}</strong><br>
-                {{ question.body|safe }}
-            </li>
+    {% for question in question %}
+    <li>
+        <strong>{{ question.title }}</strong>
+        <p>{{ question.body | safe }}</p>
+        
+        <!-- Comment form -->
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('views.add_answer', question_id=question.id) }}" method="post">
+            <div class="form-group">
+                <textarea name="answer_body" class="form-control" rows="2" placeholder="Add a comment..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+        </form>
         {% else %}
-            <li>No questions yet.</li>
-        {% endfor %}
-    </ul>
-</divclass>
+            <p>Please <a href="{{ url_for('login') }}">login</a> to comment.</p>
+        {% endif %}
 
-
+        <!-- Display comments -->
+        <div class="comments-section">
+            <h5>Comments:</h5>
+            {% if question.answers %}
+                {% for answer in question.answers %}
+                    <div class="comment">
+                        <p>{{ answer.body }}</p>
+                        <small>By {{ answer.user.username }}</small>
+                        
+                        <!-- Delete button (only for comment author) -->
+                        {% if current_user.is_authenticated and current_user.id == answer.user_id %}
+                            <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No answers yet.</p>
+            {% endif %}
+            
+        </div>
+    </li>
+{% endfor %}
 
 {% endblock %}

@@ -17,6 +17,14 @@ import secrets
 import os
 from PIL import Image
 from sqlalchemy.sql import func
+import bleach
+
+def clean(html):
+    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a']
+    allowed_attrs = {
+        'a': ['href', 'title', 'target']
+    }
+    return bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -150,27 +158,27 @@ def disconnect():
 def post():
     form = UploadFileForm()
 
-    if request.method == 'POST':
+    if request.method == 'POST' and form.validate_on_submit():
         title = request.form.get('title')
         code = request.form.get('code')
         chapter = request.form.get('chapter')
 
-        if form.validate_on_submit():
-            description = form.description.data
-            file = form.file.data
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
-            absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
-            file.save(absolute_path)
+        raw_description = form.description.data
+        clean_description = clean(raw_description)
+        file = form.file.data
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
+        absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
+        file.save(absolute_path)
 
-            new_note = Note(
-                title=title,
-                chapter=chapter,
-                code=code,
-                description=description,
-                publisher=current_user.id,
-                file_path=file_path
-            )
+        new_note = Note(
+            title=title,
+            chapter=chapter,
+            code=code,
+            description=clean_description,
+            publisher=current_user.id,
+            file_path=file_path
+        )
 
         db.session.add(new_note)
         db.session.commit()

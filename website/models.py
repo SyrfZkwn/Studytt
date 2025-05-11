@@ -27,7 +27,7 @@ class Note(db.Model):
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
     publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
-    comments = db.relationship('Comment', backref='note', lazy=True)
+    comments = db.relationship('Comment', backref='note', cascade='all, delete', lazy=True)
     ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
 class Question(db.Model):
@@ -96,7 +96,7 @@ class Comment(db.Model):
     body = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
 
 class Answer(db.Model):

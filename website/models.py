@@ -58,7 +58,6 @@ class User(db.Model, UserMixin):
     file = db.Column(db.LargeBinary)
     points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True)
-    comments = db.relationship('Comment', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
 
 
@@ -94,15 +93,16 @@ class Rating(db.Model):
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
+    body = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref=db.backref('user_comments', lazy=True))
+    user = db.relationship('User', backref='comments', lazy=True)
 
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text, nullable=False)
+    date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref=db.backref('user_answers', lazy=True))

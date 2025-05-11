@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -257,27 +257,51 @@ def post_detail(post_id):
     total_points = sum(r.value for r in ratings)
 
     if request.method == 'POST':
-        rating_value = int(request.form.get("rating"))
-    
-        if post.publisher == current_user.id:
-            flash("You can't rate your own post!", category="error")
+        # If the rating form was submitted
+        if "rating" in request.form:
+            try:
+                rating_value = int(request.form.get("rating"))
+            except (ValueError, TypeError):
+                flash("Invalid rating submitted.", category="error")
+                return redirect(url_for('views.post_detail', post_id=post_id))
+
+            if post.publisher == current_user.id:
+                flash("You can't rate your own post!", category="error")
+                return redirect(url_for('views.post_detail', post_id=post_id))
+            
+            existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
+            if existing:
+                post_author.points -= existing.value
+                existing.value = rating_value
+            else:
+                new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
+                db.session.add(new_rating)
+
+            post_author.points += rating_value
+            db.session.commit()
+            flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
             return redirect(url_for('views.post_detail', post_id=post_id))
-        
-        existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
-        if existing:
-            post_author.points -= existing.value
-            existing.value = rating_value
-        else:
-            new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
-            db.session.add(new_rating)
 
-        post_author.points += rating_value
+        # If the comment form was submitted
+        elif "comment_body" in request.form:
+            comment_body = request.form.get('comment_body')
+            if comment_body and comment_body.strip():
+                new_comment = Comment(
+                    body=comment_body,
+                    user_id=current_user.id,
+                    note_id=post_id  # Make sure you're associating with the correct post
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash('Comment posted!', category='success')
+            else:
+                flash('Comment cannot be empty.', category='error')
 
-        db.session.commit()
-        flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
-        return redirect(url_for('views.post_detail', post_id=post_id ))
+            return redirect(url_for('views.post_detail', post_id=post_id))
+
+    comments = Comment.query.filter_by(note_id=post_id).all()
     
-    return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points)
+    return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points, comments=comments)
 
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
@@ -312,8 +336,8 @@ def qna():
         flash('Question posted!', category='success')
         return redirect(url_for('views.qna'))
     
-    question = Question.query.all()
-    return render_template("qna.html", user=current_user, question=question)
+    questions = Question.query.all()
+    return render_template("qna.html", user=current_user, questions=questions)
 
 import secrets
 from PIL import Image

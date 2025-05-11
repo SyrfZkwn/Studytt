@@ -381,9 +381,9 @@
 
     </form>
 
-  <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}" style="display:inline;">
-    <input type="image" src="{{ url_for('static', filename='saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
-  </form>
+  <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
+    <input type="image" src="{{ url_for('static', filename='image/saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
+  </form>
 
   <div class="post-description">{{ post.description | safe }}</div>
 
@@ -392,7 +392,7 @@
 <div class="comment-section">
   <div id="editor-wrapper" style="display: none;">
     <form method="POST" id="post-form">
-      <textarea id="hidden-body" name="body" style="display:none;"></textarea>
+      <textarea id="hidden-body" name="comment_body" style="display:none;"></textarea>
       <div class="editor-container">
           <div class="toolbar">
               <button type="button" class="format-btn" data-format="bold" title="Bold"><strong>B</strong></button>
@@ -401,14 +401,23 @@
               <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
           </div>
           <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a comment"></div>
-          <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
-            <input type="image" src="{{ url_for('static', filename='image/saved_bttn.png') }}" alt="Save Post" style="width: 40px; height: 40px;">
-          </form>
       </div>
       <button type="submit" class="btn btn-primary">Comment</button>
     </form>
   </div>
+
+  <div class="comments">
+    {% if comments %}
+      {% for comment in comments %}
+        <p>{{comment.user.username}} : {{ comment.body | safe }}</p>
+      {% endfor %}
+    {% else %}
+      <p>No comments yet.</p>
+    {% endif %}
+  </div>
 </div>
+
+
 
 <script>
   document.querySelector('.comment-button').addEventListener('click', function () {
@@ -416,7 +425,7 @@
       const wrapper = document.getElementById('editor-wrapper');
       wrapper.style.display = wrapper.style.display === 'none' ? 'block' : 'none';
       editor.focus();
-  }); /*for comment*/
+  }); /*for comment button*/
 
   function toggleMenu(event) {
     event.stopPropagation();

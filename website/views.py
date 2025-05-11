@@ -18,13 +18,21 @@ import os
 from PIL import Image
 from sqlalchemy.sql import func
 import bleach
+import re
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a']
     allowed_attrs = {
         'a': ['href', 'title', 'target']
     }
-    return bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+
+    # Clean the HTML using bleach
+    cleaned = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+
+    # Collapse any more than 2 consecutive <br> tags into just 2 <br> tags
+    cleaned = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', cleaned)
+
+    return cleaned
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -293,9 +301,10 @@ def post_detail(post_id):
         # If the comment form was submitted
         elif "comment_body" in request.form:
             comment_body = request.form.get('comment_body')
-            if comment_body and comment_body.strip():
+            clean_comment_body = clean(comment_body)
+            if clean_comment_body and clean_comment_body.strip():
                 new_comment = Comment(
-                    body=comment_body,
+                    body=clean_comment_body,
                     user_id=current_user.id,
                     note_id=post_id  # Make sure you're associating with the correct post
                 )
@@ -331,10 +340,11 @@ def qna():
     if request.method == 'POST':
         title = request.form.get('title')
         body = request.form.get('body')
+        clean_body = clean(body)
 
         new_question = Question(
             title=title,
-            body=body,
+            body=clean_body,
             publisher=current_user.id
         )
 

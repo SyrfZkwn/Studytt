@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -21,7 +21,7 @@ import bleach
 import re
 
 def clean(html):
-    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a']
+    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
     allowed_attrs = {
         'a': ['href', 'title', 'target']
     }
@@ -316,9 +316,68 @@ def post_detail(post_id):
 
             return redirect(url_for('views.post_detail', post_id=post_id))
 
+        
+
     comments = Comment.query.filter_by(note_id=post_id).all()
     
     return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points, comments=comments)
+
+@views.route('/delete_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment (comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    post_id = comment.note_id
+
+    if comment.user_id != current_user.id:
+        flash ('You can only delete your own comments.', 'error')
+        return redirect(url_for('views.post_detail', post_id = post_id))
+    
+
+    db.session.delete(comment)
+    db.session.commit()
+    flash('Comment deleted!', 'success')
+
+    return redirect(url_for('views.post_detail', post_id = post_id))
+
+@views.route('/vote_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def vote_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    vote_value = int(request.form.get('vote'))  # should be 1 or -1
+
+    existing_vote = CommentVote.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+
+    if existing_vote:
+        if existing_vote.value == vote_value:
+            db.session.delete(existing_vote)  # toggle vote (undo)
+        else:
+            existing_vote.value = vote_value  # switch vote
+    else:
+        new_vote = CommentVote(user_id=current_user.id, comment_id=comment_id, value=vote_value)
+        db.session.add(new_vote)
+
+    db.session.commit()
+    return redirect(request.referrer or url_for('views.home'))
+
+@views.route('/comment/<int:comment_id>/reply', methods=['POST'])
+@login_required
+def reply_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    reply_body = request.form.get('reply_body')
+
+    if not reply_body or not reply_body.strip():
+        flash("Reply cannot be empty.", "error")
+        return redirect(url_for('views.post_detail', post_id=comment.note_id))
+
+    new_reply = Reply(
+        body=reply_body,
+        comment_id=comment_id,
+        user_id=current_user.id
+    )
+    db.session.add(new_reply)
+    db.session.commit()
+    flash("Reply posted!", "success")
+    return redirect(url_for('views.post_detail', post_id=comment.note_id))
 
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required

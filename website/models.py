@@ -94,15 +94,34 @@ class Rating(db.Model):
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text, nullable=False)
-    date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
+    date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
+    votes = db.relationship('CommentVote', backref='comment', lazy=True, cascade="all, delete-orphan")
+
+class CommentVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=False)
+    value = db.Column(db.Integer, nullable=False)  # +1 = upvote, -1 = downvote
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'comment_id', name='unique_comment_vote'),)
+
+class Reply(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+
+    user = db.relationship('User', backref='replies', lazy=True)
+    comment = db.relationship('Comment', backref='replies', lazy=True)
 
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text, nullable=False)
-    date_posted = db.Column(db.DateTime(timezone=True), default=func.now())
+    date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref=db.backref('user_answers', lazy=True))

@@ -328,6 +328,15 @@
 
   .a-reply {
     padding-left: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .pfp {
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
   }
 </style>
 
@@ -469,14 +478,28 @@
   <div class="comments">
     {% if comments %}
       {% for comment in comments %}
-        <div class="a-comment">
-          {{comment.user.username}}<span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
-          <br> <span class="comment-content">{{ comment.body | safe }}</span> <br>
-            <div class="mt-1" style="display: flex; height: auto; gap: 8px;">
+        <div class="a-comment" data-comment-id="{{ comment.id }}">
+          <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (comment.user.image_profile if comment.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+          </a>
+
+          <span class="publisher-username">
+            <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}">{{ comment.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
+          </span>
+          
+          {% if current_user.is_authenticated and current_user.id == comment.user_id %}
+            <form action="{{ url_for('views.delete_comment', comment_id=comment.id) }}" method="post" title="Delete" style="display: inline;">
+              <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this comment?')"><i class="fa-regular fa-trash-can"></i></button>
+            </form>
+          {% endif %}
+
+          <br> <div class="comment-content mt-1">{{ comment.body | safe }}</div>
+
+            <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
 
               <form action="{{ url_for('views.vote_comment', comment_id=comment.id) }}" method="post" style="display: inline;">
                 <input type="hidden" name="vote" value="1">
-                <button type="submit" class="btn btn-success btn-sm" title="Upvote">
+                <button type="submit" class="btn btn-outline-success btn-sm" title="Upvote">
                   <i class="fa-solid fa-circle-up"></i>
                 </button>
               </form>
@@ -484,32 +507,48 @@
               {{ (comment.votes | selectattr('value', 'equalto', 1) | list | length) - (comment.votes | selectattr('value', 'equalto', -1) | list | length) }}
               <form action="{{ url_for('views.vote_comment', comment_id=comment.id) }}" method="post" style="display: inline;">
                 <input type="hidden" name="vote" value="-1">
-                <button type="submit" class="btn btn-danger btn-sm" title="Downvote">
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Downvote">
                   <i class="fa-solid fa-circle-down"></i>
                 </button>
               </form>
+            
+            <button type="button" class="btn btn-outline-primary btn-sm reply-button" title="Reply">
+              <i class="fa-solid fa-reply"></i>
+            </button>
 
+            </div>
 
-            {% if current_user.is_authenticated and current_user.id == comment.user_id %}
-              <form action="{{ url_for('views.delete_comment', comment_id=comment.id) }}" method="post" title="Delete" style="display: inline;">
-                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this post?')"><i class="fa-regular fa-trash-can"></i></button>
+            <div id="reply-editor-wrapper-{{ comment.id }}" style="display: none;" class="mt-3">
+              <form method="POST" id="reply-post-form-{{ comment.id }}" action="{{ url_for('views.reply_comment', comment_id=comment.id) }}">
+                <textarea id="reply-hidden-body-{{ comment.id }}" name="reply_body" style="display:none;"></textarea>
+                <div class="editor-container">
+                    <div class="toolbar">
+                        <button type="button" class="reply-format-btn" data-format="bold" title="Bold"><strong>B</strong></button>
+                        <button type="button" class="reply-format-btn" data-format="italic" title="Italic"><em>I</em></button>
+                        <button type="button" class="reply-format-btn" data-format="underline" title="Underline"><u>U</u></button>
+                        <button type="button" class="reply-format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
+                    </div>
+                    <div class="editor-content" id="reply-editor-content-{{ comment.id }}" contenteditable="true" placeholder="Type a reply"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm mt-1">Reply</button>
               </form>
-            {% endif %}
             </div>
 
           <div class="a-reply">
           {% for reply in comment.replies %}
             <div class="reply ms-3">
-              <strong>{{ reply.user.username }}</strong>: {{ reply.body }}
-              <span class="underweight">{{ reply.date_posted | time_ago }}</span>
+              <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">
+                <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (reply.user.image_profile if reply.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+              </a>
+
+              <span class="publisher-username">
+                <a href="{{ url_for('views.user_profile', user_id=reply.user.id) }}">{{ reply.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ reply.date_posted | time_ago }}</span><br>
+              </span>
+
+              <div class="comment-content mt-2">{{ reply.body | safe }}</div>
             </div>
           {% endfor %}
           </div>
-
-          <form action="{{ url_for('views.reply_comment', comment_id=comment.id) }}" method="POST">
-            <input type="text" name="reply_body" placeholder="Write a reply..." required class="form-control mt-1">
-            <button type="submit" class="btn btn-primary btn-sm mt-1">Reply</button>
-          </form>
           
         </div>
       {% endfor %}
@@ -529,6 +568,15 @@
       editor.focus();
   }); /*for comment button*/
 
+  document.querySelectorAll('.reply-button').forEach(button => {
+    button.addEventListener('click', function () {
+      const commentElement = button.closest('.a-comment');
+      const commentId = commentElement.getAttribute('data-comment-id');
+      const editorWrapper = document.getElementById(`reply-editor-wrapper-${commentId}`);
+      editorWrapper.style.display = (editorWrapper.style.display === 'none') ? 'block' : 'none';
+    });
+  }); /*for reply button*/
+
   function toggleMenu(event) {
     event.stopPropagation();
     const menu = document.getElementById('dots-menu');
@@ -540,7 +588,7 @@
         document.removeEventListener('click', handleClickOutside);
       }
     });
-  } /*for dots*/
+  } /*for post dots*/
 
   document.addEventListener('DOMContentLoaded', function() {
       const editor = document.getElementById('editor-content');
@@ -594,6 +642,61 @@
       setTimeout(() => {
           updateButtonStates();
       }, 100);
-  }); /*for text rich editor*/
+  }); /*for comment text rich editor*/
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const formatCommands = {
+        'bold': 'bold',
+        'italic': 'italic',
+        'underline': 'underline',
+        'strikethrough': 'strikeThrough'
+    };
+
+    // Loop through all reply forms
+    document.querySelectorAll('[id^="reply-post-form-"]').forEach(form => {
+        const commentId = form.id.replace('reply-post-form-', '');
+        const editor = document.getElementById(`reply-editor-content-${commentId}`);
+        const hiddenTextarea = document.getElementById(`reply-hidden-body-${commentId}`);
+
+        // Format buttons for this specific editor
+        form.querySelectorAll('.reply-format-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const format = this.getAttribute('data-format');
+                const command = formatCommands[format];
+                document.execCommand(command, false, null);
+                editor.focus();
+                updateButtonStates();
+            });
+        });
+
+        // Submit handling
+        form.addEventListener('submit', function (e) {
+            hiddenTextarea.value = editor.innerHTML;
+            if (editor.textContent.trim() === '') {
+                e.preventDefault();
+                alert('Reply cannot be empty');
+                editor.focus();
+                return;
+            }
+        });
+
+        // Button state update
+        function updateButtonStates() {
+            form.querySelectorAll('.reply-format-btn').forEach(button => {
+                const format = button.getAttribute('data-format');
+                const command = formatCommands[format];
+                const isActive = document.queryCommandState(command);
+                button.classList.toggle('active', isActive);
+            });
+        }
+
+        // Update on events
+        ['mouseup', 'keyup', 'mousedown', 'keydown', 'focus', 'click'].forEach(eventType => {
+            editor.addEventListener(eventType, updateButtonStates);
+        });
+
+        setTimeout(updateButtonStates, 100);
+    });
+  }); /*for reply text rich editor*/
 </script>
 {% endblock %}

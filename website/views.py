@@ -364,13 +364,14 @@ def vote_comment(comment_id):
 def reply_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     reply_body = request.form.get('reply_body')
+    clean_reply_body = clean(reply_body)
 
-    if not reply_body or not reply_body.strip():
+    if not clean_reply_body or not clean_reply_body.strip():
         flash("Reply cannot be empty.", "error")
         return redirect(url_for('views.post_detail', post_id=comment.note_id))
 
     new_reply = Reply(
-        body=reply_body,
+        body=clean_reply_body,
         comment_id=comment_id,
         user_id=current_user.id
     )

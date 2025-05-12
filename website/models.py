@@ -99,6 +99,7 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
     votes = db.relationship('CommentVote', backref='comment', lazy=True, cascade="all, delete-orphan")
+    replies = db.relationship('Reply',backref='comment',lazy=True,cascade='all, delete-orphan',passive_deletes=True)
 
 class CommentVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -114,9 +115,7 @@ class Reply(db.Model):
     date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-
     user = db.relationship('User', backref='replies', lazy=True)
-    comment = db.relationship('Comment', backref='replies', lazy=True)
 
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

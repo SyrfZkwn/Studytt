@@ -380,6 +380,23 @@ def reply_comment(comment_id):
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))
 
+@views.route('/delete_reply/<int:reply_id>', methods=['POST'])
+@login_required
+def delete_reply (reply_id):
+    reply = Reply.query.get_or_404(reply_id)
+    post_id = reply.comment.note_id
+
+    if reply.user_id != current_user.id:
+        flash ('You can only delete your own comments.', 'error')
+        return redirect(url_for('views.post_detail', post_id = post_id))
+    
+
+    db.session.delete(reply)
+    db.session.commit()
+    flash('Reply deleted!', 'success')
+
+    return redirect(url_for('views.post_detail', post_id = post_id))
+
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
 def save_post(post_id):

@@ -57,6 +57,11 @@ def generate_unique_code(length):
             break
     return code
 
+def generate_room_code(user1_id, user2_id):
+    # Generate a consistent room code for two user IDs
+    sorted_ids = sorted([str(user1_id), str(user2_id)])
+    return f"room_{sorted_ids[0]}_{sorted_ids[1]}"
+
 def generate_unique_code(length):
     while True:
         code = ""
@@ -68,52 +73,38 @@ def generate_unique_code(length):
     
     return code
 
-@views.route("/chat", methods=["POST", "GET"])
+@views.route('/chat')
+@login_required
 def chat_home():
-    session.clear()
-    if request.method == "POST":
-        name = request.form.get("name")
-        code = request.form.get("code")
-        join = request.form.get("join", False)
-        create = request.form.get("create", False)
+    # Show chat list of followed users
+    followed_users = current_user.followed.all()
+    return render_template("chat.html", followed_users=followed_users)
 
-        if not name:
-            return render_template("chat.html", error="Please enter a name.", code=code, name=name)
+@views.route('/chat/<int:user_id>')
+@login_required
+def chat_room(user_id):
+    # Check if user_id is followed by current_user
+    user = User.query.get_or_404(user_id)
+    if not current_user.is_following(user):
+        flash("You can only chat with users you follow.", "error")
+        return redirect(url_for('views.chat_home'))
 
-        if join != False and not code:
-            return render_template("chat.html", error="Please enter a room code.", code=code, name=name)
-        
-        room = code
-        if create != False:
-            room = generate_unique_code(4)
-            rooms[room] = {"members": 0, "messages": []}
-        elif code not in rooms:
-            return render_template("chat.html", error="Room does not exist.", code=code, name=name)
-        
-        session["room"] = room
-        session["name"] = name
-        return redirect(url_for("views.room"))
+    room_code = generate_room_code(current_user.id, user_id)
+    if room_code not in rooms:
+        rooms[room_code] = {"members": 0, "messages": []}
 
-    return render_template("chat.html")
+    session["room"] = room_code
+    session["name"] = current_user.username
+    session["chat_with"] = user.username
 
-@views.route("/room")
-def room():
-    room = session.get("room")
-    if room is None or session.get("name") is None or room not in rooms:
-        return redirect(url_for("views.chat_home"))  # Fixed redirect
-
-    return render_template("room.html", code=room, messages=rooms[room]["messages"])
+    return render_template("room.html", code=room_code, messages=rooms[room_code]["messages"], chat_with=user)
 
 @socketio.on("message")
 def message(data):
     room = session.get("room")
     name = session.get("name")
     
-    print(f"Message received: {data}")
-    print(f"Session room: {room}, name: {name}")
-    
     if not room or room not in rooms:
-        print(f"Room {room} not found or not in session")
         return 
     
     content = {
@@ -121,7 +112,6 @@ def message(data):
         "message": data["data"]
     }
     
-    print(f"Sending message to room {room}: {content}")
     send(content, to=room)
     rooms[room]["messages"].append(content)
 
@@ -130,22 +120,16 @@ def connect():
     room = session.get("room")
     name = session.get("name")
     
-    print(f"Socket connected. Session data: room={room}, name={name}")
-    
     if not room or not name:
-        print("No room or name in session")
         return
     
     if room not in rooms:
-        print(f"Room {room} not found")
         return
     
     join_room(room)
-    print(f"{name} joined room {room}")
     send({"name": "System", "message": f"{name} has joined the room"}, to=room)
     rooms[room]["members"] += 1
 
-    
 @socketio.on("disconnect")
 def disconnect():
     room = session.get("room")
@@ -158,7 +142,6 @@ def disconnect():
             del rooms[room]
     
     send({"name": name, "message": "has left the room"}, to=room)
-    print(f"{name} has left the room {room}")
 
 
 @views.route('/post', methods=['GET', 'POST'])
@@ -525,7 +508,6 @@ def delete(post_id):
     db.session.commit()
     flash('Note Deleted!', category='success')
     return redirect(url_for('views.home'))
-
 
 @views.route('/add-answer/<int:question_id>', methods=['POST'])
 @login_required

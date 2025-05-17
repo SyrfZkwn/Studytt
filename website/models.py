@@ -38,9 +38,9 @@ class ChatMessage(db.Model):
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    code = db.Column(db.String(100))
-    chapter = db.Column(db.String(100))
+    title = db.Column(db.String(50))
+    code = db.Column(db.String(10))
+    chapter = db.Column(db.String(30))
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
@@ -96,7 +96,7 @@ class Comment(db.Model):
     body = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    commenter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
     votes = db.relationship('CommentVote', backref='comment', lazy=True, cascade="all, delete-orphan")
     replies = db.relationship('Reply',backref='comment',lazy=True,cascade='all, delete-orphan',passive_deletes=True)
@@ -128,7 +128,11 @@ class Answer(db.Model):
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     notified_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    notifier_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     type = db.Column(db.String(20))
     message = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=func.now())
+    timestamp = db.Column(db.DateTime(timezone=True), default=get_local_time)
+
+    notifier = db.relationship('User', foreign_keys=[notifier_id], backref='notifications_sent')
+    notified_user = db.relationship('User', foreign_keys=[notified_user_id], backref='notifications_received')

@@ -34,6 +34,15 @@ def clean(html):
 
     return cleaned
 
+def super_clean(html):
+    # Strip all HTML tags and attributes
+    text_only = bleach.clean(html, tags=[], attributes={}, strip=True)
+
+    # Optionally collapse excessive whitespace or newlines
+    text_only = re.sub(r'\s+', ' ', text_only).strip()
+
+    return text_only
+
 views = Blueprint('views', __name__, template_folder='../templates')
 
 
@@ -272,18 +281,28 @@ def post_detail(post_id):
             if existing:
                 post_author.points -= existing.value
                 existing.value = rating_value
+
+                new_notification = Notification(
+                    notified_user_id=post.publisher,
+                    notifier_id = current_user.id,
+                    type='rating',
+                        message=f"Changed the rating on <b>'{post.title} {post.code} | {post.chapter}'</b> to <b>{rating_value} point(s)!</b>"
+                    )
+                db.session.add(new_notification)
             else:
                 new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
                 db.session.add(new_rating)
 
+                new_notification = Notification(
+                    notified_user_id=post.publisher,
+                    notifier_id = current_user.id,
+                    type='rating',
+                        message=f"Rated your post <b>'{post.title} {post.code} | {post.chapter}'</b> with <b>{rating_value} point(s)!</b>"
+                    )
+                db.session.add(new_notification)
+
             post_author.points += rating_value
 
-            new_notification = Notification(
-                notified_user_id=post.publisher,
-                type='rating',
-                message=f"{current_user.username} rated your post '{post.title}'"
-            )
-            db.session.add(new_notification)
             db.session.commit()
 
             flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
@@ -296,10 +315,21 @@ def post_detail(post_id):
             if clean_comment_body and clean_comment_body.strip():
                 new_comment = Comment(
                     body=clean_comment_body,
-                    user_id=current_user.id,
+                    commenter_id=current_user.id,
                     note_id=post_id  # Make sure you're associating with the correct post
                 )
                 db.session.add(new_comment)
+
+                if post.publisher != current_user.id:
+                    super_clean_comment_body = super_clean(comment_body)
+                    short_comment = super_clean_comment_body[:20] + '...' if len(clean_comment_body) > 20 else super_clean_comment_body
+                    new_notification = Notification(
+                        notified_user_id=post.publisher,
+                        notifier_id = current_user.id,
+                        type='comment',
+                            message=f"Commented '{short_comment}' on your post <b>'{post.title} {post.code} | {post.chapter}'</b>."
+                        )
+                    db.session.add(new_notification)
                 db.session.commit()
                 flash('Comment posted!', category='success')
             else:
@@ -554,3 +584,77 @@ def delete_answer (answer_id):
     flash('Comment deleted!', 'success')
 
     return redirect(url_for('views.qna'))
+
+@views.route('/notification')
+@login_required
+def notification():
+    unread_notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).order_by(Notification.timestamp.desc()).all()
+    read_notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=True).order_by(Notification.timestamp.desc()).all()
+    total_unread_notifications = len(unread_notifications)
+    return render_template("notification.html", user=current_user, unread_notifications=unread_notifications, read_notifications=read_notifications, total_unread_notifications=total_unread_notifications)
+
+@views.route('/notifications/read/<int:notification_id>')
+@login_required
+def read_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.notified_user_id != current_user.id:
+        abort(403)
+    notification.is_read = True
+    db.session.commit()
+    return redirect(url_for('views.notification'))
+
+@views.route('/notifications/unread/<int:notification_id>')
+@login_required
+def unread_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+    if notification.notified_user_id != current_user.id:
+        abort(403)
+    notification.is_read = False
+    db.session.commit()
+    return redirect(url_for('views.notification'))
+
+@views.route('/delete-notification/<int:notification_id>')
+@login_required
+def delete_notification (notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.notified_user_id != current_user.id:
+        abort(403)
+
+    db.session.delete(notification)
+    db.session.commit()
+    flash('Notification deleted!', 'success')
+
+    return redirect(url_for('views.notification'))
+
+@views.route('/notifications/read_all')
+@login_required
+def read_notification_all():
+    notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).all()
+
+    if notifications:
+        for n in notifications:
+            n.is_read = True
+        db.session.commit()
+        flash('All notifications read!', 'success')
+    else:
+        flash('No notifications to read!', 'error')
+
+    return redirect(url_for('views.notification'))
+
+@views.route('/notifications/delete_all')
+@login_required
+def delete_all_notification():
+    notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=True).all()
+
+    if notifications:
+        for n in notifications:
+            db.session.delete(n)
+
+        db.session.commit()
+        flash('All notifications deleted!', 'success')
+    else:
+        flash('No notifications to delete!', 'error')
+
+    return redirect(url_for('views.notification'))

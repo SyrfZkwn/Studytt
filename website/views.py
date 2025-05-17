@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -277,7 +277,15 @@ def post_detail(post_id):
                 db.session.add(new_rating)
 
             post_author.points += rating_value
+
+            new_notification = Notification(
+                notified_user_id=post.publisher,
+                type='rating',
+                message=f"{current_user.username} rated your post '{post.title}'"
+            )
+            db.session.add(new_notification)
             db.session.commit()
+
             flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
             return redirect(url_for('views.post_detail', post_id=post_id))
 

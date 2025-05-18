@@ -220,8 +220,15 @@ def follow(user_id):
         return redirect(url_for('views.user_profile', user_id=user_id))
     if not current_user.is_following(user):
         current_user.follow(user)
+        new_notification = Notification(
+            notified_user_id=user.id,
+            notifier_id = current_user.id,
+            type='follow',
+            message=f"has started following you."
+            )
+        db.session.add(new_notification)
         db.session.commit()
-        flash(f"You are now following {user.username}.", "success")
+        flash(f"You are now following {user.username}", "success")
     return redirect(url_for('views.user_profile', user_id=user_id))
 
 @views.route('/unfollow/<int:user_id>', methods=['POST'])
@@ -234,7 +241,7 @@ def unfollow(user_id):
     if current_user.is_following(user):
         current_user.unfollow(user)
         db.session.commit()
-        flash(f"You have unfollowed {user.username}.", "success")
+        flash(f"You have unfollowed {user.username}", "success")
     return redirect(url_for('views.user_profile', user_id=user_id))
 
 @views.route('/saved')
@@ -322,7 +329,7 @@ def post_detail(post_id):
 
                 if post.publisher != current_user.id:
                     super_clean_comment_body = super_clean(comment_body)
-                    short_comment = super_clean_comment_body[:20] + '...' if len(clean_comment_body) > 20 else super_clean_comment_body
+                    short_comment = super_clean_comment_body[:20] + '...' if len(super_clean_comment_body) > 20 else super_clean_comment_body
                     new_notification = Notification(
                         notified_user_id=post.publisher,
                         notifier_id = current_user.id,
@@ -397,6 +404,16 @@ def reply_comment(comment_id):
         user_id=current_user.id
     )
     db.session.add(new_reply)
+
+    super_clean_reply_body = super_clean(reply_body)
+    short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
+    new_notification = Notification(
+        notified_user_id=comment.user.id,
+        notifier_id = current_user.id,
+        type='reply',
+        message=f"replied '{short_reply}' to your comment in {comment.note.title} {comment.note.code} | {comment.note.chapter}"
+        )
+    db.session.add(new_notification)
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))

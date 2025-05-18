@@ -439,3 +439,39 @@ def delete_answer (answer_id):
     flash('Comment deleted!', 'success')
 
     return redirect(url_for('views.qna'))
+
+
+@views.route('/pin_answer<int:answer_id>', methods=['POST'])
+@login_required
+def pin_answer(answer_id):
+    answer = Answer.query.get_or_404(answer_id)
+    Question= answer.question
+
+    if Question.publisher != (current_user.id):
+        flash('You can only pin answers to your own questions.', 'error')
+        return redirect(url_for('views.qna'))
+    
+
+    Answer.query.filter_by(question_id=answer_id, is_pinned=True).update({'is_pinned': False})
+    answer.is_pinned = True
+    db.session.commit()
+
+    flash('Answer pinned!', 'success')
+    return redirect(url_for('views.qna'))
+
+@views.route('/unpin_answer<int:answer_id>', methods=['POST'])
+@login_required
+def unpin_answer(answer_id):
+    answer = Answer.query.get_or_404(answer_id)
+    Question= answer.question
+
+    if Question.publisher != (current_user.id):
+        flash('You can only unpin answers to your own questions.', 'error')
+        return redirect(url_for('views.qna'))
+    
+
+    answer.is_pinned = False
+    db.session.commit()
+
+    flash('Answer unpinned!', 'success')
+    return redirect(url_for('views.qna'))

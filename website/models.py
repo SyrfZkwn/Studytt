@@ -35,7 +35,7 @@ class Question(db.Model):
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
-    publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
     answers = db.relationship('Answer', backref='question', lazy=True)
     
 
@@ -105,4 +105,5 @@ class Answer(db.Model):
     body = db.Column(db.Text, nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_pinned = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref=db.backref('user_answers', lazy=True))

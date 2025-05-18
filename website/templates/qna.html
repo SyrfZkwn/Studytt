@@ -222,19 +222,43 @@
         <div class="comments-section">
             <h5>Comments:</h5>
             {% if question.answers %}
-                {% for answer in question.answers %}
-                    <div class="comment">
-                        <p>{{ answer.body }}</p>
-                        <small>By {{ answer.user.username }}</small>
-                        
-                        <!-- Delete button (only for comment author) -->
-                        {% if current_user.is_authenticated and current_user.id == answer.user_id %}
-                            <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endfor %}
+                {# Show pinned answer first, if any #}
+{% set pinned = question.answers | selectattr('is_pinned') | first %}
+{% if pinned %}
+    <div class="comment" style="background-color: #ffeeba; border: 1px solid #f0ad4e;">
+        <p>{{ pinned.body }}</p>
+        <small>Pinned by {{ pinned.user.username }}</small>
+        
+        {% if current_user.is_authenticated and current_user.id == question.publisher %}
+            <form action="{{ url_for('views.unpin_answer', answer_id=pinned.id) }}" method="post" style="display:inline;">
+                <button class="btn btn-warning btn-sm">Unpin</button>
+            </form>
+        {% endif %}
+    </div>
+{% endif %}
+
+{# Show the rest of the answers that aren't pinned #}
+{% for answer in question.answers %}
+    {% if not answer.is_pinned %}
+        <div class="comment">
+            <p>{{ answer.body }}</p>
+            <small>By {{ answer.user.username }}</small>
+
+            {% if current_user.is_authenticated and current_user.id == question.publisher %}
+                <form action="{{ url_for('views.pin_answer', answer_id=answer.id) }}" method="post" style="display:inline;">
+                    <button class="btn btn-info btn-sm">Pin</button>
+                </form>
+            {% endif %}
+
+            {% if current_user.is_authenticated and current_user.id == answer.user_id %}
+                <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}
+
             {% else %}
                 <p>No answers yet.</p>
             {% endif %}

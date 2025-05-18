@@ -4,88 +4,310 @@
 {% block content %}
 
 <style>
-    /* Simple editor styles */
-    .editor-container {
-        margin-bottom: 2rem;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 1px solid #ced4da;
-        position: relative;
-    }
-    
-    .toolbar {
-        background-color: #f0f0f0;
-        padding: 8px;
-        border-bottom: 1px solid #ddd;
-        border-radius: 20px 20px 0 0;
-    }
-    
-    .toolbar button {
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 3px;
-        padding: 5px 10px;
-        margin-right: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: all 0.2s ease;
-    }
-    
-    .toolbar button:hover {
-        background-color: #f8d7c9;
-        color: #333;
-    }
-    
-    .toolbar button.active {
-        background-color: #f15c22;
-        color: white;
-    }
-    
-    .editor-content {
-        padding: 15px;
-        background-color: #f9f9f9;
-        min-height: 200px;
-        border-radius: 0 0 20px 20px;
-        overflow-y: auto;
-        font-family: 'Noto Sans', Arial, sans-serif;
-        font-size: 1rem;
-        line-height: 1.5;
-        font-weight: 400;
-    }
-    
-    #hidden-body {
-        display: none;
-    }
-    
-    /* Added for empty editor state */
-    .editor-content:empty:before {
-        content: attr(placeholder);
-        color: #aaa;
-    }
-
-    .comments-section {
-        margin-top: 10px;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 5px;
-    }
-
-    .comment {
-        padding: 8px;
-        margin-bottom: 8px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .comment p {
-        margin-bottom: 5px;
-    }
-
-    .comment small {
-        color: #333;
-    }
+  /* Main colors from post_detail */
+  :root {
+    --orange: #f15c22;
+    --navy: #173c67;
+    --light-gray: #f9f9f9;
+    --border-color: #ced4da;
+    --shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  /* Container styling to match post-detail */
+  .qna-container {
+    max-width: 70%;
+    margin: 2rem auto;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  
+  /* Question form */
+  .question-form {
+    margin-bottom: 2rem;
+  }
+  
+  .question-form h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: var(--orange);
+  }
+  
+  .question-form input[type="text"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .question-form input[type="text"]:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 5px rgba(241, 92, 34, 0.3);
+    outline: none;
+  }
+  
+  /* Editor styles matching post_detail */
+  .editor-container {
+    margin-bottom: 0.5rem;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    position: relative;
+    font-family: 'Noto Sans', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+  
+  .toolbar {
+    background-color: #f0f0f0;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    border-radius: 20px 20px 0 0;
+  }
+  
+  .toolbar button {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+  
+  .toolbar button:hover {
+    background-color: #f8d7c9;
+    color: #333;
+  }
+  
+  .toolbar button.active {
+    background-color: var(--orange);
+    color: white;
+  }
+  
+  .editor-content {
+    padding: 15px;
+    background-color: var(--light-gray);
+    min-height: 100px;
+    border-radius: 0 0 20px 20px;
+    overflow-y: auto;
+  }
+  
+  #hidden-body {
+    display: none;
+  }
+  
+  .editor-content:empty:before {
+    content: attr(placeholder);
+    color: #aaa;
+  }
+  
+  /* Button styling */
+  .btn-primary {
+    background-color: var(--orange);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-primary:hover {
+    background-color: #d94500;
+  }
+  
+  /* Questions list section */
+  .questions-section {
+    margin-top: 3rem;
+  }
+  
+  .questions-section h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: var(--orange);
+  }
+  
+  .questions-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .question-item {
+    background-color: #fff;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s;
+  }
+  
+  .question-item:hover {
+    transform: translateY(-3px);
+  }
+  
+  .question-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+  }
+  
+  .question-body {
+    font-family: 'Noto Sans', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+    margin-bottom: 1rem;
+  }
+  
+  /* Comments styling */
+  .comments-section {
+    background-color: var(--light-gray);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+  }
+  
+  .comments-section h5 {
+    color: var(--orange);
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+  }
+  
+  .comment {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .comment p {
+    margin-bottom: 5px;
+  }
+  
+  .pinned-comment {
+    background-color: rgba(241, 92, 34, 0.1);
+    border-left: 3px solid var(--orange);
+  }
+  
+  /* Comment form */
+  .comment-form {
+    margin-top: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .comment-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: 10px;
+  }
+  
+  /* Buttons */
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.875rem;
+    border-radius: 5px;
+  }
+  
+  .btn-info {
+    background-color: var(--navy);
+    color: white;
+    border: none;
+  }
+  
+  .btn-info:hover {
+    background-color: #0f2a4d;
+  }
+  
+  .btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+  }
+  
+  .btn-danger:hover {
+    background-color: #bd2130;
+  }
+  
+  .btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+  }
+  
+  .btn-warning:hover {
+    background-color: #e0a800;
+  }
+  
+  .btn-outline-danger {
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    background-color: transparent;
+  }
+  
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  /* User info styling */
+  .publisher-username a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  .publisher-username a:hover {
+    text-decoration: underline;
+    color: var(--orange);
+  }
+  
+  .pfp {
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+  
+  /* Flash messages */
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+  
+  .alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+  }
+  
+  .alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+  
+  /* Reply section */
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+  }
 </style>
-    
 
 <div class="flash">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -113,23 +335,120 @@
     {% endwith %}
 </div>
 
-<div>
-    <h1>Ask a Question</h1>
-    <form method="POST" id="post-form">
-        <label>Title:</label><br>
-        <input type="text" name="title" required><br><br>
-        <textarea id="hidden-body" name="body" style="display:none;"></textarea>
-        <div class="editor-container">
-            <div class="toolbar">
-                <button type="button" class="format-btn" data-format="bold" title="Bold"><strong>B</strong></button>
-                <button type="button" class="format-btn" data-format="italic" title="Italic"><em>I</em></button>
-                <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
-                <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
+<div class="qna-container">
+    <div class="question-form">
+        <h1>Ask a Question</h1>
+        <form method="POST" id="post-form">
+            <label>Title:</label>
+            <input type="text" name="title" required placeholder="What would you like to know?">
+            <textarea id="hidden-body" name="body" style="display:none;"></textarea>
+            
+            <div class="editor-container">
+                <div class="toolbar">
+                    <button type="button" class="format-btn" data-format="bold" title="Bold"><strong>B</strong></button>
+                    <button type="button" class="format-btn" data-format="italic" title="Italic"><em>I</em></button>
+                    <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
+                    <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
+                </div>
+                <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a question"></div>
             </div>
-            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a question"></div>
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+            
+            <button type="submit" class="btn btn-primary">Submit Question</button>
+        </form>
+    </div>
+
+    <div class="questions-section">
+        <h2>All Questions</h2>
+        <ul class="questions-list">
+            {% for question in questions %}
+            <li class="question-item">
+                <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}" style="text-decoration: none;">
+                    <img src="{{ url_for('static', filename='profile_pics/' + (question.user.image_profile if question.user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+                </a> 
+                <span class="publisher-username">
+                    <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}">{{ question.user.username }}</a><span class="mx-2">·</span>{{ question.date | time_ago }}
+                </span>
+
+                <div class="question-title">{{ question.title }}</div>
+                <div class="question-body">{{ question.body | safe }}</div>
+                
+                <!-- Comment form -->
+                {% if current_user.is_authenticated %}
+                <div class="comment-form">
+                    <form action="{{ url_for('views.add_answer', question_id=question.id) }}" method="post">
+                        <div class="form-group">
+                            <textarea name="answer_body" class="form-control" rows="2" placeholder="Answer the question!"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                    </form>
+                </div>
+                {% else %}
+                    <p>Please <a href="{{ url_for('login') }}" style="color: var(--orange);">login</a> to comment.</p>
+                {% endif %}
+
+                <!-- Display comments -->
+                <div class="comments-section">
+                    {% if question.answers %}
+                    <h5>Answers</h5>
+                        {# Show pinned answer first, if any #}
+                        {% set pinned = question.answers | selectattr('is_pinned') | first %}
+                        {% if pinned %}
+                            <div class="comment pinned-comment">
+                                <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}" style="text-decoration: none;">
+                                    <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (pinned.user.image_profile if pinned.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+                                </a>
+                                <span class="publisher-username">
+                                    <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}">{{ pinned.user.username }}</a>
+                                    <span class="mx-2">·</span>
+                                    <span class="underweight">Pinned</span>
+                                </span>
+                                <p>{{ pinned.body }}</p>
+                                
+                                {% if current_user.is_authenticated and current_user.id == question.publisher %}
+                                    <form action="{{ url_for('views.unpin_answer', answer_id=pinned.id) }}" method="post" style="display:inline;">
+                                        <button class="btn btn-warning btn-sm">Unpin</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        {# Show the rest of the answers that aren't pinned #}
+                        {% for answer in question.answers %}
+                            {% if not answer.is_pinned %}
+                                <div class="comment">
+                                    <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}" style="text-decoration: none;">
+                                        <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (answer.user.image_profile if answer.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+                                    </a>
+                                    <span class="publisher-username">
+                                        <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}">{{ answer.user.username }}</a>
+                                    </span>
+                                    <p>{{ answer.body }}</p>
+
+                                    <div class="action-buttons">
+                                        {% if current_user.is_authenticated and current_user.id == question.publisher %}
+                                            <form action="{{ url_for('views.pin_answer', answer_id=answer.id) }}" method="post" style="display:inline;">
+                                                <button class="btn btn-info btn-sm">Pin</button>
+                                            </form>
+                                        {% endif %}
+
+                                        {% if current_user.is_authenticated and current_user.id == answer.user_id %}
+                                            <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <h5>No answers yet.</h5>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -197,50 +516,5 @@
         }, 100);
     });
 </script>
-
-    <hr>
-
-    <h2>All Questions</h2>
-    {% for question in question %}
-    <li>
-        <strong>{{ question.title }}</strong>
-        <p>{{ question.body | safe }}</p>
-        
-        <!-- Comment form -->
-        {% if current_user.is_authenticated %}
-        <form action="{{ url_for('views.add_answer', question_id=question.id) }}" method="post">
-            <div class="form-group">
-                <textarea name="answer_body" class="form-control" rows="2" placeholder="Add a comment..."></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
-        </form>
-        {% else %}
-            <p>Please <a href="{{ url_for('login') }}">login</a> to comment.</p>
-        {% endif %}
-
-        <!-- Display comments -->
-        <div class="comments-section">
-            <h5>Comments:</h5>
-            {% if question.answers %}
-                {% for answer in question.answers %}
-                    <div class="comment">
-                        <p>{{ answer.body }}</p>
-                        <small>By {{ answer.user.username }}</small>
-                        
-                        <!-- Delete button (only for comment author) -->
-                        {% if current_user.is_authenticated and current_user.id == answer.user_id %}
-                            <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No answers yet.</p>
-            {% endif %}
-            
-        </div>
-    </li>
-{% endfor %}
 
 {% endblock %}

@@ -47,7 +47,6 @@
       text-decoration: none;
       text-align: center;
       width: 80%;
-      margin: 10px auto;
       border-radius: 20px;
     }
       
@@ -56,7 +55,6 @@
       color: #f15c22;
       border-radius: 20px;
       width: 80%;
-      margin: 0 auto;
     }
 
     .button a {
@@ -105,6 +103,11 @@
     .sidebar-btn {
       font-size: 1.5rem;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px; /* Controls space between all <a> and <hr> */
+      padding-top: 20px;
     }
     
     div.content {
@@ -202,20 +205,21 @@
     }
 
     .dropdown-button {
-      background-color: #173c67;
-      color: #f15c22;
-      padding: 10px 16px;
-      font-size: 16px;
+      background-color: inherit;
       border: none;
-      border-radius: 25px 25px 25px 25px;
       cursor: pointer;
+    }
+
+    .dropdown-button:focus {
+      outline: none;
     }
 
     .dropdown-content {
       display: none;
       position: absolute;
+      left: -15px;
       background-color: #173c67;
-      min-width: 140px;
+      min-width: 100px;
       box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       border-radius: 6px;
       z-index: 1;
@@ -232,17 +236,32 @@
       background-color: #f15c22;
     }
 
-          .dropdown:hover .dropdown-content {
-            display: block;
-          }
+    .dropdown-content a.logout:hover {
+      background-color: #dc3545;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
 
     .dropdown:hover .dropdown-button {
-      background-color: #f15c22;
-      color: #f1f1f1;
+      text-decoration: none;
     }
 
     .flash {
       margin-top: 10px;
+    }
+
+    .unbold {
+      font-family: 'Noto Sans', Arial, sans-serif;
+    }
+
+    .underweight {
+      font-family: 'Noto Sans', Arial, sans-serif;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      font-weight: 400;
+      color: #777777;
     }
   </style>
 
@@ -257,8 +276,8 @@
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
-        <form action="/search" method="GET" class="search-bar">
-          <input type="text" name="query" placeholder="Search..." required>
+        <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
+          <input type="text" name="q" placeholder="Search..." required>
           <button type="submit">
             <span class="material-symbols-outlined">
               search
@@ -275,11 +294,13 @@
         </div>
       
           <div class="dropdown mx-3">
-            <button class="dropdown-button">Menu</button>
+            <button class="dropdown-button">
+              <img src="{{ url_for('static', filename='profile_pics/' + (current_user.image_profile if current_user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+            </button>
             <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
-              <a href="{{ url_for('auth.logout') }}">Logout</a>
               <a href="#">Settings</a>
+              <a href="{{ url_for('auth.logout') }}" class="logout">Logout</a>
             </div>
           </div>
         </div>
@@ -290,11 +311,24 @@
         <div class="sidebar">
           <div class="sidebar-btn">
             <a href="#">EXPLORE</a>
-            <a class="active" href="{{ url_for('views.home') }}">HOME</a>
+            <a class="{% if request.endpoint == 'views.home' %}active{% endif %}" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
-            <a href="{{ url_for('views.qna') }}">DISCUSSION</a>
-            <a href="{{ url_for('views.chat_home') }}">CHATS</a>
-            <a href="#" style="width: 90%;">NOTIFICATION</a>
+            <a class="{% if request.endpoint == 'views.qna' %}active{% endif %}" href="{{ url_for('views.qna') }}">DISCUSSION</a>
+            <a class="{% if request.endpoint == 'views.chat_home' %}active{% endif %}" href="{{ url_for('views.chat_home') }}">CHATS</a>
+            <a class="{% if request.endpoint == 'views.notification' %}active{% endif %}" 
+              href="{{ url_for('views.notification') }}" 
+              style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
+
+              {% if total_unread_notifications > 0 %}
+                <span>NOTIFY</span>
+                <span style="color: #fff; background-color: #dc3545; padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center;" class="badge">
+                  <span class="material-symbols-outlined" style="margin-right: 4px;">notifications</span>
+                  {{ total_unread_notifications }}
+                </span>
+              {% else %}
+                NOTIFICATION
+              {% endif %}
+            </a>
           </div>
         </div>
         

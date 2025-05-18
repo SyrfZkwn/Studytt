@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from os import path
 from flask_login import LoginManager
@@ -9,6 +9,7 @@ import sqlite3
 from flask_migrate import Migrate
 from datetime import datetime
 import pytz
+from flask_login import current_user
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -41,7 +42,7 @@ def time_ago(value):
             minutes = (delta.seconds % 3600) // 60
             if minutes > 0:
                 return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
-            return "Posted just now"
+            return "Just now"
     return value
 
 def create_app():
@@ -74,6 +75,18 @@ def create_app():
     @login_manager.user_loader
     def load_user(id):
         return User.query.get(int(id))
+
+    @app.context_processor
+    def inject_request():
+        return dict(request=request)
+    
+    @app.context_processor
+    def inject_unread_notifications():
+        from .models import Notification
+        if current_user.is_authenticated:
+            count = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).count()
+            return dict(total_unread_notifications=count)
+        return dict(total_unread_notifications=0)
 
     return app
 

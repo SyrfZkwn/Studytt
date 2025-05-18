@@ -59,6 +59,7 @@ class User(db.Model, UserMixin):
     points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
+    questions = db.relationship('Question', backref='user', lazy=True)
 
 
     followed = db.relationship(

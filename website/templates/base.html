@@ -276,8 +276,8 @@
           <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
-        <form action="/search" method="GET" class="search-bar">
-          <input type="text" name="query" placeholder="Search..." required>
+        <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
+          <input type="text" name="q" placeholder="Search..." required>
           <button type="submit">
             <span class="material-symbols-outlined">
               search

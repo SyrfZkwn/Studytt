@@ -407,13 +407,14 @@ def reply_comment(comment_id):
 
     super_clean_reply_body = super_clean(reply_body)
     short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
-    new_notification = Notification(
-        notified_user_id=comment.user.id,
-        notifier_id = current_user.id,
-        type='reply',
-        message=f"replied '{short_reply}' to your comment in {comment.note.title} {comment.note.code} | {comment.note.chapter}"
-        )
-    db.session.add(new_notification)
+    if comment.user.id != current_user.id:
+        new_notification = Notification(
+            notified_user_id=comment.user.id,
+            notifier_id = current_user.id,
+            type='reply',
+            message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>."
+            )
+        db.session.add(new_notification)
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))
@@ -579,8 +580,20 @@ def add_answer (question_id):
         )
 
         db.session.add(new_answer)
+
+        super_clean_answer_body = super_clean(answer_body)
+        short_answer_body = super_clean_answer_body[:20] + '...' if len(super_clean_answer_body) > 20 else super_clean_answer_body
+        if question.publisher != current_user.id:
+            new_notification = Notification(
+                notified_user_id=question.user.id,
+                notifier_id = current_user.id,
+                type='reply',
+                message=f"Answered '{short_answer_body}' to your question <b>'{question.title}'</b>."
+                )
+            db.session.add(new_notification)
+
         db.session.commit()
-        flash('Comment added!', 'success')
+        flash('Answer added!', 'success')
     else:
         flash('Please enter a comment.', 'error')
 
@@ -680,14 +693,16 @@ def delete_all_notification():
 @login_required
 def pin_answer(answer_id):
     answer = Answer.query.get_or_404(answer_id)
-    Question= answer.question
+    question = answer.question
 
-    if Question.publisher != (current_user.id):
+    if question.publisher != current_user.id:
         flash('You can only pin answers to your own questions.', 'error')
         return redirect(url_for('views.qna'))
-    
 
-    Answer.query.filter_by(question_id=answer_id, is_pinned=True).update({'is_pinned': False})
+    # Unpin any previously pinned answers for the same question
+    Answer.query.filter_by(question_id=question.id, is_pinned=True).update({'is_pinned': False})
+    
+    # Pin the selected answer
     answer.is_pinned = True
     db.session.commit()
 
@@ -710,3 +725,16 @@ def unpin_answer(answer_id):
 
     flash('Answer unpinned!', 'success')
     return redirect(url_for('views.qna'))
+
+@views.route('/search')
+def search():
+    query = request.args.get('q', '')
+
+    users = User.query.filter(User.username.ilike(f"%{query}%")).all()
+    notes = Note.query.filter(
+        (Note.title.ilike(f"%{query}%")) | 
+        (Note.code.ilike(f"%{query}%")) |
+        (Note.chapter.ilike(f"%{query}%")) 
+    ).all()
+
+    return render_template("search_results.html", users=users, notes=notes, query=query)

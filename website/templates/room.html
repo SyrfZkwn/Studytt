@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Room{% endblock %}
+{% block title %}Chat with {{ chat_with.username }}{% endblock %}
 
 {% block content %}
-<h2>Room: {{ code }}</h2>
+<h2>Chat with {{ chat_with.username }}</h2>
 
 <div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px;">
     {% for msg in messages %}

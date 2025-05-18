@@ -157,7 +157,7 @@
                 <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
                 <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
             </div>
-            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a description"></div>
+            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Write a description"></div>
         </div>
 
         {{ form.file(id="fileInput") }}
@@ -261,11 +261,12 @@
 
             const imgClear = document.createElement('img');
             imgClear.src = fileUrl;
-            imgClear.style.width = 'auto';
+            imgClear.style.width = '100%';
             imgClear.style.height = 'auto';
-            imgClear.style.maxWidth = '350px';
-            imgClear.style.maxHeight = '350px';
+            imgClear.style.maxHeight = '400px';
+            imgClear.style.minHeight = '400px';
             imgClear.style.zIndex = '2';
+            imgClear.style.objectFit = 'contain';
 
             previewBackground.appendChild(imgBlur);
             previewImage.appendChild(imgClear);

@@ -23,7 +23,7 @@ class Question(db.Model):
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
-    publisher = db.Column(db.String, db.ForeignKey('user.id'))
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
     answers = db.relationship('Answer', backref='question', lazy=True)
     
 
@@ -59,6 +59,7 @@ class User(db.Model, UserMixin):
     points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
+    questions = db.relationship('Question', backref='user', lazy=True)
 
 
     followed = db.relationship(
@@ -123,6 +124,7 @@ class Answer(db.Model):
     date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_pinned = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref=db.backref('user_answers', lazy=True))
 
 class Notification(db.Model):

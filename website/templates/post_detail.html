@@ -330,6 +330,10 @@
     margin-right: 10px; 
     vertical-align: middle;
   }
+
+  .OP {
+    color: #0080ff;
+  }
 </style>
 
 <div class="flash">
@@ -477,7 +481,7 @@
           </a>
 
           <span class="publisher-username">
-            <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}">{{ comment.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
+            <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}">{{ comment.user.username }}</a>{% if comment.user.id == comment.note.publisher %}<span class="OP"> OP</span>{% endif %}<span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
           </span>
           
           {% if current_user.is_authenticated and current_user.id == comment.user_id %}
@@ -537,7 +541,7 @@
               </a>
 
               <span class="publisher-username">
-                <a href="{{ url_for('views.user_profile', user_id=reply.user.id) }}">{{ reply.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ reply.date_posted | time_ago }}</span>
+                <a href="{{ url_for('views.user_profile', user_id=reply.user.id) }}">{{ reply.user.username }}</a>{% if reply.user_id == comment.note.publisher %}<span class="OP"> OP</span>{% endif %}<span class="mx-2">·</span><span class="underweight">{{ reply.date_posted | time_ago }}</span>
               </span>
 
               {% if current_user.is_authenticated and current_user.id == reply.user_id %}

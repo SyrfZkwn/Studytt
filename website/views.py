@@ -407,13 +407,14 @@ def reply_comment(comment_id):
 
     super_clean_reply_body = super_clean(reply_body)
     short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
-    new_notification = Notification(
-        notified_user_id=comment.user.id,
-        notifier_id = current_user.id,
-        type='reply',
-        message=f"replied '{short_reply}' to your comment in {comment.note.title} {comment.note.code} | {comment.note.chapter}"
-        )
-    db.session.add(new_notification)
+    if comment.note.publisher != current_user.id:
+        new_notification = Notification(
+            notified_user_id=comment.user.id,
+            notifier_id = current_user.id,
+            type='reply',
+            message=f"replied '{short_reply}' to your comment in {comment.note.title} {comment.note.code} | {comment.note.chapter}"
+            )
+        db.session.add(new_notification)
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))

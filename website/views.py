@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -16,20 +16,39 @@ import random
 import secrets
 import os
 from PIL import Image
+from sqlalchemy.sql import func
+import bleach
+import re
+from website.models import User  
+
+
+def clean(html):
+        allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
+        allowed_attrs = {
+            'a': ['href', 'title', 'target']
+        }
+
+        # Clean the HTML using bleach
+        cleaned = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+
+        # Collapse any more than 2 consecutive <br> tags into just 2 <br> tags
+        cleaned = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', cleaned)
+
+        return cleaned
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
 
 class UploadFileForm(FlaskForm):
-    file = FileField("File", validators=[InputRequired()])
-    submit = SubmitField("Upload")
-    description = TextAreaField("description") 
+        file = FileField("File", validators=[InputRequired()])
+        submit = SubmitField("Upload")
+        description = TextAreaField("description") 
 
 @views.route('/home')
 @login_required
 def home():
-    notes = Note.query.all()
-    return render_template("home.html", user=current_user, notes=notes)
+        notes = Note.query.all()
+        return render_template("home.html", user=current_user, notes=notes)
 
 rooms = {}
 
@@ -126,168 +145,243 @@ def disconnect():
     
     send({"name": name, "message": "has left the room"}, to=room)
 
-
-@views.route('/post', methods=['GET', 'POST'])
-@login_required
-def post():
-    form = UploadFileForm()
-
-    if request.method == 'POST':
-        title = request.form.get('title')
-        code = request.form.get('code')
-        chapter = request.form.get('chapter')
-
-        if form.validate_on_submit():
-            description = form.description.data
-            file = form.file.data
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
-            absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
-            file.save(absolute_path)
-
-            new_note = Note(
-                title=title,
-                chapter=chapter,
-                code=code,
-                description=description,
-                publisher=current_user.id,
-                file_path=file_path
-            )
-
-        db.session.add(new_note)
-        db.session.commit()
-
-        flash('Note posted!', category='success')
-        return redirect(url_for('views.home'))
-        
-    return render_template("post.html", form=form)
-
 @views.route('/profile')
 @login_required
 def profile():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    points = current_user.points
-    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
-    notes_count = len(posts)
-    
-    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        points = current_user.points
+        posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+        notes_count = len(posts)
+        
+        return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
 @views.route('/profile/<int:user_id>')
 @login_required
 def user_profile(user_id):
-    user = User.query.get_or_404(user_id)
-    follower_count = user.follower_count()
-    following_count = user.following_count()
-    points = user.points
-    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-    notes_count = len(posts)
-    is_following = current_user.is_following(user)
-    return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+        user = User.query.get_or_404(user_id)
+        follower_count = user.follower_count()
+        following_count = user.following_count()
+        points = user.points
+        posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+        notes_count = len(posts)
+        is_following = current_user.is_following(user)
+        return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
 def follow(user_id):
-    user = User.query.get_or_404(user_id)
-    if user == current_user:
-        flash("You cannot follow yourself.", "error")
+        user = User.query.get_or_404(user_id)
+        if user == current_user:
+            flash("You cannot follow yourself.", "error")
+            return redirect(url_for('views.user_profile', user_id=user_id))
+        if not current_user.is_following(user):
+            current_user.follow(user)
+            db.session.commit()
+            flash(f"You are now following {user.username}.", "success")
         return redirect(url_for('views.user_profile', user_id=user_id))
-    if not current_user.is_following(user):
-        current_user.follow(user)
-        db.session.commit()
-        flash(f"You are now following {user.username}.", "success")
-    return redirect(url_for('views.user_profile', user_id=user_id))
 
 @views.route('/unfollow/<int:user_id>', methods=['POST'])
 @login_required
 def unfollow(user_id):
-    user = User.query.get_or_404(user_id)
-    if user == current_user:
-        flash("You cannot unfollow yourself.", "error")
+        user = User.query.get_or_404(user_id)
+        if user == current_user:
+            flash("You cannot unfollow yourself.", "error")
+            return redirect(url_for('views.user_profile', user_id=user_id))
+        if current_user.is_following(user):
+            current_user.unfollow(user)
+            db.session.commit()
+            flash(f"You have unfollowed {user.username}.", "success")
         return redirect(url_for('views.user_profile', user_id=user_id))
-    if current_user.is_following(user):
-        current_user.unfollow(user)
-        db.session.commit()
-        flash(f"You have unfollowed {user.username}.", "success")
-    return redirect(url_for('views.user_profile', user_id=user_id))
 
 @views.route('/saved')
 @login_required
 def saved():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    # Don't call .all() on current_user.saved since it's already a list
-    saved_posts = current_user.saved
-    # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
-    notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
-    
-    return render_template("saved.html", user=current_user, 
-                          follower_count=follower_count, 
-                          following_count=following_count, 
-                          saved_posts=saved_posts,
-                          notes_count=notes_count)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        # Don't call .all() on current_user.saved since it's already a list
+        saved_posts = current_user.saved
+        # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
+        notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
+        
+        return render_template("saved.html", user=current_user, 
+                            follower_count=follower_count, 
+                            following_count=following_count, 
+                            saved_posts=saved_posts,
+                            notes_count=notes_count)
 
 
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
-    post = Note.query.get_or_404(post_id)
-    if request.method == 'POST':
-        rating_value = int(request.form.get("rating"))
-    
-        if post.publisher == current_user.id:
-            flash("You can't rate your own post!", category="error")
-            return redirect(url_for('views.post_detail', post_id=post_id))
-        
-        existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
-        if existing:
-            existing.value = rating_value
-        else:
-            new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
-            db.session.add(new_rating)
-
+        post = Note.query.get_or_404(post_id)
         post_author = User.query.get(post.publisher)
-        post_author.points += rating_value
+
+        ratings = post.ratings  # List of Rating objects
+        ratings_count = len(ratings)
+        total_points = sum(r.value for r in ratings)
+
+        if request.method == 'POST':
+            # If the rating form was submitted
+            if "rating" in request.form:
+                try:
+                    rating_value = int(request.form.get("rating"))
+                except (ValueError, TypeError):
+                    flash("Invalid rating submitted.", category="error")
+                    return redirect(url_for('views.post_detail', post_id=post_id))
+
+                if post.publisher == current_user.id:
+                    flash("You can't rate your own post!", category="error")
+                    return redirect(url_for('views.post_detail', post_id=post_id))
+                
+                existing = Rating.query.filter_by(rater_id=current_user.id, note_id=post_id).first()
+                if existing:
+                    post_author.points -= existing.value
+                    existing.value = rating_value
+                else:
+                    new_rating = Rating(rater_id=current_user.id, note_id=post_id, value=rating_value)
+                    db.session.add(new_rating)
+
+                post_author.points += rating_value
+                db.session.commit()
+                flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
+                return redirect(url_for('views.post_detail', post_id=post_id))
+
+            # If the comment form was submitted
+            elif "comment_body" in request.form:
+                comment_body = request.form.get('comment_body')
+                clean_comment_body = clean(comment_body)
+                if clean_comment_body and clean_comment_body.strip():
+                    new_comment = Comment(
+                        body=clean_comment_body,
+                        user_id=current_user.id,
+                        note_id=post_id  # Make sure you're associating with the correct post
+                    )
+                    db.session.add(new_comment)
+                    db.session.commit()
+                    flash('Comment posted!', category='success')
+                else:
+                    flash('Comment cannot be empty.', category='error')
+
+                return redirect(url_for('views.post_detail', post_id=post_id))
+
+            
+
+        comments = Comment.query.filter_by(note_id=post_id).all()
+        
+        return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points, comments=comments)
+
+@views.route('/delete_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment (comment_id):
+        comment = Comment.query.get_or_404(comment_id)
+        post_id = comment.note_id
+
+        if comment.user_id != current_user.id:
+            flash ('You can only delete your own comments.', 'error')
+            return redirect(url_for('views.post_detail', post_id = post_id))
+        
+
+        db.session.delete(comment)
+        db.session.commit()
+        flash('Comment deleted!', 'success')
+
+        return redirect(url_for('views.post_detail', post_id = post_id))
+
+@views.route('/vote_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def vote_comment(comment_id):
+        comment = Comment.query.get_or_404(comment_id)
+        vote_value = int(request.form.get('vote'))  # should be 1 or -1
+
+        existing_vote = CommentVote.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+
+        if existing_vote:
+            if existing_vote.value == vote_value:
+                db.session.delete(existing_vote)  # toggle vote (undo)
+            else:
+                existing_vote.value = vote_value  # switch vote
+        else:
+            new_vote = CommentVote(user_id=current_user.id, comment_id=comment_id, value=vote_value)
+            db.session.add(new_vote)
 
         db.session.commit()
-        flash(f"Thanks for rating! {rating_value} point(s) given to {post_author.username}", category="success")
-        return redirect(url_for('views.post_detail', post_id=post_id))
-    
-    return render_template("post_detail.html", post=post)
+        return redirect(request.referrer or url_for('views.home'))
+
+@views.route('/comment/<int:comment_id>/reply', methods=['POST'])
+@login_required
+def reply_comment(comment_id):
+        comment = Comment.query.get_or_404(comment_id)
+        reply_body = request.form.get('reply_body')
+        clean_reply_body = clean(reply_body)
+
+        if not clean_reply_body or not clean_reply_body.strip():
+            flash("Reply cannot be empty.", "error")
+            return redirect(url_for('views.post_detail', post_id=comment.note_id))
+
+        new_reply = Reply(
+            body=clean_reply_body,
+            comment_id=comment_id,
+            user_id=current_user.id
+        )
+        db.session.add(new_reply)
+        db.session.commit()
+        flash("Reply posted!", "success")
+        return redirect(url_for('views.post_detail', post_id=comment.note_id))
+
+@views.route('/delete_reply/<int:reply_id>', methods=['POST'])
+@login_required
+def delete_reply (reply_id):
+        reply = Reply.query.get_or_404(reply_id)
+        post_id = reply.comment.note_id
+
+        if reply.user_id != current_user.id:
+            flash ('You can only delete your own comments.', 'error')
+            return redirect(url_for('views.post_detail', post_id = post_id))
+        
+
+        db.session.delete(reply)
+        db.session.commit()
+        flash('Reply deleted!', 'success')
+
+        return redirect(url_for('views.post_detail', post_id = post_id))
 
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
 def save_post(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post not in current_user.saved:
-        current_user.saved.append(post)
-        db.session.commit()
-        flash('Post saved successfully!', 'success')
-    else:
-        flash('Post already saved.', 'info')
-    return redirect(url_for('views.post_detail', post_id=post_id))
+        post = Note.query.get_or_404(post_id)
+        if post not in current_user.saved:
+            current_user.saved.append(post)
+            db.session.commit()
+            flash('Post saved successfully!', 'success')
+        else:
+            flash('Post already saved.', 'info')
+        return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
 def qna():
-    if request.method == 'POST':
-        title = request.form.get('title')
-        body = request.form.get('body')
 
-        new_question = Question(
-            title=title,
-            body=body,
-            publisher=current_user.id
-        )
 
-        db.session.add(new_question)
-        db.session.commit()
+        if request.method == 'POST':
+            title = request.form.get('title')
+            body = request.form.get('body')
+            clean_body = clean(body)
 
-        flash('Question posted!', category='success')
-        return redirect(url_for('views.qna'))
-    
-    question = Question.query.all()
-    return render_template("qna.html", user=current_user, question=question)
+            new_question = Question(
+                title=title,
+                body=clean_body,
+                publisher=current_user.id
+            )
+
+            db.session.add(new_question)
+            db.session.commit()
+
+            flash('Question posted!', category='success')
+            return redirect(url_for('views.qna'))
+        
+        questions = Question.query.all()
+        return render_template("qna.html", user=current_user, questions=questions)
 
 import secrets
 from PIL import Image
@@ -295,88 +389,126 @@ from PIL import Image
 @views.route("/edit_profile", methods=["GET", "POST"])
 @login_required
 def edit_profile():
-    if request.method == "POST":
-        username = request.form.get("username")
-        biography = request.form.get("biography")
+        if request.method == "POST":
+            username = request.form.get("username")
+            biography = request.form.get("biography")
 
-        if username:
-            current_user.username = username
-        if biography:
-            current_user.biography = biography
+            if username:
+                current_user.username = username
+            if biography:
+                current_user.biography = biography
 
-        if "image_profile" in request.files:
-            file = request.files["image_profile"]
-            if file and file.filename != "":
-                random_hex = secrets.token_hex(8)
-                _, f_ext = os.path.splitext(file.filename)
-                picture_fn = random_hex + f_ext
+            if "image_profile" in request.files:
+                file = request.files["image_profile"]
+                if file and file.filename != "":
+                    random_hex = secrets.token_hex(8)
+                    _, f_ext = os.path.splitext(file.filename)
+                    picture_fn = random_hex + f_ext
 
-                # Make sure the directory exists
-                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
-                os.makedirs(profile_pics_folder, exist_ok=True)
+                    # Make sure the directory exists
+                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                    os.makedirs(profile_pics_folder, exist_ok=True)
 
-                picture_path = os.path.join(profile_pics_folder, picture_fn)
+                    picture_path = os.path.join(profile_pics_folder, picture_fn)
 
-                # Resize image to 125x125 pixels
-                output_size = (125, 125)
-                i = Image.open(file)
-                i.thumbnail(output_size)
-                i.save(picture_path)
+                    # Resize image to 125x125 pixels
+                    output_size = (125, 125)
+                    i = Image.open(file)
+                    i.thumbnail(output_size)
+                    i.save(picture_path)
 
-                current_user.image_profile = picture_fn
+                    current_user.image_profile = picture_fn
 
-        db.session.commit()
-        flash("Your profile has been updated!", "success")
-        return redirect(url_for("views.profile"))
+            db.session.commit()
+            flash("Your profile has been updated!", "success")
+            return redirect(url_for("views.profile"))
 
-    image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
-    return render_template('edit_profile.html', title='edit_profile')
+        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
+        return render_template('edit_profile.html', title='edit_profile')
 
 @views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def post_edit(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post.publisher != current_user.id:
-        abort(403)
+        post = Note.query.get_or_404(post_id)
+        if post.publisher != current_user.id:
+            abort(403)
 
-    form = UploadFileForm()
+        form = UploadFileForm()
 
-    if request.method == 'POST':
-        post.title = request.form.get('title')
-        post.code = request.form.get('code')
-        post.chapter = request.form.get('chapter')
-        post.description = form.description.data
+        if request.method == 'POST':
+            post.title = request.form.get('title')
+            post.code = request.form.get('code')
+            post.chapter = request.form.get('chapter')
+            post.description = form.description.data
 
-        db.session.commit()
+            db.session.commit()
 
-        flash('Note Edited!', category='success')
-        return redirect(url_for('views.post_detail', post_id=post.id))
-        
-    return render_template("post_edit.html", form=form, post=post)
+            flash('Note Edited!', category='success')
+            return redirect(url_for('views.post_detail', post_id=post.id))
+            
+        return render_template("post_edit.html", form=form, post=post)
 
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required
 def delete(post_id):
-    post = Note.query.get_or_404(post_id)
+        post = Note.query.get_or_404(post_id)
 
-    if post.publisher != current_user.id:
-        abort(403)
+        if post.publisher != current_user.id:
+            abort(403)
 
-    for rating in post.ratings:
-        post_author = User.query.get(post.publisher)
-        post_author.points -= rating.value
+        for rating in post.ratings:
+            post_author = User.query.get(post.publisher)
+            post_author.points -= rating.value
 
-    if post.file_path:
-        try:
-            file_path = os.path.join(current_app.root_path, post.file_path)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            else:
-                flash('File not found, but note deleted!', category='error')
-        except Exception as e:
-            flash(f"Failed to delete file: {e}", category='error')
+        if post.file_path:
+            try:
+                file_path = os.path.join(current_app.root_path, post.file_path)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                else:
+                    flash('File not found, but post deleted!', category='error')
+            except Exception as e:
+                flash(f"Failed to delete file: {e}", category='error')
 
-    db.session.delete(post)
-    db.session.commit()
-    flash('Note Deleted!', category='success')
-    return redirect(url_for('views.home'))
+        db.session.delete(post)
+        db.session.commit()
+        flash('Note Deleted!', category='success')
+        return redirect(url_for('views.home'))
+
+@views.route('/add-answer/<int:question_id>', methods=['POST'])
+@login_required
+def add_answer (question_id):
+        question = Question.query.get_or_404(question_id)
+        
+        if request.method == 'POST':
+            answer_body = request.form.get('answer_body')
+
+            new_answer= Answer(
+                body=answer_body,
+                question_id=question.id,
+                user_id=current_user.id
+            )
+
+            db.session.add(new_answer)
+            db.session.commit()
+            flash('Comment added!', 'success')
+        else:
+            flash('Please enter a comment.', 'error')
+
+        return redirect(url_for('views.qna'))
+
+@views.route('/delete-answer/<int:answer_id>', methods=['POST'])
+@login_required
+def delete_answer (answer_id):
+        answer = Answer.query.get_or_404(answer_id)
+
+        if answer.user_id != current_user.id:
+            flash ('You can only delete your own comments.', 'error')
+            return redirect(url_for('views.qna'))
+        
+
+        db.session.delete(answer)
+        db.session.commit()
+        flash('Comment deleted!', 'success')
+
+        return redirect(url_for('views.qna'))

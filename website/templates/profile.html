@@ -127,6 +127,11 @@
   max-width: 300px;
 }
 
+  .post a {
+    text-decoration: none;
+    color: #f15c22;
+  }
+
 .post:hover {
   transform: translateY(-4px);
 }
@@ -179,6 +184,31 @@
 
 </style>
 
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
 
   <div class="profile-header">
     <img class="rounded-circle account-img profile-pic" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
@@ -192,7 +222,7 @@
         <div class="stat">Points: {{ points }}</div>
         <div class="stat">
           {% if notes_count > 0 %}
-            Total Rating: {{ (points / notes_count) }}
+            Total Rating: {{ ((points / notes_count) | round(1)) if ratings_count != 0 else '' }}
           {% else %}
           Total Rating: 0
           {% endif %}

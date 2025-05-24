@@ -50,4 +50,64 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 </script>
+
+<style>
+/* Container Styling */
+#messages {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fdfdfd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 15px;
+}
+
+/* Message Paragraphs */
+#messages p {
+    margin: 8px 0;
+    line-height: 1.5;
+    font-size: 15px;
+}
+
+/* Message Sender Name */
+#messages p strong {
+    color: #2c3e50;
+}
+
+/* Input Field */
+#message-input {
+    width: 75%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-right: 10px;
+    outline: none;
+}
+
+/* Send Button */
+#send-button {
+    padding: 10px 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#send-button:hover {
+    background-color: #2980b9;
+}
+
+/* Chat Heading */
+h2 {
+    margin-bottom: 20px;
+    color: #34495e;
+}
+</style>
+
 {% endblock %}

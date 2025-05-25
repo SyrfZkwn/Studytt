@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+
+{% block content %}
+<h2>Search Results for "{{ query }}"</h2>
+
+{% if users %}
+  <h3>Users:</h3>
+  {% for user in users %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">{{ user.username }}</a><br>
+  {% endfor %}
+{% endif %}
+
+{% if notes %}
+  <h3>Notes:</h3>
+  {% for note in notes %}
+    <a href="{{ url_for('views.post_detail', post_id=note.id) }}">{{ note.title }} {{ note.code }} | {{ note.chapter }}</a><br>
+  {% endfor %}
+{% endif %}
+
+{% if not users and not notes %}
+  <p>No results found.</p>
+{% endif %}
+
+{% endblock %}

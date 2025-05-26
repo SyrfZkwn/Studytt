@@ -4,11 +4,30 @@
 {% block content %}
 <h2>Chat with {{ chat_with.username }}</h2>
 
-<div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px;">
-    {% for msg in messages %}
-        <p><strong>{{ msg.name }}</strong>: {{ msg.message }}</p>
-    {% endfor %}
-</div>
+{% for msg in messages %}
+  <div class="message-wrapper">
+    <div class="message-bubble">
+      <strong>{{ msg.sender.username }}</strong><br>
+      {{ msg.message }}
+
+      <!-- Meta info -->
+      <div class="message-meta">
+        {% if msg.sender_id == current_user.id %}
+          <span class="read-status">{{ 'Read' if msg.read else 'Sent' }}</span>
+        {% endif %}
+
+        <!-- Reaction Button -->
+        <button class="reaction-btn" onclick="reactToMessage('{{ msg.id }}')">👍</button>
+
+        {% if msg.sender_id == current_user.id %}
+          <button class="delete-btn" data-id="{{ msg.id }}">🗑</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+
 
 <input type="text" id="message-input" placeholder="Type a message...">
 <button id="send-button">Send</button>
@@ -19,48 +38,78 @@
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
-    
-    // Debug connection
+
+    // Scroll to bottom helper
+    function scrollToBottom() {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // On connect, you join the room (this part happens server-side with session)
     socket.on('connect', () => {
-        console.log('Connected to Socket.IO');
-        messagesDiv.innerHTML += '<p><em>Connected to chat</em></p>';
+        console.log('Connected to server');
     });
-    
-    // Send message when button is clicked
+
+    // Send message
     sendButton.addEventListener('click', () => {
         const message = messageInput.value.trim();
         if (message) {
-            console.log('Sending message:', message);
             socket.emit('message', { data: message });
             messageInput.value = '';
         }
     });
-    
-    // Handle enter key
+
+    // Enter key to send
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             sendButton.click();
         }
     });
-    
-    // Receive messages
+
+    // Receive new message
     socket.on('message', (data) => {
-        console.log('Received message:', data);
-        messagesDiv.innerHTML += `<p><strong>${data.name}</strong>: ${data.message}</p>`;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        console.log('New message:', data);
+        const msgElement = document.createElement('p');
+        msgElement.innerHTML = `<strong>${data.name}</strong>: ${data.message}`;
+        messagesDiv.appendChild(msgElement);
+        scrollToBottom();
     });
+
+    
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('delete-btn')) {
+            const messageId = e.target.getAttribute('data-id');
+
+            fetch(`/delete-message/${messageId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                   
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const messageEl = document.querySelector(`p[data-id='${messageId}']`);
+                    if (messageEl) messageEl.remove();
+                }
+            });
+        }
+    });
+
+
 </script>
+
 
 <style>
 /* Container Styling */
 #messages {
     height: 300px;
     overflow-y: auto;
-    border: 1px solid #ccc;
+    border: 1px solid #f15c22;
     border-radius: 8px;
     padding: 10px;
-    background-color: #fdfdfd;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    background-color: #fbf3e2;
+    box-shadow: 0 0 10px #f15c22(0, 0, 0, 0.05);
     margin-bottom: 15px;
 }
 
@@ -73,14 +122,15 @@
 
 /* Message Sender Name */
 #messages p strong {
-    color: #2c3e50;
+    color: #fbf3e2;
 }
 
 /* Input Field */
 #message-input {
     width: 75%;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #f15c22;
+    background-color:#fbf3e2 ;
     border-radius: 6px;
     font-size: 14px;
     margin-right: 10px;
@@ -90,7 +140,7 @@
 /* Send Button */
 #send-button {
     padding: 10px 16px;
-    background-color: #3498db;
+    background-color: #173c67;
     color: white;
     border: none;
     border-radius: 6px;
@@ -100,14 +150,77 @@
 }
 
 #send-button:hover {
-    background-color: #2980b9;
+    background-color: #f15c22;
 }
 
 /* Chat Heading */
 h2 {
     margin-bottom: 20px;
-    color: #34495e;
+    color: #f15c22;
+    font-size: 50px;
 }
+
+.message-wrapper {
+    display: flex;
+    margin-bottom: 12px;
+}
+
+.message-wrapper.sent {
+    justify-content: flex-end;
+}
+
+.message-wrapper.received {
+    justify-content: flex-start;
+}
+
+.message-bubble {
+    max-width: 65%;
+    padding: 10px 14px;
+    border-radius: 15px;
+    background-color: #173c67;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    word-wrap: break-word;
+    color: #fbf3e2;
+}
+
+.message-wrapper.sent .message-bubble {
+    background-color: #dcf8c6; /* Light green for sent messages */
+    text-align: right;
+}
+
+.message-meta {
+    margin-top: 6px;
+    font-size: 0.8em;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reaction-btn, .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 6px;
+    font-size: 0.9em;
+}
+
 </style>
+<script>
+    document.addEventListener('click', function (event) {
+        if (event.target.classList.contains('reaction-btn')) {
+            const msgId = event.target.getAttribute('data-id');
+            reactToMessage(msgId);
+        }
+    });
+
+    function reactToMessage(msgId) {
+        console.log('Reacting to message ID:', msgId);
+       
+    }
+</script>
+
+
 
 {% endblock %}

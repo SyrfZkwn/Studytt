@@ -19,6 +19,9 @@ from PIL import Image
 from sqlalchemy.sql import func
 import bleach
 import re
+from flask import jsonify
+from .models import ChatMessage
+
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -85,59 +88,77 @@ def generate_unique_code(length):
 @views.route('/chat')
 @login_required
 def chat_home():
-    # Show chat list of followed users
     followed_users = current_user.followed.all()
-    return render_template("chat.html", followed_users=followed_users)
+    chat_data = []
+
+    for user in followed_users:
+     room_code = generate_room_code(current_user.id, user.id)
+
+    last_message = ChatMessage.query.filter_by(room_code=room_code) \
+        .order_by(ChatMessage.date.desc()) \
+        .first()
+
+    print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
+
+    chat_data.append({
+        "user": user,
+        "last_message": last_message.message if last_message else "",
+        "timestamp": last_message.date if last_message else None
+    })
+
+
+    return render_template("chat.html", chat_data=chat_data)
+
 
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
-    # Check if user_id is followed by current_user
     user = User.query.get_or_404(user_id)
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
         return redirect(url_for('views.chat_home'))
 
     room_code = generate_room_code(current_user.id, user_id)
-    if room_code not in rooms:
-        rooms[room_code] = {"members": 0, "messages": []}
+    messages = ChatMessage.query.filter_by(room_code=room_code).order_by(ChatMessage.date.asc()).all()
 
     session["room"] = room_code
     session["name"] = current_user.username
     session["chat_with"] = user.username
 
-    return render_template("room.html", code=room_code, messages=rooms[room_code]["messages"], chat_with=user)
+    return render_template("room.html", code=room_code, messages=messages, chat_with=user)
+
 
 @socketio.on("message")
-def message(data):
+def handle_message(data):
     room = session.get("room")
-    name = session.get("name")
-    
-    if not room or room not in rooms:
-        return 
-    
+    sender_name = session.get("name")
+    sender_id = current_user.id
+    chat_with = session.get("chat_with")
+
+    if not room or not sender_name:
+        return
+
+    # Save to database
+    receiver = User.query.filter_by(username=chat_with).first()
+    if receiver:
+        msg = ChatMessage(
+            sender_id=sender_id,
+            receiver_id=receiver.id,
+            room_code=room,
+            message=data["data"]
+        )
+        db.session.add(msg)
+        db.session.commit()
+
+    # Prepare message for broadcast
     content = {
-        "name": name,
+        "name": sender_name,
         "message": data["data"]
     }
-    
-    send(content, to=room)
-    rooms[room]["messages"].append(content)
 
-@socketio.on("connect")
-def connect():
-    room = session.get("room")
-    name = session.get("name")
-    
-    if not room or not name:
-        return
-    
-    if room not in rooms:
-        return
-    
-    join_room(room)
-    send({"name": "System", "message": f"{name} has joined the room"}, to=room)
-    rooms[room]["members"] += 1
+    send(content, to=room)
+
+
 
 @socketio.on("disconnect")
 def disconnect():
@@ -152,6 +173,17 @@ def disconnect():
     
     send({"name": name, "message": "has left the room"}, to=room)
 
+@views.route('/delete-message/<int:message_id>', methods=['POST'])
+@login_required
+def delete_message(message_id):
+    msg = ChatMessage.query.get_or_404(message_id)
+    
+    if msg.sender_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    db.session.delete(msg)
+    db.session.commit()
+    return jsonify({'success': True}), 200
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
@@ -464,17 +496,18 @@ def qna():
             publisher=current_user.id
         )
 
-            db.session.add(new_question)
-            db.session.commit()
+    db.session.add(new_question)
+    db.session.commit()
 
-        flash('Question posted!', category='success')
-        return redirect(url_for('views.qna'))
+    flash('Question posted!', category='success')
+    return redirect(url_for('views.qna'))
     
     questions = Question.query.all()
     return render_template("qna.html", user=current_user, questions=questions)
 
 import secrets
-from PIL import Image
+from PIL import Image, ImageOps
+
 
 @views.route("/edit_profile", methods=["GET", "POST"])
 @login_required
@@ -502,12 +535,12 @@ def edit_profile():
                     picture_path = os.path.join(profile_pics_folder, picture_fn)
 
                     # Resize image to 125x125 pixels
-                    output_size = (125, 125)
-                    i = Image.open(file)
-                    i.thumbnail(output_size)
-                    i.save(picture_path)
+                output_size = (125, 125)
+                i = Image.open(file)
+                i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
+                i.save(picture_path)
 
-                    current_user.image_profile = picture_fn
+                current_user.image_profile = picture_fn
 
             db.session.commit()
             flash("Your profile has been updated!", "success")
@@ -541,14 +574,14 @@ def post_edit(post_id):
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required
 def delete(post_id):
-        post = Note.query.get_or_404(post_id)
+    post = Note.query.get_or_404(post_id)
 
-        if post.publisher != current_user.id:
-            abort(403)
+    if post.publisher != current_user.id:
+        abort(403)
 
-        for rating in post.ratings:
-            post_author = User.query.get(post.publisher)
-            post_author.points -= rating.value
+    for rating in post.ratings:
+        post_author = User.query.get(post.publisher)
+        post_author.points -= rating.value
 
     if post.file_path:
         try:
@@ -738,3 +771,11 @@ def search():
     ).all()
 
     return render_template("search_results.html", users=users, notes=notes, query=query)
+
+@views.route('/react/<int:msg_id>', methods=['POST'])
+@login_required
+def react(msg_id):
+    message = ChatMessage.query.get_or_404(msg_id)
+    print(f"{current_user.username} reacted to message {msg_id}")
+    # You could log/store reactions in the DB here
+    return '', 204

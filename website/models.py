@@ -35,6 +35,8 @@ class ChatMessage(db.Model):
     room_code = db.Column(db.String(10), nullable=True)  # For room-based messages
     message = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)

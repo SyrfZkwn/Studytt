@@ -293,7 +293,6 @@
   }
 
   .a-comment {
-    margin-bottom: 1.5rem;
     font-size: 1.3rem;
   }
 
@@ -437,7 +436,7 @@
     </form>
 
     <div class="rating-summary ml-2">
-      <h1>{{ ((total_points / ratings_count) | round(1)) if ratings_count != 0 else 'No Rating' }}</h1>
+      <h1>{{ post.rating_ratio if ratings_count != 0 else 'No Rating' }}</h1>
     </div>
 
     <div style="display: flex; height: auto; margin-left: auto;">
@@ -561,6 +560,29 @@
 
               <div class="comment-content my-2">
                 {{ reply.body | safe }}
+              </div>
+
+              <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
+
+                <form action="{{ url_for('views.vote_reply', reply_id=reply.id) }}" method="post" style="display: inline;">
+                  <input type="hidden" name="vote" value="1">
+                  <button type="submit" class="btn btn-outline-success btn-sm" title="Upvote">
+                    <i class="fa-solid fa-circle-up"></i>
+                  </button>
+                </form>
+                
+                {{ (reply.votes | selectattr('value', 'equalto', 1) | list | length) - (reply.votes | selectattr('value', 'equalto', -1) | list | length) }}
+                <form action="{{ url_for('views.vote_reply', reply_id=reply.id) }}" method="post" style="display: inline;">
+                  <input type="hidden" name="vote" value="-1">
+                  <button type="submit" class="btn btn-outline-danger btn-sm" title="Downvote">
+                    <i class="fa-solid fa-circle-down"></i>
+                  </button>
+                </form>
+              
+                <button type="button" class="btn btn-outline-primary btn-sm reply-button" title="Reply">
+                  <i class="fa-solid fa-reply"></i>
+                </button>
+
               </div>
             </div>
           {% endfor %}

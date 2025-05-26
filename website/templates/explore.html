@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Search{% endblock %}
+{% extends "base.html" %} 
+<title>{% block title %}Explore{% endblock %}</title>
 
 {% block content %}
 
@@ -74,37 +74,6 @@
 
 </style>
 
-<div class="flash">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-          {% for category, message in messages %}
-          {% if category == 'error' %}
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% else %}
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% endif %}
-          {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-</div>
-
-<h2>Search Results for "{{ query }}"</h2>
-
-{% if notes %}
-  <h3>Notes:</h3>
-
 <div class="content-section">
   {% for note in notes %}
   <div class="post">
@@ -127,17 +96,5 @@
     <p>No notes to show.</p>
     {% endfor %}
 </div>
-{% endif %}
-
-{% if users %}
-  <h3>Users:</h3>
-  {% for user in users %}
-    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">{{ user.username }}</a><br>
-  {% endfor %}
-{% endif %}
-
-{% if not users and not notes %}
-  <p>No results found.</p>
-{% endif %}
 
 {% endblock %}

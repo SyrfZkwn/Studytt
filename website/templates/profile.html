@@ -182,6 +182,16 @@
             margin: 0 auto;
           }
 
+  #username {
+    color: #2a83db;
+    transition: transform 0.2s;
+  }
+
+  #username:hover {
+    color: #1263b4;
+    transform: translateY(-4px);
+  }
+
 </style>
 
 <div class="flash">
@@ -270,15 +280,15 @@
           <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
         {% endif %}
       </div>
-      <div class="post-title">{{ post.title }}</div>
+      <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
     </a>
     <div class="post-footer">
-      <span>Likes 0</span>
-      <span>💬 0</span>
+      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a></span>
+      <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
     </div>
   </div>
     {% else %}
-    <p>No posts to show.</p>
+    <p>No notes to show.</p>
     {% endfor %}
   </div>
 {% endblock %}

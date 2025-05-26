@@ -5,7 +5,7 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -281,12 +281,22 @@ def saved():
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
-    post = Note.query.get_or_404(post_id)
+    post = Note.query.get(post_id)
+    if not post:
+        flash("The post you're looking for doesn't exist.", "error")
+        return redirect(url_for('views.deleted_post'))
+    
     post_author = User.query.get(post.publisher)
 
     ratings = post.ratings  # List of Rating objects
     ratings_count = len(ratings)
     total_points = sum(r.value for r in ratings)
+
+    if ratings_count == 0:
+        post.rating_ratio = 0.0
+    else:
+        total_points = sum(r.value for r in ratings)
+        post.rating_ratio = round(total_points / ratings_count, 1)
 
     if request.method == 'POST':
         # If the rating form was submitted
@@ -371,15 +381,20 @@ def post_detail(post_id):
                         )
                         db.session.add(new_notification)
 
+                comments = Comment.query.filter_by(note_id=post_id).all()
+
+                if comments:
+                    post.total_comments += 1
+                else:
+                    post.total_comments = 0
+
                 db.session.commit()
                 flash('Comment posted!', category='success')
             else:
                 flash('Comment cannot be empty.', category='error')
 
             return redirect(url_for('views.post_detail', post_id=post_id))
-
         
-
     comments = Comment.query.filter_by(note_id=post_id).all()
     
     return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points, comments=comments)
@@ -389,16 +404,19 @@ def post_detail(post_id):
 def delete_comment (comment_id):
     comment = Comment.query.get_or_404(comment_id)
     post_id = comment.note_id
+    post = Note.query.get_or_404(post_id)
 
     if comment.commenter_id != current_user.id:
         flash ('You can only delete your own comments.', 'error')
         return redirect(url_for('views.post_detail', post_id = post_id))
-    
 
     db.session.delete(comment)
     db.session.commit()
-    flash('Comment deleted!', 'success')
 
+    post.total_comments -= 1
+    db.session.commit()
+
+    flash('Comment deleted!', 'success')
     return redirect(url_for('views.post_detail', post_id = post_id))
 
 @views.route('/vote_comment/<int:comment_id>', methods=['POST'])
@@ -407,7 +425,7 @@ def vote_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     vote_value = int(request.form.get('vote'))  # should be 1 or -1
 
-    existing_vote = CommentVote.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+    existing_vote = CommentVote.query.filter_by(voter_id=current_user.id, comment_id=comment_id).first()
 
     if existing_vote:
         if existing_vote.value == vote_value:
@@ -415,7 +433,27 @@ def vote_comment(comment_id):
         else:
             existing_vote.value = vote_value  # switch vote
     else:
-        new_vote = CommentVote(user_id=current_user.id, comment_id=comment_id, value=vote_value)
+        new_vote = CommentVote(voter_id=current_user.id, comment_id=comment_id, value=vote_value)
+        db.session.add(new_vote)
+
+    db.session.commit()
+    return redirect(request.referrer or url_for('views.home'))
+
+@views.route('/vote_reply/<int:reply_id>', methods=['POST'])
+@login_required
+def vote_reply(reply_id):
+    reply = Reply.query.get_or_404(reply_id)
+    vote_value = int(request.form.get('vote'))  # should be 1 or -1
+
+    existing_vote = ReplyVote.query.filter_by(voter_id=current_user.id, reply_id=reply_id).first()
+
+    if existing_vote:
+        if existing_vote.value == vote_value:
+            db.session.delete(existing_vote)  # toggle vote (undo)
+        else:
+            existing_vote.value = vote_value  # switch vote
+    else:
+        new_vote = ReplyVote(voter_id=current_user.id, reply_id=reply_id, value=vote_value)
         db.session.add(new_vote)
 
     db.session.commit()
@@ -427,6 +465,8 @@ def reply_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     reply_body = request.form.get('reply_body')
     clean_reply_body = clean(reply_body)
+    post_id = comment.note_id
+    post = Note.query.get_or_404(post_id)
 
     if not clean_reply_body or not clean_reply_body.strip():
         flash("Reply cannot be empty.", "error")
@@ -466,6 +506,13 @@ def reply_comment(comment_id):
             )
             db.session.add(new_notification)
 
+    replies = Reply.query.filter_by(comment_id=comment_id).all()
+
+    if comment:
+        post.total_comments += 1
+    else:
+        post.total_comments = 0
+
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))
@@ -475,6 +522,7 @@ def reply_comment(comment_id):
 def delete_reply (reply_id):
     reply = Reply.query.get_or_404(reply_id)
     post_id = reply.comment.note_id
+    post = Note.query.get_or_404(post_id)
 
     if reply.user_id != current_user.id:
         flash ('You can only delete your own comments.', 'error')
@@ -484,6 +532,9 @@ def delete_reply (reply_id):
     db.session.delete(reply)
     db.session.commit()
     flash('Reply deleted!', 'success')
+
+    post.total_comments -= 1
+    db.session.commit()
 
     return redirect(url_for('views.post_detail', post_id = post_id))
 
@@ -778,6 +829,7 @@ def unpin_answer(answer_id):
     return redirect(url_for('views.qna'))
 
 @views.route('/search')
+@login_required
 def search():
     query = request.args.get('q', '')
 
@@ -789,3 +841,13 @@ def search():
     ).all()
 
     return render_template("search_results.html", users=users, notes=notes, query=query)
+
+@views.route('/explore')
+@login_required
+def explore():
+    notes = Note.query.all()
+    return render_template("explore.html", current_user=current_user, notes=notes)
+
+@views.route('/post_deleted')
+def deleted_post():
+    return render_template('post_deleted.html')

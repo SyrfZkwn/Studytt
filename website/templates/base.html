@@ -310,7 +310,7 @@
 
         <div class="sidebar">
           <div class="sidebar-btn">
-            <a href="#">EXPLORE</a>
+            <a class="{% if request.endpoint == 'views.explore' %}active{% endif %}" href="{{ url_for('views.explore') }}">EXPLORE</a>
             <a class="{% if request.endpoint == 'views.home' %}active{% endif %}" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
             <a class="{% if request.endpoint == 'views.qna' %}active{% endif %}" href="{{ url_for('views.qna') }}">DISCUSSION</a>

@@ -167,10 +167,15 @@
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
         <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
-        {% endif %}
 
-        {% if n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
+        {% elif n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
         <a href="{{ url_for('views.post_detail', post_id=n.post_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+        
+        {% elif n.type in ['answer', 'pin'] %} <!--leads user to related question -->
+        <a href="#" class="go-to" style="max-width: 85%; height: auto; display: flex;">
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
         <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
@@ -223,10 +228,15 @@
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
         <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
-        {% endif %}
 
-        {% if n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
+        {% elif n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
         <a href="{{ url_for('views.post_detail', post_id=n.post_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+
+        {% elif n.type in ['answer', 'pin'] %} <!--leads user to related question -->
+        <a href="#" class="go-to" style="max-width: 85%; height: auto; display: flex;">
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
         <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>

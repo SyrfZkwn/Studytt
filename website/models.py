@@ -45,6 +45,8 @@ class Note(db.Model):
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
     publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
+    rating_ratio = db.Column(db.Float, default=0.0)
+    total_comments = db.Column(db.Integer, default=0)
     comments = db.relationship('Comment', backref='note', cascade='all, delete', lazy=True)
     ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
@@ -104,11 +106,19 @@ class Comment(db.Model):
 
 class CommentVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=False)
     value = db.Column(db.Integer, nullable=False)  # +1 = upvote, -1 = downvote
 
-    __table_args__ = (db.UniqueConstraint('user_id', 'comment_id', name='unique_comment_vote'),)
+    __table_args__ = (db.UniqueConstraint('voter_id', 'comment_id', name='unique_comment_vote'),)
+
+class ReplyVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    reply_id = db.Column(db.Integer, db.ForeignKey('reply.id', ondelete='CASCADE'), nullable=False)
+    value = db.Column(db.Integer, nullable=False)  # +1 = upvote, -1 = downvote
+
+    __table_args__ = (db.UniqueConstraint('voter_id', 'reply_id', name='unique_reply_vote'),)
 
 class Reply(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -117,6 +127,7 @@ class Reply(db.Model):
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     user = db.relationship('User', backref='replies', lazy=True)
+    votes = db.relationship('ReplyVote', backref='reply', lazy=True, cascade="all, delete-orphan")
 
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -131,6 +131,7 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     notified_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     notifier_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    post_id = db.Column(db.Integer)
     type = db.Column(db.String(20))
     message = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)

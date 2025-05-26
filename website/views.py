@@ -43,6 +43,9 @@ def super_clean(html):
 
     return text_only
 
+def find_mentions(text):
+    return re.findall(r'@([\w.]+)', text) #find mentions
+
 views = Blueprint('views', __name__, template_folder='../templates')
 
 
@@ -179,8 +182,22 @@ def post():
             publisher=current_user.id,
             file_path=file_path
         )
-
         db.session.add(new_note)
+        db.session.commit()
+
+        usernames = find_mentions(clean_description) #mention user
+        for username in usernames:
+            user = User.query.filter(func.lower(User.username) == username.lower()).first()
+            if user and user.id != current_user.id:
+                new_notification = Notification(
+                notified_user_id=user.id,
+                notifier_id = current_user.id,
+                type='mention',
+                message=f"You were mentioned in description <b>'{title} {code} | {chapter}'</b>.",
+                post_id = new_note.id
+                )
+            db.session.add(new_notification)
+
         db.session.commit()
 
         flash('Note posted!', category='success')
@@ -293,7 +310,8 @@ def post_detail(post_id):
                     notified_user_id=post.publisher,
                     notifier_id = current_user.id,
                     type='rating',
-                        message=f"Changed the rating on <b>'{post.title} {post.code} | {post.chapter}'</b> to <b>{rating_value} point(s)!</b>"
+                    message=f"Changed the rating on <b>'{post.title} {post.code} | {post.chapter}'</b> to <b>{rating_value} point(s)!</b>",
+                    post_id = post_id
                     )
                 db.session.add(new_notification)
             else:
@@ -304,7 +322,8 @@ def post_detail(post_id):
                     notified_user_id=post.publisher,
                     notifier_id = current_user.id,
                     type='rating',
-                        message=f"Rated your post <b>'{post.title} {post.code} | {post.chapter}'</b> with <b>{rating_value} point(s)!</b>"
+                    message=f"Rated your post <b>'{post.title} {post.code} | {post.chapter}'</b> with <b>{rating_value} point(s)!</b>",
+                    post_id = post_id
                     )
                 db.session.add(new_notification)
 
@@ -334,9 +353,24 @@ def post_detail(post_id):
                         notified_user_id=post.publisher,
                         notifier_id = current_user.id,
                         type='comment',
-                            message=f"Commented '{short_comment}' on your post <b>'{post.title} {post.code} | {post.chapter}'</b>."
+                        message=f"Commented '{short_comment}' on your post <b>'{post.title} {post.code} | {post.chapter}'</b>.",
+                        post_id = post_id
                         )
                     db.session.add(new_notification)
+
+                usernames = find_mentions(clean_comment_body) #mention user
+                for username in usernames:
+                    user = User.query.filter(func.lower(User.username) == username.lower()).first()
+                    if user and user.id != current_user.id:
+                        new_notification = Notification(
+                        notified_user_id=user.id,
+                        notifier_id = current_user.id,
+                        type='mention',
+                        message=f"You were mentioned in a comment in <b>'{post.title} {post.code} | {post.chapter}'</b>.",
+                        post_id = post_id
+                        )
+                        db.session.add(new_notification)
+
                 db.session.commit()
                 flash('Comment posted!', category='success')
             else:
@@ -356,7 +390,7 @@ def delete_comment (comment_id):
     comment = Comment.query.get_or_404(comment_id)
     post_id = comment.note_id
 
-    if comment.user_id != current_user.id:
+    if comment.commenter_id != current_user.id:
         flash ('You can only delete your own comments.', 'error')
         return redirect(url_for('views.post_detail', post_id = post_id))
     
@@ -407,22 +441,31 @@ def reply_comment(comment_id):
 
     super_clean_reply_body = super_clean(reply_body)
     short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
-    if comment.note.publisher != current_user.id:
+        
+    if comment.commenter_id != current_user.id:
         new_notification = Notification(
             notified_user_id=comment.user.id,
             notifier_id = current_user.id,
             type='reply',
-            message=f"replied '{short_reply}' to your comment in {comment.note.title} {comment.note.code} | {comment.note.chapter}"
+            message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
+            post_id = comment.note.id
             )
         db.session.add(new_notification)
-    if comment.user.id != current_user.id:
-        new_notification = Notification(
-            notified_user_id=comment.user.id,
+
+    # Detect @mentions
+    usernames = find_mentions(reply_body)
+    for username in usernames:
+        user = User.query.filter(func.lower(User.username) == username.lower()).first()
+        if user and user.id != current_user.id:
+            new_notification = Notification(
+            notified_user_id=user.id,
             notifier_id = current_user.id,
-            type='reply',
-            message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>."
+            type='mention',
+            message=f"You were mentioned in a reply in <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
+            post_id = comment.note.id
             )
-        db.session.add(new_notification)
+            db.session.add(new_notification)
+
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))
@@ -595,8 +638,8 @@ def add_answer (question_id):
             new_notification = Notification(
                 notified_user_id=question.user.id,
                 notifier_id = current_user.id,
-                type='reply',
-                message=f"Answered '{short_answer_body}' to your question <b>'{question.title}'</b>."
+                type='answer',
+                message=f"Answered '{short_answer_body}' to your question <b>'{question.title}'</b>.",
                 )
             db.session.add(new_notification)
 
@@ -619,7 +662,7 @@ def delete_answer (answer_id):
 
     db.session.delete(answer)
     db.session.commit()
-    flash('Comment deleted!', 'success')
+    flash('Answer deleted!', 'success')
 
     return redirect(url_for('views.qna'))
 

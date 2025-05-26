@@ -3,6 +3,7 @@ from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from flask_login import login_user, login_required, logout_user, current_user
+from sqlalchemy.sql import func
 
 
 auth = Blueprint('auth', __name__)
@@ -40,9 +41,13 @@ def sign_up():
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
 
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash('Email already exists', category='error')
+        existing_email = User.query.filter(func.lower(User.email) == email).first() #no dupe email
+        if existing_email:
+            flash('An account with that email already exists.', category='error')
+            return render_template("signup.html")
+        existing_user = User.query.filter(func.lower(User.username) == username.lower()).first()
+        if existing_user:
+            flash('Username is unavailable, choose another.', category='error')
             return render_template("signup.html")
 
         if len(username) < 3:
@@ -54,7 +59,7 @@ def sign_up():
         elif len(password1) < 7:
             flash('Password must be at least 7 characters', category='error')
         else:
-            new_user = User(email=email, username=username, password=generate_password_hash(password1, method='pbkdf2:sha256'))
+            new_user = User(email=email.lower(), username=username, password=generate_password_hash(password1, method='pbkdf2:sha256'))
             db.session.add(new_user)
             db.session.commit()
             login_user(new_user, remember=True)

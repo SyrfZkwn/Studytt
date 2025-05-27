@@ -478,7 +478,7 @@
   <div class="comments">
     {% if comments %}
     <h2 style="color: #f15c22;" class="mb-3">Comments</h2>
-      {% for comment in comments %}
+      {% for comment in comments|reverse %}
         <div class="a-comment" data-comment-id="{{ comment.id }}">
           <div class="{% if ('@' + current_user.username.lower()) in comment.body.lower() %}highlight{% endif %} pl-2 py-2">
             <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">

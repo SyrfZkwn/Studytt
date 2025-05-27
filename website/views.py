@@ -297,6 +297,7 @@ def post_detail(post_id):
     else:
         total_points = sum(r.value for r in ratings)
         post.rating_ratio = round(total_points / ratings_count, 1)
+    db.session.commit()
 
     if request.method == 'POST':
         # If the rating form was submitted
@@ -724,6 +725,27 @@ def notification():
     read_notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=True).order_by(Notification.timestamp.desc()).all()
     total_unread_notifications = len(unread_notifications)
     return render_template("notification.html", user=current_user, unread_notifications=unread_notifications, read_notifications=read_notifications, total_unread_notifications=total_unread_notifications)
+
+@views.route('/notifications/go-to/<int:notification_id>')
+@login_required
+def go_to_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.notified_user_id != current_user.id:
+        abort(403)
+    notification.is_read = True
+    db.session.commit()
+    
+    # Redirect based on type
+    if notification.type == 'follow':
+        return redirect(url_for('views.user_profile', user_id=notification.notifier_id))
+    elif notification.type in ['mention', 'rating', 'comment', 'reply']:
+        return redirect(url_for('views.post_detail', post_id=notification.post_id))
+    elif notification.type in ['answer', 'pin']:
+        return redirect(url_for('views.notification'))  # Replace with actual route
+    else:
+        flash("Notification type is unknown.", "error")
+        return redirect(url_for('views.home'))  # fallback
 
 @views.route('/notifications/read/<int:notification_id>')
 @login_required

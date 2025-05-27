@@ -19,6 +19,8 @@ from PIL import Image
 from sqlalchemy.sql import func
 import bleach
 import re
+from pdf2image import convert_from_path
+from pathlib import Path
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -48,6 +50,15 @@ def find_mentions(text):
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
+def generate_pdf_preview(pdf_rel_path, preview_rel_path):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+
+    abs_pdf_path = os.path.join(base_dir, pdf_rel_path)
+    abs_preview_path = os.path.join(base_dir, preview_rel_path)
+
+    pages = convert_from_path(abs_pdf_path, first_page=1, last_page=1)
+    os.makedirs(os.path.dirname(abs_preview_path), exist_ok=True)
+    pages[0].save(abs_preview_path, 'JPEG')
 
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired()])
@@ -173,6 +184,13 @@ def post():
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
         absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
         file.save(absolute_path)
+        preview_path = None
+
+        # ✅ Generate preview if it's a PDF
+        if filename.lower().endswith('.pdf'):
+            preview_filename = filename.rsplit('.', 1)[0] + '_preview.jpg'
+            preview_path = os.path.join(current_app.config['PDF_PREVIEW_FOLDER'], preview_filename).replace('\\', '/')
+            generate_pdf_preview(file_path, preview_path)
 
         new_note = Note(
             title=title,
@@ -180,7 +198,8 @@ def post():
             code=code,
             description=clean_description,
             publisher=current_user.id,
-            file_path=file_path
+            file_path=file_path,
+            preview_path=preview_path
         )
         db.session.add(new_note)
         db.session.commit()
@@ -643,7 +662,7 @@ def post_edit(post_id):
 
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required
-def delete(post_id):
+def delete_post(post_id):
     post = Note.query.get_or_404(post_id)
 
     if post.publisher != current_user.id:
@@ -660,6 +679,9 @@ def delete(post_id):
                 os.remove(file_path)
             else:
                 flash('File not found, but post deleted!', category='error')
+            if post.file_path.endswith('.pdf'):
+                preview_path = os.path.join(current_app.root_path, post.preview_path)
+                os.remove(preview_path)
         except Exception as e:
             flash(f"Failed to delete file: {e}", category='error')
 

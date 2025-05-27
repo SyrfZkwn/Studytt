@@ -270,14 +270,14 @@
 
 
 <div class="content-section">
-  {% for post in posts %}
+  {% for post in posts|reverse %}
   <div class="post">
     <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
       <div class="post-img">
-        {% if post.file_path %}
-          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% if post.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (post.preview_path or '') }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% else %}
-          <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% endif %}
       </div>
       <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
@@ -288,7 +288,7 @@
     </div>
   </div>
     {% else %}
-    <p>No notes to show.</p>
-    {% endfor %}
   </div>
+    <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h2>
+    {% endfor %}
 {% endblock %}

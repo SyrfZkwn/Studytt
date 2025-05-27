@@ -44,6 +44,7 @@ class Note(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
+    preview_path = db.Column(db.String(255))
     publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
     rating_ratio = db.Column(db.Float, default=0.0)
     total_comments = db.Column(db.Integer, default=0)

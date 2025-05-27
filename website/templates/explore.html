@@ -8,7 +8,7 @@
     .content-section {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1.5rem;
+        gap: 2rem;
         padding: 1rem;
         max-width: 85%;
     }
@@ -100,15 +100,16 @@
   {% endwith %}
 </div>
 
+{% if notes %}
 <div class="content-section">
-  {% for note in notes|reverse %}
+{% for note in notes|reverse %}
   <div class="post">
     <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
       <div class="post-img">
-        {% if note.file_path %}
-          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% if note.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% else %}
-          <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% endif %}
       </div>
       <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
@@ -118,9 +119,10 @@
       <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
     </div>
   </div>
-    {% else %}
-    <p>No notes to show.</p>
-    {% endfor %}
+{% endfor %}
 </div>
+{% else %}
+    <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
+{% endif %}
 
 {% endblock %}

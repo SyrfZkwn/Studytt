@@ -497,7 +497,7 @@ def reply_comment(comment_id):
     usernames = find_mentions(reply_body)
     for username in usernames:
         user = User.query.filter(func.lower(User.username) == username.lower()).first()
-        if user and user.id != current_user.id:
+        if user and user.id != current_user.id and comment.commenter_id != user.id:
             new_notification = Notification(
             notified_user_id=user.id,
             notifier_id = current_user.id,

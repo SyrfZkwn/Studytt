@@ -579,9 +579,24 @@
                   </button>
                 </form>
               
-                <button type="button" class="btn btn-outline-primary btn-sm reply-button" title="Reply">
-                  <i class="fa-solid fa-reply"></i>
-                </button>
+                <div class="a-comment" data-comment-id="{{ comment.id }}" data-username="{{ reply.user.username }}">
+                  <!-- Mention reply button -->
+                  <button type="button" class="btn btn-outline-primary btn-sm mention-reply-button" title="Mention Reply">
+                    <i class="fa-solid fa-at"></i> <!-- @ icon -->
+                  </button>
+                  
+                  <!-- Editor wrapper (hidden by default) -->
+                  <div id="reply-editor-wrapper-{{ comment.id }}" style="display: none;">
+                    <form id="reply-post-form-{{ comment.id }}" method="POST">
+                      <div class="toolbar">
+                        <!-- formatting buttons -->
+                      </div>
+                      <div id="reply-editor-content-{{ comment.id }}" contenteditable="true" class="editor"></div>
+                      <textarea id="reply-hidden-body-{{ comment.id }}" name="reply_body" hidden></textarea>
+                      <button type="submit">Post Reply</button>
+                    </form>
+                  </div>
+                </div>
 
               </div>
             </div>
@@ -737,5 +752,24 @@
         setTimeout(updateButtonStates, 100);
     });
   }); /*for reply text rich editor*/
+
+  document.querySelectorAll('.mention-reply-button').forEach(button => {
+    button.addEventListener('click', function () {
+      const commentElement = button.closest('.a-comment');
+      const commentId = commentElement.getAttribute('data-comment-id');
+      const username = commentElement.getAttribute('data-username');
+      const editorWrapper = document.getElementById(`reply-editor-wrapper-${commentId}`);
+      const editor = document.getElementById(`reply-editor-content-${commentId}`);
+
+      // Show the editor
+      editorWrapper.style.display = 'block';
+
+      // Pre-fill with @username and focus
+      if (!editor.innerHTML.includes(`@${username}`)) {
+        editor.innerHTML = `@${username} `;
+      }
+      editor.focus();
+    });
+  }); // for mention //
 </script>
 {% endblock %}

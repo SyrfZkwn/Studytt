@@ -31,10 +31,12 @@ class Question(db.Model):
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Can be null for room messages
-    room_code = db.Column(db.String(10), nullable=True)  # For room-based messages
-    message = db.Column(db.Text)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    content = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
+
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    receiver = db.relationship('User', foreign_keys=[receiver_id])
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +46,7 @@ class Note(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
-    preview_path = db.Column(db.String(255))
+    preview_path = db.Column(db.String(255), default=None)
     publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
     rating_ratio = db.Column(db.Float, default=0.0)
     total_comments = db.Column(db.Integer, default=0)

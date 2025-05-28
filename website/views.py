@@ -9,7 +9,7 @@ from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, 
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
-from flask_socketio import SocketIO, join_room, leave_room, send
+from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from . import socketio
 from string import ascii_uppercase
 import random
@@ -111,61 +111,45 @@ def chat_room(user_id):
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
         return redirect(url_for('views.chat_home'))
-
-    room_code = generate_room_code(current_user.id, user_id)
-    if room_code not in rooms:
-        rooms[room_code] = {"members": 0, "messages": []}
-
-    session["room"] = room_code
-    session["name"] = current_user.username
-    session["chat_with"] = user.username
-
-    return render_template("room.html", code=room_code, messages=rooms[room_code]["messages"], chat_with=user)
-
-@socketio.on("message")
-def message(data):
-    room = session.get("room")
-    name = session.get("name")
     
-    if not room or room not in rooms:
-        return 
-    
-    content = {
-        "name": name,
-        "message": data["data"]
-    }
-    
-    send(content, to=room)
-    rooms[room]["messages"].append(content)
+    messages = ChatMessage.query.filter(
+        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user_id)) |
+        ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == current_user.id))
+    ).order_by(ChatMessage.date.asc()).all()
 
-@socketio.on("connect")
-def connect():
-    room = session.get("room")
-    name = session.get("name")
-    
-    if not room or not name:
-        return
-    
-    if room not in rooms:
-        return
-    
-    join_room(room)
-    send({"name": "System", "message": f"{name} has joined the room"}, to=room)
-    rooms[room]["members"] += 1
+    return render_template("room.html", messages=messages, chat_with=user)
 
-@socketio.on("disconnect")
-def disconnect():
-    room = session.get("room")
-    name = session.get("name")
-    leave_room(room)
+@socketio.on('send_message')
+def handle_send_message(data):
+    sender_id = current_user.id
+    receiver_id = data['receiver_id']
+    content = data['content']
 
-    if room in rooms:
-        rooms[room]["members"] -= 1
-        if rooms[room]["members"] <= 0:
-            del rooms[room]
-    
-    send({"name": name, "message": "has left the room"}, to=room)
+    # Save message to DB
+    message = ChatMessage(sender_id=sender_id, receiver_id=receiver_id, content=content)
+    db.session.add(message)
+    db.session.commit()
 
+    room = f"user_{receiver_id}"
+    emit('receive_message', {
+        'sender_id': sender_id,
+        'content': content,
+        'date': message.date.strftime('%Y-%m-%d %H:%M')
+    }, room=room)
+
+    # Optional: send a notification to receiver
+    emit('notification', {
+        'notified_user_id': receiver_id,
+        'notifier_id': sender_id,
+        'type': 'chat',
+        'message': f"New message from {current_user.username}"
+    }, room=room)
+
+@socketio.on('connect')
+def on_connect():
+    if current_user.is_authenticated:
+        room = f"user_{current_user.id}"
+        join_room(room)
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required

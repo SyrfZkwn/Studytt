@@ -876,6 +876,6 @@ def explore():
     notes = Note.query.all()
     return render_template("explore.html", current_user=current_user, notes=notes)
 
-@views.route('/post_deleted')
+@views.route('/post_not_found')
 def deleted_post():
     return render_template('post_deleted.html')

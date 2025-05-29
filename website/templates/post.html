@@ -113,7 +113,49 @@
         border-radius: 20px;
         overflow: hidden;
     }
+
+    .file-upload-wrapper {
+        position: relative;
+        display: inline-block;
+        width: max-content;
+    }
+
+    input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
 </style>
+
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
 
 <div class="container">
     <form method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;" id="post-form">
@@ -157,14 +199,17 @@
                 <button type="button" class="format-btn" data-format="underline" title="Underline"><u>U</u></button>
                 <button type="button" class="format-btn" data-format="strikethrough" title="Strikethrough"><strike>S</strike></button>
             </div>
-            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Type a description"></div>
+            <div class="editor-content" id="editor-content" contenteditable="true" placeholder="Write a description"></div>
         </div>
 
-        {{ form.file(id="fileInput") }}
+        <div class="file-upload-wrapper">
+            <label class="file-upload-button btn btn-primary" for="fileInput">Choose File</label>
+            {{ form.file(id="fileInput") }}
+        </div>
 
         <div id="filePreview" style="position: relative; margin: 10px 0; overflow: hidden;"></div>
 
-        <button type="submit" class="btn btn-primary" style="margin: 10px 0 20px 0;">Submit</button>
+        <button type="submit" class="btn" style="margin: 10px 0 20px 0; background-color: #f15c22; color: #fff;">Submit Post</button>
 
     </form>
 </div>
@@ -261,11 +306,12 @@
 
             const imgClear = document.createElement('img');
             imgClear.src = fileUrl;
-            imgClear.style.width = 'auto';
+            imgClear.style.width = '100%';
             imgClear.style.height = 'auto';
-            imgClear.style.maxWidth = '350px';
-            imgClear.style.maxHeight = '350px';
+            imgClear.style.maxHeight = '400px';
+            imgClear.style.minHeight = '400px';
             imgClear.style.zIndex = '2';
+            imgClear.style.objectFit = 'contain';
 
             previewBackground.appendChild(imgBlur);
             previewImage.appendChild(imgClear);
@@ -300,6 +346,17 @@
             fileInfo.style.borderRadius = '10px';
             fileInfo.innerHTML = `<p>File selected: <strong>${file.name}</strong></p>`;
             filePreview.appendChild(fileInfo);
+        }
+    });
+
+    const fileInput = document.getElementById('fileInput');
+    const fileLabel = document.querySelector('.file-upload-button');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+        fileLabel.textContent = fileInput.files[0].name;
+        } else {
+        fileLabel.textContent = 'Choose File';
         }
     });
 </script>

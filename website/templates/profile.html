@@ -48,7 +48,18 @@
   }
 
   .stat {
-    font-size: 1rem;
+    font-size: 0.8rem;
+    display: block;
+  padding: 0.5rem 1.5rem;
+  background-color: #1b4f83;
+  color: #fdf3de;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  width: 100%;
+  outline-style: solid;
+  outline-color: #f15c22;
   }
 
   .edit-btn {
@@ -104,7 +115,7 @@
 }
 
   .post {
-  background-color: #fff;
+  background-color: #1b4f83;
   padding: 1rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -116,6 +127,11 @@
   max-width: 300px;
 }
 
+  .post a {
+    text-decoration: none;
+    color: #f15c22;
+  }
+
 .post:hover {
   transform: translateY(-4px);
 }
@@ -123,7 +139,7 @@
 .post-img {
   width: 100%;
   aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
-  background-color: #ccc;
+  background-color: #1b4f83;
   border-radius: 10px;
   margin-bottom: 0.5rem;
   overflow: hidden;
@@ -166,8 +182,43 @@
             margin: 0 auto;
           }
 
+  #username {
+    color: #2a83db;
+    transition: transform 0.2s;
+  }
+
+  #username:hover {
+    color: #1263b4;
+    transform: translateY(-4px);
+  }
+
 </style>
 
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
 
   <div class="profile-header">
     <img class="rounded-circle account-img profile-pic" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
@@ -181,13 +232,30 @@
         <div class="stat">Points: {{ points }}</div>
         <div class="stat">
           {% if notes_count > 0 %}
-            Total Rating: {{ (points / notes_count) }}
+            Total Rating: {{ ((points / notes_count) | round(1)) if ratings_count != 0 else '' }}
           {% else %}
           Total Rating: 0
           {% endif %}
         </div>
+       
       </div>
-      <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      <div class="stats">{{user.biography}}</div>
+      {% if user.id != current_user.id %}
+        <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;">
+          {% if is_following %}
+            <button type="button" class="edit-btn" disabled>Followed</button>
+          {% else %}
+            <button type="submit" class="edit-btn">Follow</button>
+          {% endif %}
+        </form>
+        {% if is_following %}
+          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="edit-btn" style="background-color: #ff0000; margin-left: 10px;">Unfollow</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+      {% endif %}
     </div>
   </div>
 
@@ -201,26 +269,26 @@
 </div>
 
 
-  <div class="content-section">
-    {% for post in posts %}
-    <div class="post">
-      <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
-        <div class="post-img">
-          {% if post.file_path %}
-            <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% else %}
-            <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
-          {% endif %}
-        </div>
-        <div class="post-title">{{ post.title }}</div>
-      </a>
-      <div class="post-footer">
-        <span>Likes 0</span>
-        <span>💬 0</span>
+<div class="content-section">
+  {% for post in posts|reverse %}
+  <div class="post">
+    <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
+      <div class="post-img">
+        {% if post.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (post.preview_path or '') }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% else %}
+          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% endif %}
       </div>
+      <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
+    </a>
+    <div class="post-footer">
+      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
+      <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
     </div>
-    {% else %}
-    <p>No posts to show.</p>
-    {% endfor %}
   </div>
+    {% else %}
+  </div>
+    <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h2>
+    {% endfor %}
 {% endblock %}

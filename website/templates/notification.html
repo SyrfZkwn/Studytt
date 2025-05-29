@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+
+<style>
+
+    .center-me {
+      color: #f15c22;
+      margin: 0 auto;
+      width: fit-content;
+    }
+
+    .notification-section {
+      width: 85%;
+      background-color: #1b4f83;
+      color: #fff;
+      padding: 30px 30px 30px 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      margin: 0 auto 0 auto;
+    }
+
+    .notification {
+      margin-bottom: 10px;
+    }
+
+    .pfp {
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      margin-right: 10px; 
+      vertical-align: middle;
+    }
+
+    .notifier-info a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .notifier-info a.profile:hover {
+      color: #f15c22;
+      transition: all 0.2s ease;
+    }
+
+    a.go-to {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    a.go-to:hover {
+      color: #f15c22;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    a.read-noti:hover {
+      background-color: #4291d9; /* lighter blue for hover */
+      color: #ffffff; /* stay white or optionally a soft yellow like #fff3cd */
+      text-decoration: none;
+      transition: 0.2s ease;
+    }
+
+    a.read-noti {
+      color: #ffffff;
+      background-color: #2d7ac0;
+      padding: 0px 15px;
+      border-radius: 10px;
+      text-decoration: none;
+      float: right;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    a.delete-noti:hover {
+      background-color: #b02a37;
+      color: #ffffff;
+      text-decoration: none;
+      transition: 0.2s ease;
+    }
+
+    a.delete-noti {
+      color: #ffffff;
+      background-color: #dc3545;
+      padding: 0px 15px;
+      border-radius: 10px;
+      text-decoration: none;
+      float: right;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .read-all {
+      background-color: #1b4f83;
+      color: #f15c22;
+      position: absolute;
+      right: 0;
+      top: 0;
+      padding: 0px 20px;
+      border-radius: 30px;
+    }
+
+    a.read-all:hover {
+      color: #fff;
+      background-color: #f15c22;
+      transition: 0.2s ease;
+      text-decoration: none;
+    }
+
+</style>
+
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<div style="width: 85%; position: relative;" class="mt-4 mb-2 mx-auto">
+  <h1 class="center-me">Notifications</h1>
+  <a href="{{ url_for('views.read_notification_all') }}"
+    class="delete-noti mx-1 px-4 py-2 rounded-lg shadow-sm text-white d-flex align-items-center gap-2 read-all"
+    title="Read All Notifications"
+    style="display: inline-flex; align-items: center; background-color: #2d7ac0; color: white; text-decoration: none; border-radius: 8px; padding: 8px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 500;">
+    
+    <span style="margin-right: 6px;">Read All</span>
+    <span class="material-symbols-outlined">notification_multiple</span>
+  </a>
+</div>
+
+<div class="notification-section my-4">
+{% if unread_notifications %}
+{% for n in unread_notifications %}
+  <div class="notification mb-4 {{ 'unread' if not n.is_read else '' }}">
+
+      <h3 class="notifier-info mb-3">
+        <a class="profile" href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}">
+          <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (n.notifier.image_profile if n.notifier.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+          {{ n.notifier.username }}
+        </a>
+        <a href="{{ url_for('views.read_notification', notification_id=n.id) }}" class="read-noti" title="Mark as read">
+          <h4><span class="material-symbols-outlined" style="font-size: xx-large;">mark_email_read</span></h4>
+        </a>
+      </h3>
+
+      <div style="display: flex;">
+        <a href="{{ url_for('views.go_to_notification', notification_id=n.id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+      </div>
+
+  </div>
+{% endfor %}
+{% else %}
+  <h3 class="notifier-info my-3">
+    No new notifications.
+  </h3>
+{% endif %}
+</div>
+
+<div style="width: 85%; position: relative;" class="mt-4 mb-2 mx-auto">
+  <h1 class="center-me">Read Notifications</h1>
+  <a href="{{ url_for('views.delete_all_notification') }}"
+    class="delete-noti mx-1 px-4 py-2 rounded-lg shadow-sm text-white bg-danger d-flex align-items-center gap-2 read-all"
+    title="Delete All Notifications"
+    onclick="return confirm('Are you sure you want to delete all notifications?')"
+    style="display: inline-flex; align-items: center; background-color: #dc3545; color: white; text-decoration: none; border-radius: 8px; padding: 8px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 500;">
+    
+    <span style="margin-right: 6px;">Delete All</span>
+    <span class="material-symbols-outlined" style="font-size: 24px;">delete_sweep</span>
+  </a>
+</div>
+
+<div class="notification-section my-4" style="color: #B0B0B0;">
+{% if read_notifications %}
+{% for n in read_notifications %}
+  <div class="notification mb-4 {{ 'read' if n.is_read else '' }}">
+
+      <h3 class="notifier-info mb-3">
+        <a class="profile" href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}">
+          <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (n.notifier.image_profile if n.notifier.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+          {{ n.notifier.username }}
+        </a>
+        <a href="{{ url_for('views.delete_notification', notification_id=n.id) }}" class="delete-noti mx-1" title="Delete" onclick="return confirm('Are you sure you want to delete this notification?')">
+          <h4><span class="material-symbols-outlined" style="font-size: xx-large;">delete</span></h4>
+        </a>
+        <a href="{{ url_for('views.unread_notification', notification_id=n.id) }}" class="read-noti mx-1" title="Mark as unread">
+          <h4><span class="material-symbols-outlined" style="font-size: xx-large;">mark_email_unread</span></h4>
+        </a>
+      </h3>
+
+      <div style="display: flex;">
+        {% if n.type == 'follow' %} <!--leads user to follower profile -->
+        <a href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+
+        {% elif n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
+        <a href="{{ url_for('views.post_detail', post_id=n.post_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+
+        {% elif n.type in ['answer', 'pin'] %} <!--leads user to related question -->
+        <a href="#" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+        {% endif %}
+      </div>
+      
+  </div>
+{% endfor %}
+{% else %}
+  <h3 class="notifier-info my-3">
+    No new notifications.
+  </h3>
+{% endif %}
+</div>
+{% endblock %}

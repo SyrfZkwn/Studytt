@@ -18,7 +18,6 @@
     border-radius: 30px;
     border: #1b4f83 solid 3px;
     background-color: #1b4f83;
-    margin-bottom: 4rem;
     padding: 1rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
   }
@@ -73,7 +72,6 @@
   .title-container {
     width: 80%;
     margin: 5px auto;
-    border-radius: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -82,10 +80,10 @@
   .username-container {
     width: 80%;
     margin: 10px auto;
-    border-radius: 10px;
     overflow: hidden;
     display: flex;
     align-items: center;
+    font-size: large;
   }
 
   .publisher-container {
@@ -131,13 +129,6 @@
     color: inherit;
   }
 
-  .post-content:hover {
-    background-color: #246aa7;
-    box-shadow: 0 0 20px rgba(36, 106, 167, 0.5);
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-  }
-
   .flash {
     margin-top: 10px;
   }
@@ -174,23 +165,24 @@
   {% endwith %}
 </div>
 
-<div class="post-section">
-
   {% if notes %}
     {% for note in notes|sort(attribute='date', reverse=true) %}
+    <div class="post-section">
       <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
         <div class="post-content">
 
           <div class="username-container">
-            by {{ note.user.username }}
+            <img src="{{ url_for('static', filename='profile_pics/' + (note.user.image_profile if note.user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+            {{ note.user.username }} <span class="mx-2">·</span> {{ note.date | time_ago }}
           </div>
           <div class="title-container">
             {{ note.title }} {{ note.code }} | Chapter : {{ note.chapter }}
           </div>
 
           {% if note.file_path.endswith('.pdf') %}
-            <div class="file-container">
-              <embed class="uploaded-pdf" src="{{ '/' + note.file_path }}" type="application/pdf" width="100%" height="500px" />
+            <div class="image-container">
+              <img class="background-image" src="{{ '/' ~ (note.preview_path or '') }}" alt="PDF Preview">
+              <img class="uploaded-image" src="{{ '/' ~ (note.preview_path or '') }}" alt="PDF Preview">
             </div>
           {% else %}
             <div class="image-container">
@@ -204,11 +196,10 @@
           </div>
         </div>
       </a>
+    </div>
     {% endfor %}
   {% else %}
-    <h1 style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Welcome! No notes yet. <a class="post-text" href="{{ url_for('views.post') }}">Post something!</a></h1>
+    <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
   {% endif %}
-
-</div>
 
 {% endblock %}

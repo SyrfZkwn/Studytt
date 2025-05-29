@@ -1,26 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Chat{% endblock %}
 
 {% block content %}
-<div class="content">
-    <form method="POST" action="{{ url_for('views.chat_home') }}">
-        <h3>Enter the Chat Room</h3>
-
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
-
-        <div>
-            <label>Name:</label>
-            <input type="text" placeholder="Pick a name!" name="name" value="{{name}}" />
-        </div>
-
-        <div class="join">
-            <input type="text" placeholder="Room Code" name="code" value="{{code}}" />
-            <button type="submit" name="join" value="true">Join a room</button>
-        </div>
-
-        <button type="submit" name="create" value="true" class="create-btn">Create a Room</button>
-    </form>
-</div>
+<h2>Chat List</h2>
+<ul>
+    {% for user in followed_users %}
+        <li><a href="{{ url_for('views.chat_room', user_id=user.id) }}">{{ user.username }}</a></li>
+    {% else %}
+        <li>You are not following anyone yet.</li>
+    {% endfor %}
+</ul>
 {% endblock %}

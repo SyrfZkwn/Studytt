@@ -17,7 +17,7 @@
   .qna-container {
     max-width: 70%;
     margin: 2rem auto;
-    background-color: #fff;
+    background-color: var(--bg-primary);
     padding: 2rem;
     border-radius: 12px;
     box-shadow: var(--shadow);
@@ -65,7 +65,7 @@
   }
   
   .toolbar {
-    background-color: #f0f0f0;
+    background-color:var(--bg-primary);
     padding: 8px;
     border-bottom: 1px solid #ddd;
     border-radius: 20px 20px 0 0;
@@ -94,7 +94,7 @@
   
   .editor-content {
     padding: 15px;
-    background-color: var(--light-gray);
+    background-color: var(--bg-primary);
     min-height: 100px;
     border-radius: 0 0 20px 20px;
     overflow-y: auto;
@@ -143,7 +143,7 @@
   }
   
   .question-item {
-    background-color: #fff;
+    background-color: var(--bg-primary);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     border-radius: 12px;
@@ -172,7 +172,7 @@
   
   /* Comments styling */
   .comments-section {
-    background-color: var(--light-gray);
+    background-color: var(--bg-primary);
     padding: 15px;
     border-radius: 10px;
     margin-top: 15px;
@@ -187,7 +187,7 @@
   .comment {
     padding: 10px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #f8f8f8;
   }
   
   .comment p {
@@ -307,6 +307,11 @@
     gap: 5px;
     margin-top: 5px;
   }
+
+  .question-title-input {
+    background-color: var(--bg-primary);
+    text-emphasis-color: var(white);
+  }
 </style>
 
 <div class="flash">
@@ -340,7 +345,7 @@
         <h1>Ask a Question</h1>
         <form method="POST" id="post-form">
             <label>Title:</label>
-            <input type="text" name="title" required placeholder="What would you like to know?">
+            <input class="question-title-input" type="text" name="title" required placeholder="What would you like to know?">
             <textarea id="hidden-body" name="body" style="display:none;"></textarea>
             
             <div class="editor-container">

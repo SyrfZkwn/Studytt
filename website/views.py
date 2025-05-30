@@ -9,7 +9,7 @@ from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, 
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
-from flask_socketio import SocketIO, join_room, leave_room, send
+from flask_socketio import SocketIO, join_room, leave_room, send, emit 
 from . import socketio
 from string import ascii_uppercase
 import random
@@ -19,6 +19,12 @@ from PIL import Image
 from sqlalchemy.sql import func
 import bleach
 import re
+from sqlalchemy import or_, and_
+import random
+from string import ascii_uppercase
+from datetime import datetime
+from . import db, socketio
+
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -56,6 +62,7 @@ class UploadFileForm(FlaskForm):
 def home():
     notes = Note.query.all()
     return render_template("home.html", user=current_user, notes=notes)
+
 
 rooms = {}
 
@@ -153,6 +160,8 @@ def disconnect():
     send({"name": name, "message": "has left the room"}, to=room)
 
 
+
+
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
 def post():
@@ -170,6 +179,8 @@ def post():
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
         absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
         file.save(absolute_path)
+
+      
 
         new_note = Note(
             title=title,
@@ -738,3 +749,26 @@ def search():
     ).all()
 
     return render_template("search_results.html", users=users, notes=notes, query=query)
+
+
+@views.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        theme = request.form.get('theme', 'light')
+        current_user.theme_preference = theme
+        db.session.commit()
+        flash('Settings updated successfully!', 'success')
+        return redirect(url_for('views.settings'))
+    
+    return render_template('settings.html')
+
+
+@views.route('/toggle_theme', methods=['POST'])
+@login_required
+def toggle_theme():
+    current_theme = getattr(current_user, 'theme_preference', 'light')
+    new_theme = 'dark' if current_theme == 'light' else 'light'
+    current_user.theme_preference = new_theme
+    db.session.commit()
+    return redirect(request.referrer or url_for('views.home'))

@@ -19,13 +19,13 @@
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
-    
+
     // Debug connection
     socket.on('connect', () => {
         console.log('Connected to Socket.IO');
         messagesDiv.innerHTML += '<p><em>Connected to chat</em></p>';
     });
-    
+
     // Send message when button is clicked
     sendButton.addEventListener('click', () => {
         const message = messageInput.value.trim();
@@ -35,19 +35,76 @@
             messageInput.value = '';
         }
     });
-    
+
     // Handle enter key
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             sendButton.click();
         }
     });
-    
+
     // Receive messages
     socket.on('message', (data) => {
         console.log('Received message:', data);
-        messagesDiv.innerHTML += `<p><strong>${data.name}</strong>: ${data.message}</p>`;
+        messagesDiv.innerHTML += <p><strong>${data.name}</strong>: ${data.message}</p>;
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     });
 </script>
+<style>
+    #chat-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    #messages {
+        height: 300px;
+        overflow-y: scroll;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f9f9f9;
+    }
+
+    #messages p {
+        margin: 8px 0;
+        padding: 6px 10px;
+        background-color: #e6f3ff;
+        border-radius: 6px;
+    }
+
+    #messages p strong {
+        color: #2c3e50;
+    }
+
+    #input-area {
+        display: flex;
+        gap: 10px;
+    }
+
+    #message-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    #send-button {
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    #send-button:hover {
+        background-color: #2980b9;
+    }
+</style>
 {% endblock %}

@@ -36,6 +36,10 @@ class ChatMessage(db.Model):
     message = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
 
+
+
+
+
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(50))
@@ -60,6 +64,10 @@ class User(db.Model, UserMixin):
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
+    theme_preference = db.Column(db.String(10), default='light')
+
+    messages_sent = db.relationship('ChatMessage', foreign_keys='ChatMessage.sender_id', backref='sender', lazy=True)
+    messages_received = db.relationship('ChatMessage', foreign_keys='ChatMessage.receiver_id', backref='receiver', lazy=True)
 
 
     followed = db.relationship(

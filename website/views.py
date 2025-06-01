@@ -5,11 +5,11 @@ from wtforms import FileField, SubmitField, StringField, TextAreaField
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
-from flask_socketio import SocketIO, join_room, leave_room, send
+from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from . import socketio
 from string import ascii_uppercase
 import random
@@ -19,9 +19,8 @@ from PIL import Image
 from sqlalchemy.sql import func
 import bleach
 import re
-from flask import jsonify
-from .models import ChatMessage
-
+from pdf2image import convert_from_path
+from pathlib import Path
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -46,8 +45,20 @@ def super_clean(html):
 
     return text_only
 
+def find_mentions(text):
+    return re.findall(r'@([\w.]+)', text) #find mentions
+
 views = Blueprint('views', __name__, template_folder='../templates')
 
+def generate_pdf_preview(pdf_rel_path, preview_rel_path):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+
+    abs_pdf_path = os.path.join(base_dir, pdf_rel_path)
+    abs_preview_path = os.path.join(base_dir, preview_rel_path)
+
+    pages = convert_from_path(abs_pdf_path, first_page=1, last_page=1)
+    os.makedirs(os.path.dirname(abs_preview_path), exist_ok=True)
+    pages[0].save(abs_preview_path, 'JPEG')
 
 class UploadFileForm(FlaskForm):
         file = FileField("File", validators=[InputRequired()])
@@ -117,73 +128,45 @@ def chat_room(user_id):
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
         return redirect(url_for('views.chat_home'))
+    
+    messages = ChatMessage.query.filter(
+        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user_id)) |
+        ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == current_user.id))
+    ).order_by(ChatMessage.date.asc()).all()
 
-    room_code = generate_room_code(current_user.id, user_id)
-    messages = ChatMessage.query.filter_by(room_code=room_code).order_by(ChatMessage.date.asc()).all()
+    return render_template("room.html", messages=messages, chat_with=user)
 
-    session["room"] = room_code
-    session["name"] = current_user.username
-    session["chat_with"] = user.username
-
-    return render_template("room.html", code=room_code, messages=messages, chat_with=user)
-
-
-@socketio.on("message")
-def handle_message(data):
-    room = session.get("room")
-    sender_name = session.get("name")
+@socketio.on('send_message')
+def handle_send_message(data):
     sender_id = current_user.id
-    chat_with = session.get("chat_with")
+    receiver_id = data['receiver_id']
+    content = data['content']
 
-    if not room or not sender_name:
-        return
-
-    # Save to database
-    receiver = User.query.filter_by(username=chat_with).first()
-    if receiver:
-        msg = ChatMessage(
-            sender_id=sender_id,
-            receiver_id=receiver.id,
-            room_code=room,
-            message=data["data"]
-        )
-        db.session.add(msg)
-        db.session.commit()
-
-    # Prepare message for broadcast
-    content = {
-        "name": sender_name,
-        "message": data["data"]
-    }
-
-    send(content, to=room)
-
-
-
-@socketio.on("disconnect")
-def disconnect():
-    room = session.get("room")
-    name = session.get("name")
-    leave_room(room)
-
-    if room in rooms:
-        rooms[room]["members"] -= 1
-        if rooms[room]["members"] <= 0:
-            del rooms[room]
-    
-    send({"name": name, "message": "has left the room"}, to=room)
-
-@views.route('/delete-message/<int:message_id>', methods=['POST'])
-@login_required
-def delete_message(message_id):
-    msg = ChatMessage.query.get_or_404(message_id)
-    
-    if msg.sender_id != current_user.id:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    db.session.delete(msg)
+    # Save message to DB
+    message = ChatMessage(sender_id=sender_id, receiver_id=receiver_id, content=content)
+    db.session.add(message)
     db.session.commit()
-    return jsonify({'success': True}), 200
+
+    room = f"user_{receiver_id}"
+    emit('receive_message', {
+        'sender_id': sender_id,
+        'content': content,
+        'date': message.date.strftime('%Y-%m-%d %H:%M')
+    }, room=room)
+
+    # Optional: send a notification to receiver
+    emit('notification', {
+        'notified_user_id': receiver_id,
+        'notifier_id': sender_id,
+        'type': 'chat',
+        'message': f"New message from {current_user.username}"
+    }, room=room)
+
+@socketio.on('connect')
+def on_connect():
+    if current_user.is_authenticated:
+        room = f"user_{current_user.id}"
+        join_room(room)
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
@@ -202,6 +185,13 @@ def post():
         file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
         absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
         file.save(absolute_path)
+        preview_path = None
+
+        # ✅ Generate preview if it's a PDF
+        if filename.lower().endswith('.pdf'):
+            preview_filename = filename.rsplit('.', 1)[0] + '_preview.jpg'
+            preview_path = os.path.join(current_app.config['PDF_PREVIEW_FOLDER'], preview_filename).replace('\\', '/')
+            generate_pdf_preview(file_path, preview_path)
 
         new_note = Note(
             title=title,
@@ -209,10 +199,25 @@ def post():
             code=code,
             description=clean_description,
             publisher=current_user.id,
-            file_path=file_path
+            file_path=file_path,
+            preview_path=preview_path
         )
-
         db.session.add(new_note)
+        db.session.commit()
+
+        usernames = find_mentions(clean_description) #mention user
+        for username in usernames:
+            user = User.query.filter(func.lower(User.username) == username.lower()).first()
+            if user and user.id != current_user.id:
+                new_notification = Notification(
+                notified_user_id=user.id,
+                notifier_id = current_user.id,
+                type='mention',
+                message=f"You were mentioned in description <b>'{title} {code} | {chapter}'</b>.",
+                post_id = new_note.id
+                )
+            db.session.add(new_notification)
+
         db.session.commit()
 
         flash('Note posted!', category='success')
@@ -296,12 +301,23 @@ def saved():
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
-    post = Note.query.get_or_404(post_id)
+    post = Note.query.get(post_id)
+    if not post:
+        flash("The post you're looking for doesn't exist.", "error")
+        return redirect(url_for('views.deleted_post'))
+    
     post_author = User.query.get(post.publisher)
 
     ratings = post.ratings  # List of Rating objects
     ratings_count = len(ratings)
     total_points = sum(r.value for r in ratings)
+
+    if ratings_count == 0:
+        post.rating_ratio = 0.0
+    else:
+        total_points = sum(r.value for r in ratings)
+        post.rating_ratio = round(total_points / ratings_count, 1)
+    db.session.commit()
 
     if request.method == 'POST':
         # If the rating form was submitted
@@ -325,7 +341,8 @@ def post_detail(post_id):
                     notified_user_id=post.publisher,
                     notifier_id = current_user.id,
                     type='rating',
-                        message=f"Changed the rating on <b>'{post.title} {post.code} | {post.chapter}'</b> to <b>{rating_value} point(s)!</b>"
+                    message=f"Changed the rating on <b>'{post.title} {post.code} | {post.chapter}'</b> to <b>{rating_value} point(s)!</b>",
+                    post_id = post_id
                     )
                 db.session.add(new_notification)
             else:
@@ -336,7 +353,8 @@ def post_detail(post_id):
                     notified_user_id=post.publisher,
                     notifier_id = current_user.id,
                     type='rating',
-                        message=f"Rated your post <b>'{post.title} {post.code} | {post.chapter}'</b> with <b>{rating_value} point(s)!</b>"
+                    message=f"Rated your post <b>'{post.title} {post.code} | {post.chapter}'</b> with <b>{rating_value} point(s)!</b>",
+                    post_id = post_id
                     )
                 db.session.add(new_notification)
 
@@ -366,18 +384,38 @@ def post_detail(post_id):
                         notified_user_id=post.publisher,
                         notifier_id = current_user.id,
                         type='comment',
-                            message=f"Commented '{short_comment}' on your post <b>'{post.title} {post.code} | {post.chapter}'</b>."
+                        message=f"Commented '{short_comment}' on your post <b>'{post.title} {post.code} | {post.chapter}'</b>.",
+                        post_id = post_id
                         )
                     db.session.add(new_notification)
+
+                usernames = find_mentions(clean_comment_body) #mention user
+                for username in usernames:
+                    user = User.query.filter(func.lower(User.username) == username.lower()).first()
+                    if user and user.id != current_user.id:
+                        new_notification = Notification(
+                        notified_user_id=user.id,
+                        notifier_id = current_user.id,
+                        type='mention',
+                        message=f"You were mentioned in a comment in <b>'{post.title} {post.code} | {post.chapter}'</b>.",
+                        post_id = post_id
+                        )
+                        db.session.add(new_notification)
+
+                comments = Comment.query.filter_by(note_id=post_id).all()
+
+                if comments:
+                    post.total_comments += 1
+                else:
+                    post.total_comments = 0
+
                 db.session.commit()
                 flash('Comment posted!', category='success')
             else:
                 flash('Comment cannot be empty.', category='error')
 
             return redirect(url_for('views.post_detail', post_id=post_id))
-
         
-
     comments = Comment.query.filter_by(note_id=post_id).all()
     
     return render_template("post_detail.html", post=post, ratings_count=ratings_count, total_points=total_points, comments=comments)
@@ -387,16 +425,19 @@ def post_detail(post_id):
 def delete_comment (comment_id):
     comment = Comment.query.get_or_404(comment_id)
     post_id = comment.note_id
+    post = Note.query.get_or_404(post_id)
 
-    if comment.user_id != current_user.id:
+    if comment.commenter_id != current_user.id:
         flash ('You can only delete your own comments.', 'error')
         return redirect(url_for('views.post_detail', post_id = post_id))
-    
 
     db.session.delete(comment)
     db.session.commit()
-    flash('Comment deleted!', 'success')
 
+    post.total_comments -= 1
+    db.session.commit()
+
+    flash('Comment deleted!', 'success')
     return redirect(url_for('views.post_detail', post_id = post_id))
 
 @views.route('/vote_comment/<int:comment_id>', methods=['POST'])
@@ -405,7 +446,7 @@ def vote_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     vote_value = int(request.form.get('vote'))  # should be 1 or -1
 
-    existing_vote = CommentVote.query.filter_by(user_id=current_user.id, comment_id=comment_id).first()
+    existing_vote = CommentVote.query.filter_by(voter_id=current_user.id, comment_id=comment_id).first()
 
     if existing_vote:
         if existing_vote.value == vote_value:
@@ -413,7 +454,27 @@ def vote_comment(comment_id):
         else:
             existing_vote.value = vote_value  # switch vote
     else:
-        new_vote = CommentVote(user_id=current_user.id, comment_id=comment_id, value=vote_value)
+        new_vote = CommentVote(voter_id=current_user.id, comment_id=comment_id, value=vote_value)
+        db.session.add(new_vote)
+
+    db.session.commit()
+    return redirect(request.referrer or url_for('views.home'))
+
+@views.route('/vote_reply/<int:reply_id>', methods=['POST'])
+@login_required
+def vote_reply(reply_id):
+    reply = Reply.query.get_or_404(reply_id)
+    vote_value = int(request.form.get('vote'))  # should be 1 or -1
+
+    existing_vote = ReplyVote.query.filter_by(voter_id=current_user.id, reply_id=reply_id).first()
+
+    if existing_vote:
+        if existing_vote.value == vote_value:
+            db.session.delete(existing_vote)  # toggle vote (undo)
+        else:
+            existing_vote.value = vote_value  # switch vote
+    else:
+        new_vote = ReplyVote(voter_id=current_user.id, reply_id=reply_id, value=vote_value)
         db.session.add(new_vote)
 
     db.session.commit()
@@ -425,6 +486,8 @@ def reply_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
     reply_body = request.form.get('reply_body')
     clean_reply_body = clean(reply_body)
+    post_id = comment.note_id
+    post = Note.query.get_or_404(post_id)
 
     if not clean_reply_body or not clean_reply_body.strip():
         flash("Reply cannot be empty.", "error")
@@ -439,14 +502,38 @@ def reply_comment(comment_id):
 
     super_clean_reply_body = super_clean(reply_body)
     short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
-    if comment.user.id != current_user.id:
+        
+    if comment.commenter_id != current_user.id:
         new_notification = Notification(
             notified_user_id=comment.user.id,
             notifier_id = current_user.id,
             type='reply',
-            message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>."
+            message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
+            post_id = comment.note.id
             )
         db.session.add(new_notification)
+
+    # Detect @mentions
+    usernames = find_mentions(reply_body)
+    for username in usernames:
+        user = User.query.filter(func.lower(User.username) == username.lower()).first()
+        if user and user.id != current_user.id and comment.commenter_id != user.id:
+            new_notification = Notification(
+            notified_user_id=user.id,
+            notifier_id = current_user.id,
+            type='mention',
+            message=f"You were mentioned in a reply in <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
+            post_id = comment.note.id
+            )
+            db.session.add(new_notification)
+
+    replies = Reply.query.filter_by(comment_id=comment_id).all()
+
+    if comment:
+        post.total_comments += 1
+    else:
+        post.total_comments = 0
+
     db.session.commit()
     flash("Reply posted!", "success")
     return redirect(url_for('views.post_detail', post_id=comment.note_id))
@@ -456,6 +543,7 @@ def reply_comment(comment_id):
 def delete_reply (reply_id):
     reply = Reply.query.get_or_404(reply_id)
     post_id = reply.comment.note_id
+    post = Note.query.get_or_404(post_id)
 
     if reply.user_id != current_user.id:
         flash ('You can only delete your own comments.', 'error')
@@ -465,6 +553,9 @@ def delete_reply (reply_id):
     db.session.delete(reply)
     db.session.commit()
     flash('Reply deleted!', 'success')
+
+    post.total_comments -= 1
+    db.session.commit()
 
     return redirect(url_for('views.post_detail', post_id = post_id))
 
@@ -573,7 +664,7 @@ def post_edit(post_id):
 
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required
-def delete(post_id):
+def delete_post(post_id):
     post = Note.query.get_or_404(post_id)
 
     if post.publisher != current_user.id:
@@ -590,6 +681,9 @@ def delete(post_id):
                 os.remove(file_path)
             else:
                 flash('File not found, but post deleted!', category='error')
+            if post.file_path.endswith('.pdf'):
+                preview_path = os.path.join(current_app.root_path, post.preview_path)
+                os.remove(preview_path)
         except Exception as e:
             flash(f"Failed to delete file: {e}", category='error')
 
@@ -620,8 +714,8 @@ def add_answer (question_id):
             new_notification = Notification(
                 notified_user_id=question.user.id,
                 notifier_id = current_user.id,
-                type='reply',
-                message=f"Answered '{short_answer_body}' to your question <b>'{question.title}'</b>."
+                type='answer',
+                message=f"Answered '{short_answer_body}' to your question <b>'{question.title}'</b>.",
                 )
             db.session.add(new_notification)
 
@@ -644,7 +738,7 @@ def delete_answer (answer_id):
 
     db.session.delete(answer)
     db.session.commit()
-    flash('Comment deleted!', 'success')
+    flash('Answer deleted!', 'success')
 
     return redirect(url_for('views.qna'))
 
@@ -655,6 +749,27 @@ def notification():
     read_notifications = Notification.query.filter_by(notified_user_id=current_user.id, is_read=True).order_by(Notification.timestamp.desc()).all()
     total_unread_notifications = len(unread_notifications)
     return render_template("notification.html", user=current_user, unread_notifications=unread_notifications, read_notifications=read_notifications, total_unread_notifications=total_unread_notifications)
+
+@views.route('/notifications/go-to/<int:notification_id>')
+@login_required
+def go_to_notification(notification_id):
+    notification = Notification.query.get_or_404(notification_id)
+
+    if notification.notified_user_id != current_user.id:
+        abort(403)
+    notification.is_read = True
+    db.session.commit()
+    
+    # Redirect based on type
+    if notification.type == 'follow':
+        return redirect(url_for('views.user_profile', user_id=notification.notifier_id))
+    elif notification.type in ['mention', 'rating', 'comment', 'reply']:
+        return redirect(url_for('views.post_detail', post_id=notification.post_id))
+    elif notification.type in ['answer', 'pin']:
+        return redirect(url_for('views.notification'))  # Replace with actual route
+    else:
+        flash("Notification type is unknown.", "error")
+        return redirect(url_for('views.home'))  # fallback
 
 @views.route('/notifications/read/<int:notification_id>')
 @login_required
@@ -760,6 +875,7 @@ def unpin_answer(answer_id):
     return redirect(url_for('views.qna'))
 
 @views.route('/search')
+@login_required
 def search():
     query = request.args.get('q', '')
 
@@ -772,12 +888,12 @@ def search():
 
     return render_template("search_results.html", users=users, notes=notes, query=query)
 
-@views.route('/react/<int:msg_id>', methods=['POST'])
+@views.route('/explore')
 @login_required
-def react(msg_id):
-    message = ChatMessage.query.get_or_404(msg_id)
-    print(f"{current_user.username} reacted to message {msg_id}")
-    # You could log/store reactions in the DB here
-    return '', 204
+def explore():
+    notes = Note.query.all()
+    return render_template("explore.html", current_user=current_user, notes=notes)
 
-
+@views.route('/post_deleted')
+def deleted_post():
+    return render_template('post_deleted.html')

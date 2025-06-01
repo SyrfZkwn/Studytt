@@ -1,0 +1,37 @@
+{% extends "base.html" %} 
+<title>{% block title %}Post Not Found{% endblock %}</title>
+
+{% block content %}
+
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<div class="d-flex justify-content-center align-items-center flex-column text-center" style="height: 80vh;">
+    <h1 style="color: #f15c22;">This note has most likely been deleted. <a href="{{ url_for('views.home') }}">Back to homepage.</a></h1>
+    <img src="{{ url_for('static', filename='image/404.png') }}" alt="404" style="max-width: 40%;">
+</div>
+
+{% endblock %}

@@ -53,6 +53,7 @@ def create_app():
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     app.config['UPLOAD_FOLDER'] = 'static/notes'
+    app.config['PDF_PREVIEW_FOLDER'] = 'static/pdf_preview'
     app.jinja_env.filters['time_ago'] = time_ago
 
     db.init_app(app)

@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Search{% endblock %}
+{% extends "base.html" %} 
+<title>{% block title %}Explore{% endblock %}</title>
 
 {% block content %}
 
@@ -8,7 +8,7 @@
     .content-section {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1.5rem;
+        gap: 2rem;
         padding: 1rem;
         max-width: 85%;
     }
@@ -100,44 +100,29 @@
   {% endwith %}
 </div>
 
-<h2>Search Results for "{{ query }}"</h2>
-
 {% if notes %}
-  <h3>Notes:</h3>
-
 <div class="content-section">
-  {% for note in notes %}
+{% for note in notes|reverse %}
   <div class="post">
     <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
       <div class="post-img">
-        {% if note.file_path %}
-          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% if note.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% else %}
-          <div style="width:100%; height: 200px; background-color: #ccc; border-radius: 10px;"></div>
+          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
         {% endif %}
       </div>
       <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
     </a>
     <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a></span>
+      <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
       <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
     </div>
   </div>
-    {% else %}
-    <p>No notes to show.</p>
-    {% endfor %}
+{% endfor %}
 </div>
-{% endif %}
-
-{% if users %}
-  <h3>Users:</h3>
-  {% for user in users %}
-    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">{{ user.username }}</a><br>
-  {% endfor %}
-{% endif %}
-
-{% if not users and not notes %}
-  <p>No results found.</p>
+{% else %}
+    <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
 {% endif %}
 
 {% endblock %}

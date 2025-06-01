@@ -136,8 +136,13 @@
 
 <div style="width: 85%; position: relative;" class="mt-4 mb-2 mx-auto">
   <h1 class="center-me">Notifications</h1>
-  <a href="{{ url_for('views.read_notification_all') }}" class="read-all" title="Read All">
-    <h1><span class="material-symbols-outlined">notification_multiple</span></h1>
+  <a href="{{ url_for('views.read_notification_all') }}"
+    class="delete-noti mx-1 px-4 py-2 rounded-lg shadow-sm text-white d-flex align-items-center gap-2 read-all"
+    title="Read All Notifications"
+    style="display: inline-flex; align-items: center; background-color: #2d7ac0; color: white; text-decoration: none; border-radius: 8px; padding: 8px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 500;">
+    
+    <span style="margin-right: 6px;">Read All</span>
+    <span class="material-symbols-outlined">notification_multiple</span>
   </a>
 </div>
 
@@ -157,10 +162,9 @@
       </h3>
 
       <div style="display: flex;">
-        <a href="{{ url_for('views.read_notification', notification_id=n.id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+        <a href="{{ url_for('views.go_to_notification', notification_id=n.id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
-        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
       </div>
 
   </div>
@@ -172,8 +176,21 @@
 {% endif %}
 </div>
 
+<div style="width: 85%; position: relative;" class="mt-4 mb-2 mx-auto">
+  <h1 class="center-me">Read Notifications</h1>
+  <a href="{{ url_for('views.delete_all_notification') }}"
+    class="delete-noti mx-1 px-4 py-2 rounded-lg shadow-sm text-white bg-danger d-flex align-items-center gap-2 read-all"
+    title="Delete All Notifications"
+    onclick="return confirm('Are you sure you want to delete all notifications?')"
+    style="display: inline-flex; align-items: center; background-color: #dc3545; color: white; text-decoration: none; border-radius: 8px; padding: 8px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 500;">
+    
+    <span style="margin-right: 6px;">Delete All</span>
+    <span class="material-symbols-outlined" style="font-size: 24px;">delete_sweep</span>
+  </a>
+</div>
+
+<div class="notification-section my-4" style="color: #B0B0B0;">
 {% if read_notifications %}
-<div class="notification-section my-5" style="color: #B0B0B0; padding-bottom: 5rem;">
 {% for n in read_notifications %}
   <div class="notification mb-4 {{ 'read' if n.is_read else '' }}">
 
@@ -190,21 +207,33 @@
         </a>
       </h3>
 
-      <h5 class="unbold">{{ n.message | safe }} <small style="float: right;">{{ n.timestamp | time_ago }}</small></h5>
+      <div style="display: flex;">
+        {% if n.type == 'follow' %} <!--leads user to follower profile -->
+        <a href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+
+        {% elif n.type in ['mention', 'rating', 'comment', 'reply'] %} <!--leads user to related post -->
+        <a href="{{ url_for('views.post_detail', post_id=n.post_id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+
+        {% elif n.type in ['answer', 'pin'] %} <!--leads user to related question -->
+        <a href="#" class="go-to" style="max-width: 85%; height: auto; display: flex;">
+          <h5 class="unbold">{{ n.message | safe }}</h5>
+        </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
+        {% endif %}
+      </div>
       
   </div>
 {% endfor %}
-  <a href="{{ url_for('views.delete_all_notification') }}"
-    class="delete-noti mx-1 px-4 py-2 rounded-lg shadow-sm text-white bg-danger d-flex align-items-center gap-2"
-    title="Delete All Notifications"
-    onclick="return confirm('Are you sure you want to delete all notifications?')"
-    style="display: inline-flex; align-items: center; background-color: #dc3545; color: white; text-decoration: none; border-radius: 8px; padding: 8px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-weight: 500;">
-    
-    <span style="margin-right: 6px;">Delete All</span>
-    <span class="material-symbols-outlined" style="font-size: 24px;">delete_sweep</span>
-  </a>
 {% else %}
-</div>
+  <h3 class="notifier-info my-3">
+    No new notifications.
+  </h3>
 {% endif %}
-
+</div>
 {% endblock %}

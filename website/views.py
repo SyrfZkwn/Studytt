@@ -779,3 +779,5 @@ def react(msg_id):
     print(f"{current_user.username} reacted to message {msg_id}")
     # You could log/store reactions in the DB here
     return '', 204
+
+

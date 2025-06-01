@@ -64,6 +64,7 @@ class User(db.Model, UserMixin):
     questions = db.relationship('Question', backref='user', lazy=True)
 
 
+
     followed = db.relationship(
         'User', secondary=followers,
         primaryjoin=(followers.c.follower_id == id),

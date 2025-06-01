@@ -10,10 +10,9 @@ from flask_migrate import Migrate
 from datetime import datetime
 import pytz
 from flask_login import current_user
+from itsdangerous import URLSafeTimedSerializer
+from .extensions import db, mail, migrate, socketio
 
-db = SQLAlchemy()
-migrate = Migrate()
-socketio = SocketIO()
 DB_NAME = "database.db"
 
 def get_local_time():
@@ -88,6 +87,19 @@ def create_app():
             count = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).count()
             return dict(total_unread_notifications=count)
         return dict(total_unread_notifications=0)
+    
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_USERNAME'] = 'studytt518@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'pxsp emts vske moyo'
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_BACKEND'] = 'smtp'
+
+    global s
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+    mail.init_app(app)
 
     return app
 

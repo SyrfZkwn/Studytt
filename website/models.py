@@ -68,6 +68,7 @@ class User(db.Model, UserMixin):
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
+    verified = db.Column(db.Boolean, default=False)
 
 
     followed = db.relationship(

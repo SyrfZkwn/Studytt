@@ -20,6 +20,7 @@ saved_posts = db.Table('saved_posts',
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    __table_args__ = {'sqlite_autoincrement': True}
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
@@ -42,6 +43,7 @@ class ChatMessage(db.Model):
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    __table_args__ = {'sqlite_autoincrement': True}
     title = db.Column(db.String(50))
     code = db.Column(db.String(10))
     chapter = db.Column(db.String(30))
@@ -57,6 +59,7 @@ class Note(db.Model):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
+    __table_args__ = {'sqlite_autoincrement': True}
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
@@ -67,6 +70,7 @@ class User(db.Model, UserMixin):
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
+    verified = db.Column(db.Boolean, default=False)
 
 
 

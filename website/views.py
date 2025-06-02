@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, current_app, request, flash, redir
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField, StringField, TextAreaField
+from flask_wtf.file import FileSize
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
@@ -20,7 +21,7 @@ from sqlalchemy.sql import func
 import bleach
 import re
 from pdf2image import convert_from_path
-from pathlib import Path
+import uuid
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -61,9 +62,9 @@ def generate_pdf_preview(pdf_rel_path, preview_rel_path):
     pages[0].save(abs_preview_path, 'JPEG')
 
 class UploadFileForm(FlaskForm):
-        file = FileField("File", validators=[InputRequired()])
-        submit = SubmitField("Upload")
-        description = TextAreaField("description") 
+    file = FileField("File", validators=[InputRequired(), FileSize(max_size=15 * 1024 * 1024, message="File must be 15MB or less.")])
+    submit = SubmitField("Upload")
+    description = TextAreaField("description") 
 
 @views.route('/home')
 @login_required
@@ -182,14 +183,23 @@ def post():
         clean_description = clean(raw_description)
         file = form.file.data
         filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
-        absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
-        file.save(absolute_path)
-        preview_path = None
 
-        # ✅ Generate preview if it's a PDF
-        if filename.lower().endswith('.pdf'):
-            preview_filename = filename.rsplit('.', 1)[0] + '_preview.jpg'
+        ext = os.path.splitext(filename)[1].lower()
+        ALLOWED_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
+        if ext not in ALLOWED_EXTENSIONS:
+            flash("Only PDF and image files are allowed.", category="error")
+            return render_template("post.html", form=form)
+
+        unique_filename = f"{uuid.uuid4().hex}_{filename}"
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename).replace('\\', '/')
+        absolute_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), file_path)
+        preview_path = None
+        file.save(absolute_path)
+
+        # Generate preview if it's a PDF
+        if unique_filename.lower().endswith('.pdf'):
+            preview_filename = unique_filename.rsplit('.', 1)[0] + '_preview.jpg'
             preview_path = os.path.join(current_app.config['PDF_PREVIEW_FOLDER'], preview_filename).replace('\\', '/')
             generate_pdf_preview(file_path, preview_path)
 
@@ -222,6 +232,14 @@ def post():
 
         flash('Note posted!', category='success')
         return redirect(url_for('views.home'))
+    
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                if 'file size' in error.lower():
+                    flash('Maximum file size is only 15MB', category='error')
+                else:
+                    flash(error, category='error')
         
     return render_template("post.html", form=form)
 
@@ -894,6 +912,6 @@ def explore():
     notes = Note.query.all()
     return render_template("explore.html", current_user=current_user, notes=notes)
 
-@views.route('/post_deleted')
+@views.route('/post_not_found')
 def deleted_post():
     return render_template('post_deleted.html')

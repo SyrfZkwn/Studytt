@@ -5,7 +5,7 @@ from flask import redirect, url_for
 
 class AdminModelView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and current_user.email.lower() == "studytt@admin"
+        return current_user.is_authenticated and current_user.email.lower() == "studytt518@gmail.com"
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('auth.login'))

@@ -69,8 +69,8 @@ class UploadFileForm(FlaskForm):
 @views.route('/home')
 @login_required
 def home():
-    notes = Note.query.all()
-    return render_template("home.html", user=current_user, notes=notes)
+        notes = Note.query.all()
+        return render_template("home.html", user=current_user, notes=notes)
 
 rooms = {}
 
@@ -100,14 +100,31 @@ def generate_unique_code(length):
 @views.route('/chat')
 @login_required
 def chat_home():
-    # Show chat list of followed users
     followed_users = current_user.followed.all()
-    return render_template("chat.html", followed_users=followed_users)
+    chat_data = []
+
+    for user in followed_users:
+     room_code = generate_room_code(current_user.id, user.id)
+
+    last_message = ChatMessage.query.filter_by(room_code=room_code) \
+        .order_by(ChatMessage.date.desc()) \
+        .first()
+
+    print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
+
+    chat_data.append({
+        "user": user,
+        "last_message": last_message.message if last_message else "",
+        "timestamp": last_message.date if last_message else None
+    })
+
+
+    return render_template("chat.html", chat_data=chat_data)
+
 
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
-    # Check if user_id is followed by current_user
     user = User.query.get_or_404(user_id)
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
@@ -229,25 +246,25 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    points = current_user.points
-    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
-    notes_count = len(posts)
-    
-    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        points = current_user.points
+        posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+        notes_count = len(posts)
+        
+        return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
 @views.route('/profile/<int:user_id>')
 @login_required
 def user_profile(user_id):
-    user = User.query.get_or_404(user_id)
-    follower_count = user.follower_count()
-    following_count = user.following_count()
-    points = user.points
-    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-    notes_count = len(posts)
-    is_following = current_user.is_following(user)
-    return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+        user = User.query.get_or_404(user_id)
+        follower_count = user.follower_count()
+        following_count = user.following_count()
+        points = user.points
+        posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+        notes_count = len(posts)
+        is_following = current_user.is_following(user)
+        return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
@@ -285,18 +302,18 @@ def unfollow(user_id):
 @views.route('/saved')
 @login_required
 def saved():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    # Don't call .all() on current_user.saved since it's already a list
-    saved_posts = current_user.saved
-    # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
-    notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
-    
-    return render_template("saved.html", user=current_user, 
-                          follower_count=follower_count, 
-                          following_count=following_count, 
-                          saved_posts=saved_posts,
-                          notes_count=notes_count)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        # Don't call .all() on current_user.saved since it's already a list
+        saved_posts = current_user.saved
+        # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
+        notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
+        
+        return render_template("saved.html", user=current_user, 
+                            follower_count=follower_count, 
+                            following_count=following_count, 
+                            saved_posts=saved_posts,
+                            notes_count=notes_count)
 
 
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
@@ -563,14 +580,14 @@ def delete_reply (reply_id):
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
 def save_post(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post not in current_user.saved:
-        current_user.saved.append(post)
-        db.session.commit()
-        flash('Post saved successfully!', 'success')
-    else:
-        flash('Post already saved.', 'info')
-    return redirect(url_for('views.post_detail', post_id=post_id))
+        post = Note.query.get_or_404(post_id)
+        if post not in current_user.saved:
+            current_user.saved.append(post)
+            db.session.commit()
+            flash('Post saved successfully!', 'success')
+        else:
+            flash('Post already saved.', 'info')
+        return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
@@ -588,79 +605,80 @@ def qna():
             publisher=current_user.id
         )
 
-        db.session.add(new_question)
-        db.session.commit()
+    db.session.add(new_question)
+    db.session.commit()
 
-        flash('Question posted!', category='success')
-        return redirect(url_for('views.qna'))
+    flash('Question posted!', category='success')
+    return redirect(url_for('views.qna'))
     
     questions = Question.query.all()
     return render_template("qna.html", user=current_user, questions=questions)
 
 import secrets
-from PIL import Image
+from PIL import Image, ImageOps
+
 
 @views.route("/edit_profile", methods=["GET", "POST"])
 @login_required
 def edit_profile():
-    if request.method == "POST":
-        username = request.form.get("username")
-        biography = request.form.get("biography")
+        if request.method == "POST":
+            username = request.form.get("username")
+            biography = request.form.get("biography")
 
-        if username:
-            current_user.username = username
-        if biography:
-            current_user.biography = biography
+            if username:
+                current_user.username = username
+            if biography:
+                current_user.biography = biography
 
-        if "image_profile" in request.files:
-            file = request.files["image_profile"]
-            if file and file.filename != "":
-                random_hex = secrets.token_hex(8)
-                _, f_ext = os.path.splitext(file.filename)
-                picture_fn = random_hex + f_ext
+            if "image_profile" in request.files:
+                file = request.files["image_profile"]
+                if file and file.filename != "":
+                    random_hex = secrets.token_hex(8)
+                    _, f_ext = os.path.splitext(file.filename)
+                    picture_fn = random_hex + f_ext
 
-                # Make sure the directory exists
-                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
-                os.makedirs(profile_pics_folder, exist_ok=True)
+                    # Make sure the directory exists
+                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                    os.makedirs(profile_pics_folder, exist_ok=True)
 
-                picture_path = os.path.join(profile_pics_folder, picture_fn)
+                    picture_path = os.path.join(profile_pics_folder, picture_fn)
 
-                # Resize image to 125x125 pixels
+                    # Resize image to 125x125 pixels
                 output_size = (125, 125)
                 i = Image.open(file)
-                i.thumbnail(output_size)
+                i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
                 i.save(picture_path)
 
                 current_user.image_profile = picture_fn
 
-        db.session.commit()
-        flash("Your profile has been updated!", "success")
-        return redirect(url_for("views.profile"))
+            db.session.commit()
+            flash("Your profile has been updated!", "success")
+            return redirect(url_for("views.profile"))
 
-    image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
-    return render_template('edit_profile.html', title='edit_profile')
+        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
+        return render_template('edit_profile.html', title='edit_profile')
 
 @views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def post_edit(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post.publisher != current_user.id:
-        abort(403)
+        post = Note.query.get_or_404(post_id)
+        if post.publisher != current_user.id:
+            abort(403)
 
-    form = UploadFileForm()
+        form = UploadFileForm()
 
-    if request.method == 'POST':
-        post.title = request.form.get('title')
-        post.code = request.form.get('code')
-        post.chapter = request.form.get('chapter')
-        post.description = form.description.data
+        if request.method == 'POST':
+            post.title = request.form.get('title')
+            post.code = request.form.get('code')
+            post.chapter = request.form.get('chapter')
+            post.description = form.description.data
 
-        db.session.commit()
+            db.session.commit()
 
-        flash('Note Edited!', category='success')
-        return redirect(url_for('views.post_detail', post_id=post.id))
-        
-    return render_template("post_edit.html", form=form, post=post)
+            flash('Note Edited!', category='success')
+            return redirect(url_for('views.post_detail', post_id=post.id))
+            
+        return render_template("post_edit.html", form=form, post=post)
 
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required

@@ -14,7 +14,17 @@ auth = Blueprint('auth', __name__)
 def login():
     if request.method == 'POST':
         email = request.form.get('email')
-        password = request.form.get ('password')
+        password = request.form.get('password')
+
+        # Special admin login check
+        if email == "Studytt@Admin" and password == "Studytt123":
+            # Create a dummy User object for admin
+            admin_user = User()
+            admin_user.id = 0
+            admin_user.email = "Studytt@Admin"
+            admin_user.username = "Admin"
+            login_user(admin_user, remember=True)
+            return redirect(url_for('views.home'))
 
         user = User.query.filter_by(email=email).first()
         if user:

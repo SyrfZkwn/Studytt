@@ -26,8 +26,20 @@
       <br>
       <label for="image_profile">Change Profile Picture:</label><br>
       <input type="file" name="image_profile" id="image_profile" accept="image/*"><br><br>
+      <img id="preview" src="{{ url_for('static', filename='profile_pics/' + current_user.image_profile) }}" alt="Profile Preview" style="max-width: 125px; max-height: 125px; border-radius: 50%; display: block; margin-top: 10px;">
       <button type="submit" class="btn btn-primary btn-block">Update Profile</button>
     </form>
 </div>
+
+<script>
+  document.getElementById("image_profile").addEventListener("change", function (event) {
+      const [file] = event.target.files;
+      if (file) {
+          const preview = document.getElementById("preview");
+          preview.src = URL.createObjectURL(file);
+      }
+  });
+</script>
+
 
 {% endblock %}

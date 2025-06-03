@@ -52,7 +52,13 @@ def shorten(text, length=20):
 
 def extract_keywords(title):
     # Extract words and remove common stopwords
-    stopwords = {"of", "the", "and", "in", "on", "for", "to", "with", "iii", "ii", "i"}
+    stopwords = {"of", "the", "and", "in", "on", "for", "to", "with", "i", "ii", "iii", 
+        "iv", "v", "vi", "vii", "viii", "ix", "x", "introduction", 
+        "principles", "fundamentals", "basics", "foundation", 
+        "concepts", "theory", "methods", "techniques", "overview",
+        "study", "studies", "approach", "approaches",
+        "essential", "elements", "analysis", "application", "applications",
+    }
     words = re.findall(r'\b[a-zA-Z]+\b', title.lower())
     return [word for word in words if word not in stopwords]
 

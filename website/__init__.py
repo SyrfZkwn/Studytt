@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from os import path
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_socketio import SocketIO
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -9,11 +9,10 @@ import sqlite3
 from flask_migrate import Migrate
 from datetime import datetime
 import pytz
-from flask_login import current_user
+from website.admin import init_admin
+from itsdangerous import URLSafeTimedSerializer
+from .extensions import db, mail, migrate, socketio
 
-db = SQLAlchemy()
-migrate = Migrate()
-socketio = SocketIO()
 DB_NAME = "database.db"
 
 def get_local_time():
@@ -45,6 +44,8 @@ def time_ago(value):
             return "Just now"
     return value
 
+
+
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
@@ -56,9 +57,10 @@ def create_app():
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins="*")
 
+
     from .views import views
     from .auth import auth
-    from .models import User, Note
+    from .models import User, Note, ChatMessage, Question, Answer, Comment, Reply
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
@@ -88,6 +90,22 @@ def create_app():
             count = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).count()
             return dict(total_unread_notifications=count)
         return dict(total_unread_notifications=0)
+    
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_USERNAME'] = 'studytt518@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'rsmt lbnf okul pnhi'
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_BACKEND'] = 'smtp'
+
+    global s
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+    mail.init_app(app)
+
+    # Initialize flask-admin
+    init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply)
 
     return app
 

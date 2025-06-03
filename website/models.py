@@ -35,6 +35,8 @@ class ChatMessage(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     content = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
+    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
 
     sender = db.relationship('User', foreign_keys=[sender_id])
     receiver = db.relationship('User', foreign_keys=[receiver_id])
@@ -68,6 +70,8 @@ class User(db.Model, UserMixin):
     notes = db.relationship('Note', backref='user', lazy=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
+    verified = db.Column(db.Boolean, default=False)
+
 
 
     followed = db.relationship(

@@ -45,7 +45,6 @@
 
     .login-card h1 {
       font-size: 2.5rem;
-      margin-bottom: 30px;
       color: #ffdf43;
     }
 
@@ -110,8 +109,9 @@
     <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Logo">
   </div>
 
+{% if not show_resend_link %}
   <div class="login-card">
-    <h1>STUDYTT</h1>
+    <h1 style="margin-bottom: 30px;">STUDYTT</h1>
     <form method="POST">
       <input 
         type="text" 
@@ -149,6 +149,23 @@
       </div>
     </form>
   </div>
+{% else %}
+  <div class="login-card">
+    <h1 style="margin-bottom: 20px;">STUDYTT</h1>
+    <form method="POST" action="{{ url_for('auth.resend_email') }}">
+      <label for="resend_email">Didn't get the email?</label>
+      <input 
+        type="email" 
+        name="resend_email" 
+        placeholder="Enter your email again" 
+        class="form-control"
+        required
+      />
+      <button type="submit" class="btn btn-primary btn-block">RESEND EMAIL</button>
+    </form>
+    <p>Go back to <a href="/">Sign Up</a></p>
+  </div>
+{% endif %}
 
 <script
   src="https://code.jquery.com/jquery-3.2.1.slim.min.js"

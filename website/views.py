@@ -61,6 +61,8 @@ def generate_pdf_preview(pdf_rel_path, preview_rel_path):
     os.makedirs(os.path.dirname(abs_preview_path), exist_ok=True)
     pages[0].save(abs_preview_path, 'JPEG')
 
+def shorten(text, length=20):
+    return text[:length] + '...' if len(text) > length else text #create short text for notifications
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired(), FileSize(max_size=15 * 1024 * 1024, message="File must be 15MB or less.")])
     submit = SubmitField("Upload")
@@ -210,8 +212,7 @@ def post():
                 post_id = new_note.id
                 )
             db.session.add(new_notification)
-
-        db.session.commit()
+            db.session.commit()
 
         flash('Note posted!', category='success')
         return redirect(url_for('views.home'))
@@ -229,25 +230,25 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    points = current_user.points
-    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
-    notes_count = len(posts)
-    
-    return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        points = current_user.points
+        posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+        notes_count = len(posts)
+        
+        return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
 
 @views.route('/profile/<int:user_id>')
 @login_required
 def user_profile(user_id):
-    user = User.query.get_or_404(user_id)
-    follower_count = user.follower_count()
-    following_count = user.following_count()
-    points = user.points
-    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-    notes_count = len(posts)
-    is_following = current_user.is_following(user)
-    return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+        user = User.query.get_or_404(user_id)
+        follower_count = user.follower_count()
+        following_count = user.following_count()
+        points = user.points
+        posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+        notes_count = len(posts)
+        is_following = current_user.is_following(user)
+        return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
@@ -285,18 +286,18 @@ def unfollow(user_id):
 @views.route('/saved')
 @login_required
 def saved():
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    # Don't call .all() on current_user.saved since it's already a list
-    saved_posts = current_user.saved
-    # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
-    notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
-    
-    return render_template("saved.html", user=current_user, 
-                          follower_count=follower_count, 
-                          following_count=following_count, 
-                          saved_posts=saved_posts,
-                          notes_count=notes_count)
+        follower_count = current_user.follower_count()
+        following_count = current_user.following_count()
+        # Don't call .all() on current_user.saved since it's already a list
+        saved_posts = current_user.saved
+        # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
+        notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
+        
+        return render_template("saved.html", user=current_user, 
+                            follower_count=follower_count, 
+                            following_count=following_count, 
+                            saved_posts=saved_posts,
+                            notes_count=notes_count)
 
 
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
@@ -316,7 +317,6 @@ def post_detail(post_id):
     if ratings_count == 0:
         post.rating_ratio = 0.0
     else:
-        total_points = sum(r.value for r in ratings)
         post.rating_ratio = round(total_points / ratings_count, 1)
     db.session.commit()
 
@@ -380,7 +380,7 @@ def post_detail(post_id):
 
                 if post.publisher != current_user.id:
                     super_clean_comment_body = super_clean(comment_body)
-                    short_comment = super_clean_comment_body[:20] + '...' if len(super_clean_comment_body) > 20 else super_clean_comment_body
+                    short_comment = shorten(super_clean_comment_body)
                     new_notification = Notification(
                         notified_user_id=post.publisher,
                         notifier_id = current_user.id,
@@ -435,7 +435,7 @@ def delete_comment (comment_id):
     db.session.delete(comment)
     db.session.commit()
 
-    post.total_comments -= 1
+    post.total_comments = max(post.total_comments - 1, 0)
     db.session.commit()
 
     flash('Comment deleted!', 'success')
@@ -502,11 +502,11 @@ def reply_comment(comment_id):
     db.session.add(new_reply)
 
     super_clean_reply_body = super_clean(reply_body)
-    short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
+    short_reply = shorten(super_clean_reply_body)
         
     if comment.commenter_id != current_user.id:
         new_notification = Notification(
-            notified_user_id=comment.user.id,
+            notified_user_id=comment.commenter_id,
             notifier_id = current_user.id,
             type='reply',
             message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
@@ -515,7 +515,7 @@ def reply_comment(comment_id):
         db.session.add(new_notification)
 
     # Detect @mentions
-    usernames = find_mentions(reply_body)
+    usernames = find_mentions(clean_reply_body)
     for username in usernames:
         user = User.query.filter(func.lower(User.username) == username.lower()).first()
         if user and user.id != current_user.id and comment.commenter_id != user.id:
@@ -547,7 +547,7 @@ def delete_reply (reply_id):
     post = Note.query.get_or_404(post_id)
 
     if reply.user_id != current_user.id:
-        flash ('You can only delete your own comments.', 'error')
+        flash ('You can only delete your own replies.', 'error')
         return redirect(url_for('views.post_detail', post_id = post_id))
     
 
@@ -563,14 +563,14 @@ def delete_reply (reply_id):
 @views.route('/save_post/<int:post_id>', methods=['POST'])
 @login_required
 def save_post(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post not in current_user.saved:
-        current_user.saved.append(post)
-        db.session.commit()
-        flash('Post saved successfully!', 'success')
-    else:
-        flash('Post already saved.', 'info')
-    return redirect(url_for('views.post_detail', post_id=post_id))
+        post = Note.query.get_or_404(post_id)
+        if post not in current_user.saved:
+            current_user.saved.append(post)
+            db.session.commit()
+            flash('Post saved successfully!', 'success')
+        else:
+            flash('Post already saved.', 'info')
+        return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
 @login_required
@@ -597,70 +597,72 @@ def qna():
     questions = Question.query.all()
     return render_template("qna.html", user=current_user, questions=questions)
 
+
 import secrets
-from PIL import Image
+from PIL import Image, ImageOps
+
 
 @views.route("/edit_profile", methods=["GET", "POST"])
 @login_required
 def edit_profile():
-    if request.method == "POST":
-        username = request.form.get("username")
-        biography = request.form.get("biography")
+        if request.method == "POST":
+            username = request.form.get("username")
+            biography = request.form.get("biography")
 
-        if username:
-            current_user.username = username
-        if biography:
-            current_user.biography = biography
+            if username:
+                current_user.username = username
+            if biography:
+                current_user.biography = biography
 
-        if "image_profile" in request.files:
-            file = request.files["image_profile"]
-            if file and file.filename != "":
-                random_hex = secrets.token_hex(8)
-                _, f_ext = os.path.splitext(file.filename)
-                picture_fn = random_hex + f_ext
+            if "image_profile" in request.files:
+                file = request.files["image_profile"]
+                if file and file.filename != "":
+                    random_hex = secrets.token_hex(8)
+                    _, f_ext = os.path.splitext(file.filename)
+                    picture_fn = random_hex + f_ext
 
-                # Make sure the directory exists
-                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
-                os.makedirs(profile_pics_folder, exist_ok=True)
+                    # Make sure the directory exists
+                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                    os.makedirs(profile_pics_folder, exist_ok=True)
 
-                picture_path = os.path.join(profile_pics_folder, picture_fn)
+                    picture_path = os.path.join(profile_pics_folder, picture_fn)
 
-                # Resize image to 125x125 pixels
-                output_size = (125, 125)
-                i = Image.open(file)
-                i.thumbnail(output_size)
-                i.save(picture_path)
+                    # Resize image to 125x125 pixels
+                    output_size = (125, 125)
+                    i = Image.open(file)
+                    i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
+                    i.save(picture_path)
 
-                current_user.image_profile = picture_fn
+                    current_user.image_profile = picture_fn
 
-        db.session.commit()
-        flash("Your profile has been updated!", "success")
-        return redirect(url_for("views.profile"))
+            db.session.commit()
+            flash("Your profile has been updated!", "success")
+            return redirect(url_for("views.profile"))
 
-    image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
-    return render_template('edit_profile.html', title='edit_profile')
+        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
+        return render_template('edit_profile.html', title='edit_profile')
 
 @views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required
 def post_edit(post_id):
-    post = Note.query.get_or_404(post_id)
-    if post.publisher != current_user.id:
-        abort(403)
+        post = Note.query.get_or_404(post_id)
+        if post.publisher != current_user.id:
+            abort(403)
 
-    form = UploadFileForm()
+        form = UploadFileForm()
 
-    if request.method == 'POST':
-        post.title = request.form.get('title')
-        post.code = request.form.get('code')
-        post.chapter = request.form.get('chapter')
-        post.description = form.description.data
+        if request.method == 'POST':
+            post.title = request.form.get('title')
+            post.code = request.form.get('code')
+            post.chapter = request.form.get('chapter')
+            post.description = form.description.data
 
-        db.session.commit()
+            db.session.commit()
 
-        flash('Note Edited!', category='success')
-        return redirect(url_for('views.post_detail', post_id=post.id))
-        
-    return render_template("post_edit.html", form=form, post=post)
+            flash('Note Edited!', category='success')
+            return redirect(url_for('views.post_detail', post_id=post.id))
+            
+        return render_template("post_edit.html", form=form, post=post)
 
 @views.route("/delete/<int:post_id>", methods=['POST'])
 @login_required
@@ -709,7 +711,7 @@ def add_answer (question_id):
         db.session.add(new_answer)
 
         super_clean_answer_body = super_clean(answer_body)
-        short_answer_body = super_clean_answer_body[:20] + '...' if len(super_clean_answer_body) > 20 else super_clean_answer_body
+        short_answer_body = shorten(super_clean_answer_body)
         if question.publisher != current_user.id:
             new_notification = Notification(
                 notified_user_id=question.user.id,
@@ -837,7 +839,7 @@ def delete_all_notification():
 
     return redirect(url_for('views.notification'))
 
-@views.route('/pin_answer<int:answer_id>', methods=['POST'])
+@views.route('/pin_answer/<int:answer_id>', methods=['POST'])
 @login_required
 def pin_answer(answer_id):
     answer = Answer.query.get_or_404(answer_id)
@@ -857,7 +859,7 @@ def pin_answer(answer_id):
     flash('Answer pinned!', 'success')
     return redirect(url_for('views.qna'))
 
-@views.route('/unpin_answer<int:answer_id>', methods=['POST'])
+@views.route('/unpin_answer/<int:answer_id>', methods=['POST'])
 @login_required
 def unpin_answer(answer_id):
     answer = Answer.query.get_or_404(answer_id)

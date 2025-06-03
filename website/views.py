@@ -18,51 +18,11 @@ import secrets
 import os
 from PIL import Image
 from sqlalchemy.sql import func
-import bleach
-import re
-from pdf2image import convert_from_path
 import uuid
-
-def clean(html):
-    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
-    allowed_attrs = {
-        'a': ['href', 'title', 'target']
-    }
-
-    # Clean the HTML using bleach
-    cleaned = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
-
-    # Collapse any more than 2 consecutive <br> tags into just 2 <br> tags
-    cleaned = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', cleaned)
-
-    return cleaned
-
-def super_clean(html):
-    # Strip all HTML tags and attributes
-    text_only = bleach.clean(html, tags=[], attributes={}, strip=True)
-
-    # Optionally collapse excessive whitespace or newlines
-    text_only = re.sub(r'\s+', ' ', text_only).strip()
-
-    return text_only
-
-def find_mentions(text):
-    return re.findall(r'@([\w.]+)', text) #find mentions
+from .views_utils import clean, super_clean, find_mentions, generate_pdf_preview, shorten, recommend_posts
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
-def generate_pdf_preview(pdf_rel_path, preview_rel_path):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-
-    abs_pdf_path = os.path.join(base_dir, pdf_rel_path)
-    abs_preview_path = os.path.join(base_dir, preview_rel_path)
-
-    pages = convert_from_path(abs_pdf_path, first_page=1, last_page=1)
-    os.makedirs(os.path.dirname(abs_preview_path), exist_ok=True)
-    pages[0].save(abs_preview_path, 'JPEG')
-
-def shorten(text, length=20):
-    return text[:length] + '...' if len(text) > length else text #create short text for notifications
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired(), FileSize(max_size=15 * 1024 * 1024, message="File must be 15MB or less.")])
     submit = SubmitField("Upload")
@@ -569,7 +529,7 @@ def save_post(post_id):
             db.session.commit()
             flash('Post saved successfully!', 'success')
         else:
-            flash('Post already saved.', 'info')
+            flash('Post already saved.', 'error')
         return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
@@ -894,7 +854,10 @@ def search():
 @login_required
 def explore():
     notes = Note.query.all()
-    return render_template("explore.html", current_user=current_user, notes=notes)
+
+    recommended_notes = recommend_posts(current_user.id)
+
+    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes)
 
 @views.route('/post_not_found')
 def deleted_post():

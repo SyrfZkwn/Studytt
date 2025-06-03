@@ -100,26 +100,49 @@
   {% endwith %}
 </div>
 
+{% if recommended_notes %}
+<div class="content-section">
+  {% for note in recommended_notes[:3] |reverse %}
+    <div class="post">
+      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+        <div class="post-img">
+          {% if note.file_path.endswith('.pdf') %}
+            <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% else %}
+            <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% endif %}
+        </div>
+        <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+      </a>
+      <div class="post-footer">
+        <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+        <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% if notes %}
 <div class="content-section">
-{% for note in notes|reverse %}
-  <div class="post">
-    <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
-      <div class="post-img">
-        {% if note.file_path.endswith('.pdf') %}
-          <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% else %}
-          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% endif %}
+  {% for note in notes|reverse %}
+    <div class="post">
+      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+        <div class="post-img">
+          {% if note.file_path.endswith('.pdf') %}
+            <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% else %}
+            <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+          {% endif %}
+        </div>
+        <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+      </a>
+      <div class="post-footer">
+        <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+        <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
       </div>
-      <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
-    </a>
-    <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
-      <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
     </div>
-  </div>
-{% endfor %}
+  {% endfor %}
 </div>
 {% else %}
     <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>

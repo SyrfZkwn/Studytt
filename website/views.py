@@ -6,7 +6,7 @@ from flask_wtf.file import FileSize
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote, Report
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -915,3 +915,69 @@ def explore():
 @views.route('/post_not_found')
 def deleted_post():
     return render_template('post_deleted.html')
+
+# User submits a report
+@views.route('/report', methods=['POST'])
+@login_required
+def report():
+    reason = request.form.get('reason')
+    note_id = request.form.get('note_id')
+    comment_id = request.form.get('comment_id')
+
+    if not reason:
+        flash("Please enter a reason for your report.", "warning")
+        return redirect(request.referrer)
+
+    # Check for duplicate reports
+    existing = Report.query.filter_by(
+        reported_by=current_user.id,
+        note_id=note_id if note_id else None,
+        comment_id=comment_id if comment_id else None
+    ).first()
+
+    if existing:
+        flash("You've already reported this.", "info")
+        return redirect(request.referrer)
+
+    report = Report(
+        reported_by=current_user.id,
+        note_id=note_id if note_id else None,
+        comment_id=comment_id if comment_id else None,
+        reason=reason
+    )
+    db.session.add(report)
+    db.session.commit()
+    flash("Thank you. Your report has been submitted.", "success")
+    return redirect(request.referrer)
+
+
+# Admin: view reports
+@views.route('/admin/reports')
+@login_required
+def admin_reports():
+    if not current_user.is_admin:
+        return "Unauthorized", 403
+
+    status_filter = request.args.get('status', 'pending')
+    reports = Report.query.filter_by(status=status_filter).order_by(Report.timestamp.desc()).all()
+    return render_template('admin_reports.html', reports=reports, status_filter=status_filter)
+
+
+# Admin: update report status
+@views.route('/admin/report/<int:report_id>/update', methods=['POST'])
+@login_required
+def update_report_status(report_id):
+    if not current_user.is_admin:
+        return "Unauthorized", 403
+
+    report = Report.query.get_or_404(report_id)
+    new_status = request.form.get('status')
+
+    if new_status in ['reviewed', 'dismissed']:
+        report.status = new_status
+        db.session.commit()
+        flash("Report status updated.", "success")
+    else:
+        flash("Invalid status.", "danger")
+
+    return redirect(url_for('admin_reports'))

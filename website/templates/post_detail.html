@@ -450,10 +450,17 @@
         <i class="fa-regular fa-comment comment-icon"></i>
       </button>
     </div>
-
+    {% if current_user.is_authenticated and current_user.id != post.user.id %}
+    <form>
+    <button type="button" onclick="openReportModal('{{ note.id }}', null)">Report Post</button>
+    </form>
+    {% endif %}
   </div>
 
   <div class="post-description">{{ post.description | safe }}</div>
+  
+ 
+
 
 </div>
 
@@ -501,6 +508,12 @@
           </div>
 
             <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
+              {% if current_user.is_authenticated and current_user.id != comment.commenter_id %}
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="openReportModal(null, '{{ comment.id }}')">
+                  Report
+                </button>
+              {% endif %}
+
 
               <form action="{{ url_for('views.vote_comment', comment_id=comment.id) }}" method="post" style="display: inline;">
                 <input type="hidden" name="vote" value="1">
@@ -761,5 +774,16 @@
       editor.focus();
     });
   }); // for mention //
+
+    function openReportModal(noteId, commentId) {
+  document.getElementById('reportNoteId').value = noteId || '';
+  document.getElementById('reportCommentId').value = commentId || '';
+}
+
+
+  function closeReportModal() {
+    document.getElementById('reportModal').style.display = 'none';
+  }
+
 </script>
 {% endblock %}

@@ -160,3 +160,16 @@ class Notification(db.Model):
 
     notifier = db.relationship('User', foreign_keys=[notifier_id], backref='notifications_sent')
     notified_user = db.relationship('User', foreign_keys=[notified_user_id], backref='notifications_received')
+
+class Report(db.Model):
+    __tablename__ = 'report'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reported_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=True)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default="pending")
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    reporter = db.relationship('User', backref='reports_made')

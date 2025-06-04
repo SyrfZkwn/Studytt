@@ -106,6 +106,12 @@
       text-decoration: none;
     }
 
+    .notification:hover {
+      background-color: #246aa7;
+      border-radius: 10px;
+      transition: background-color 0.3s ease;
+    }
+
 </style>
 
 <div class="flash">
@@ -149,7 +155,7 @@
 <div class="notification-section my-4">
 {% if unread_notifications %}
 {% for n in unread_notifications %}
-  <div class="notification mb-4 {{ 'unread' if not n.is_read else '' }}">
+  <div class="notification p-2 {{ 'unread' if not n.is_read else '' }}">
 
       <h3 class="notifier-info mb-3">
         <a class="profile" href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}">
@@ -192,7 +198,7 @@
 <div class="notification-section my-4" style="color: #B0B0B0;">
 {% if read_notifications %}
 {% for n in read_notifications %}
-  <div class="notification mb-4 {{ 'read' if n.is_read else '' }}">
+  <div class="notification p-2 {{ 'read' if n.is_read else '' }}">
 
       <h3 class="notifier-info mb-3">
         <a class="profile" href="{{ url_for('views.user_profile', user_id=n.notifier_id) }}">

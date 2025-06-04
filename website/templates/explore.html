@@ -5,71 +5,85 @@
 
 <style>
 
+    .main-section {
+      padding-left: 1rem;
+    }
+
     .content-section {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 2rem;
-        padding: 1rem;
-        max-width: 85%;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 2rem;
+      max-width: 85%;
     }
 
     .post {
-        background-color: #1b4f83;
-        padding: 1rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        transition: transform 0.2s;
-        min-width: 250px;
-        max-width: 300px;
+      background-color: #1b4f83;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+      min-width: 250px;
+      max-width: 300px;
     }
 
     .post a {
-        text-decoration: none;
-        color: #f15c22;
+      text-decoration: none;
+      color: #f15c22;
     }
 
     .post:hover {
-        transform: translateY(-4px);
+      transform: translateY(-4px);
     }
 
     .post-img {
-        width: 100%;
-        aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
-        background-color: #1b4f83;
-        border-radius: 10px;
-        margin-bottom: 0.5rem;
-        overflow: hidden;
+      width: 100%;
+      aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
+      background-color: #1b4f83;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
     }
 
     .post-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .post-title {
-        font-weight: bold;
-        margin-bottom: 0.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
     }
 
     .post-footer {
-        font-size: 0.9rem;
-        color: #888;
-        display: flex;
-        justify-content: space-between;
+      font-size: 0.9rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
     }
 
     #username {
-        color: #2a83db;
-        transition: transform 0.2s;
+      color: #2a83db;
+      transition: transform 0.2s;
     }
 
     #username:hover {
-        color: #1263b4;
-        transform: translateY(-4px);
+      color: #1263b4;
+      transform: translateY(-4px);
+    }
+
+    .center-me {
+      color: #f15c22;
+      margin: 0 auto;
+      width: fit-content;
+    }
+
+    .header {
+      color: #f15c22;
+      padding-left: 1rem;
     }
 
 </style>
@@ -101,48 +115,54 @@
 </div>
 
 {% if recommended_notes %}
-<div class="content-section">
-  {% for note in recommended_notes[:3] |reverse %}
-    <div class="post">
-      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
-        <div class="post-img">
-          {% if note.file_path.endswith('.pdf') %}
-            <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% else %}
-            <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% endif %}
+<div class="main-section mb-4">
+  <h1 class="header">For you</h1>
+  <div class="content-section">
+    {% for note in recommended_notes[:6] |reverse %}
+      <div class="post">
+        <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+          <div class="post-img">
+            {% if note.file_path.endswith('.pdf') %}
+              <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+            {% else %}
+              <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+            {% endif %}
+          </div>
+          <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+        </a>
+        <div class="post-footer">
+          <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+          <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
         </div>
-        <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
-      </a>
-      <div class="post-footer">
-        <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
-        <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
       </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
 {% if notes %}
-<div class="content-section">
-  {% for note in notes|reverse %}
-    <div class="post">
-      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
-        <div class="post-img">
-          {% if note.file_path.endswith('.pdf') %}
-            <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% else %}
-            <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-          {% endif %}
+<div class="main-section">
+<h1 class="header">New Notes</h1>
+  <div class="content-section">
+    {% for note in notes|reverse %}
+      <div class="post">
+        <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+          <div class="post-img">
+            {% if note.file_path.endswith('.pdf') %}
+              <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+            {% else %}
+              <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+            {% endif %}
+          </div>
+          <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+        </a>
+        <div class="post-footer">
+          <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+          <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
         </div>
-        <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
-      </a>
-      <div class="post-footer">
-        <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
-        <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
       </div>
-    </div>
-  {% endfor %}
+    {% endfor %}
+  </div>
 </div>
 {% else %}
     <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>

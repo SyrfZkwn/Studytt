@@ -19,7 +19,7 @@ import os
 from PIL import Image
 from sqlalchemy.sql import func
 import uuid
-from .views_utils import clean, super_clean, find_mentions, generate_pdf_preview, shorten, recommend_posts
+from .views_utils import clean, super_clean, find_mentions, generate_pdf_preview, shorten, recommend_posts, suggest_profiles
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -32,7 +32,8 @@ class UploadFileForm(FlaskForm):
 @login_required
 def home():
     notes = Note.query.all()
-    return render_template("home.html", user=current_user, notes=notes)
+    recommended_profiles = suggest_profiles(current_user.id)
+    return render_template("home.html", user=current_user, notes=notes, recommended_profiles=recommended_profiles)
 
 rooms = {}
 
@@ -526,10 +527,11 @@ def save_post(post_id):
         post = Note.query.get_or_404(post_id)
         if post not in current_user.saved:
             current_user.saved.append(post)
-            db.session.commit()
-            flash('Post saved successfully!', 'success')
+            flash('Post saved!', 'success')
         else:
-            flash('Post already saved.', 'error')
+            current_user.saved.remove(post)
+            flash('Post unsaved!', 'success')
+        db.session.commit()
         return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
@@ -856,8 +858,9 @@ def explore():
     notes = Note.query.all()
 
     recommended_notes = recommend_posts(current_user.id)
+    recommended_profiles = suggest_profiles(current_user.id)
 
-    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes)
+    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes, recommended_profiles=recommended_profiles)
 
 @views.route('/post_not_found')
 def deleted_post():

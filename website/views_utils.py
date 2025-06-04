@@ -90,15 +90,47 @@ def recommend_posts(user_id, limit=10):
     top_keywords = get_user_keywords(user_id)
 
     if not top_keywords:
-        return []  # or return trending posts
+        return []  # Return trending posts or fallback
 
     # Build OR conditions for keyword matching
     conditions = [Note.title.ilike(f"%{kw}%") for kw in top_keywords]
 
-    # Fetch posts that match the keywords and are not by the user
+    # Subqueries to exclude saved and rated posts
+    user = User.query.get(user_id)
+    saved_ids = [note.id for note in user.saved]
+
+    # Get note IDs rated by user
+    rated_note_ids = db.session.query(Rating.note_id).filter_by(rater_id=user_id).all()
+    rated_ids = [r[0] for r in rated_note_ids]
+
+    # Fetch posts that match keywords, not by user, and not saved or rated
     posts = Note.query.filter(
         or_(*conditions),
-        Note.publisher != user_id  # use 'publisher', not 'user_id'
+        Note.publisher != user_id,
+        ~Note.id.in_(saved_ids),
+        ~Note.id.in_(rated_ids)
     ).order_by(func.random()).limit(limit).all()
 
     return posts
+
+def suggest_profiles(user_id, limit=5):
+    user_keywords = set(get_user_keywords(user_id))
+    
+    # Get all other users and compare
+    other_users = User.query.filter(User.id != user_id).all()
+    suggestions = []
+
+    for user in other_users:
+        note_titles = [note.title for note in user.notes]
+        keywords = set(
+            kw for title in note_titles for kw in extract_keywords(title)
+        )
+
+        overlap = user_keywords & keywords
+        if overlap:
+            suggestions.append((user, len(overlap)))
+
+    # Sort by most keyword overlap
+    suggestions.sort(key=lambda x: x[1], reverse=True)
+
+    return [user for user, _ in suggestions[:limit]]

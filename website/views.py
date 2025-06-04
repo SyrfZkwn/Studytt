@@ -33,7 +33,17 @@ class UploadFileForm(FlaskForm):
 def home():
     notes = Note.query.all()
     recommended_profiles = suggest_profiles(current_user.id)
-    return render_template("home.html", user=current_user, notes=notes, recommended_profiles=recommended_profiles)
+    # Get IDs of users current_user is following
+    followed_ids = [user.id for user in current_user.followed]
+
+    # Exclude current user and followed users from random_profiles
+    random_profiles = User.query.filter(
+        User.id != current_user.id,
+        ~User.id.in_(followed_ids)
+    ).all()
+    
+    return render_template("home.html", user=current_user, notes=notes, recommended_profiles=recommended_profiles,
+                           random_profiles=random_profiles)
 
 rooms = {}
 
@@ -859,8 +869,17 @@ def explore():
 
     recommended_notes = recommend_posts(current_user.id)
     recommended_profiles = suggest_profiles(current_user.id)
+    # Get IDs of users current_user is following
+    followed_ids = [user.id for user in current_user.followed]
 
-    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes, recommended_profiles=recommended_profiles)
+    # Exclude current user and followed users from random_profiles
+    random_profiles = User.query.filter(
+        User.id != current_user.id,
+        ~User.id.in_(followed_ids)
+    ).all()
+
+    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes, 
+                           recommended_profiles=recommended_profiles, random_profiles=random_profiles)
 
 @views.route('/post_not_found')
 def deleted_post():

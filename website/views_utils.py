@@ -86,7 +86,7 @@ def get_user_keywords(user_id):
     # Return top 3 keywords
     return [kw for kw, _ in keyword_counts.most_common(3)]
 
-def recommend_posts(user_id, limit=10):
+def recommend_posts(user_id, limit=20):
     top_keywords = get_user_keywords(user_id)
 
     if not top_keywords:
@@ -114,21 +114,30 @@ def recommend_posts(user_id, limit=10):
     return posts
 
 def suggest_profiles(user_id, limit=5):
+    user = User.query.get(user_id)
+    if not user:
+        return []
+
+    followed_ids = {u.id for u in user.followed}
     user_keywords = set(get_user_keywords(user_id))
-    
-    # Get all other users and compare
-    other_users = User.query.filter(User.id != user_id).all()
+
+    # Get users who are not the current user and not already followed
+    other_users = User.query.filter(
+        User.id != user_id,
+        ~User.id.in_(followed_ids)
+    ).all()
+
     suggestions = []
 
-    for user in other_users:
-        note_titles = [note.title for note in user.notes]
+    for other_user in other_users:
+        note_titles = [note.title for note in other_user.notes]
         keywords = set(
             kw for title in note_titles for kw in extract_keywords(title)
         )
 
         overlap = user_keywords & keywords
         if overlap:
-            suggestions.append((user, len(overlap)))
+            suggestions.append((other_user, len(overlap)))
 
     # Sort by most keyword overlap
     suggestions.sort(key=lambda x: x[1], reverse=True)

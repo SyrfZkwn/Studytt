@@ -100,10 +100,24 @@ def handle_send_message(data):
     sender_id = current_user.id
     receiver_id = data['receiver_id']
     content = data['content']
+    clean_content = clean(content)
 
     # Save message to DB
-    message = ChatMessage(sender_id=sender_id, receiver_id=receiver_id, content=content)
+    message = ChatMessage(
+        sender_id=sender_id, 
+        receiver_id=receiver_id, 
+        content=clean_content
+    )
     db.session.add(message)
+
+    new_notification = Notification(
+        notified_user_id=receiver_id,
+        notifier_id = sender_id,
+        type='chat',
+        message=f"Messaged you '{clean_content}'",
+        )
+    db.session.add(new_notification)
+
     db.session.commit()
 
     room = f"user_{receiver_id}"
@@ -111,14 +125,6 @@ def handle_send_message(data):
         'sender_id': sender_id,
         'content': content,
         'date': message.date.strftime('%Y-%m-%d %H:%M')
-    }, room=room)
-
-    # Optional: send a notification to receiver
-    emit('notification', {
-        'notified_user_id': receiver_id,
-        'notifier_id': sender_id,
-        'type': 'chat',
-        'message': f"New message from {current_user.username}"
     }, room=room)
 
 @socketio.on('connect')
@@ -743,6 +749,8 @@ def go_to_notification(notification_id):
         return redirect(url_for('views.post_detail', post_id=notification.post_id))
     elif notification.type in ['answer', 'pin']:
         return redirect(url_for('views.notification'))  # Replace with actual route
+    elif notification.type in ['chat']:
+        return redirect(url_for('views.chat_room', user_id=notification.notifier_id))
     else:
         flash("Notification type is unknown.", "error")
         return redirect(url_for('views.home'))  # fallback
@@ -755,16 +763,6 @@ def read_notification(notification_id):
     if notification.notified_user_id != current_user.id:
         abort(403)
     notification.is_read = True
-    db.session.commit()
-    return redirect(url_for('views.notification'))
-
-@views.route('/notifications/unread/<int:notification_id>')
-@login_required
-def unread_notification(notification_id):
-    notification = Notification.query.get_or_404(notification_id)
-    if notification.notified_user_id != current_user.id:
-        abort(403)
-    notification.is_read = False
     db.session.commit()
     return redirect(url_for('views.notification'))
 

@@ -7,6 +7,7 @@ import re
 from sqlalchemy import or_, func
 from pdf2image import convert_from_path
 from collections import Counter
+import random
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -121,13 +122,14 @@ def suggest_profiles(user_id, limit=5):
     followed_ids = {u.id for u in user.followed}
     user_keywords = set(get_user_keywords(user_id))
 
-    # Get users who are not the current user and not already followed
+    # Get users not followed and not the current user
     other_users = User.query.filter(
         User.id != user_id,
         ~User.id.in_(followed_ids)
     ).all()
 
-    suggestions = []
+    keyword_matches = []
+    no_keyword_users = []
 
     for other_user in other_users:
         note_titles = [note.title for note in other_user.notes]
@@ -137,9 +139,20 @@ def suggest_profiles(user_id, limit=5):
 
         overlap = user_keywords & keywords
         if overlap:
-            suggestions.append((other_user, len(overlap)))
+            keyword_matches.append((other_user, len(overlap)))
+        else:
+            no_keyword_users.append(other_user)
 
-    # Sort by most keyword overlap
-    suggestions.sort(key=lambda x: x[1], reverse=True)
+    # Sort by most overlap
+    keyword_matches.sort(key=lambda x: x[1], reverse=True)
 
-    return [user for user, _ in suggestions[:limit]]
+    # Extract just the user objects
+    suggestions = [user for user, _ in keyword_matches]
+
+    # If not enough, fill with random users from those without overlap
+    if len(suggestions) < limit:
+        remaining_needed = limit - len(suggestions)
+        random.shuffle(no_keyword_users)
+        suggestions += no_keyword_users[:remaining_needed]
+
+    return suggestions[:limit]

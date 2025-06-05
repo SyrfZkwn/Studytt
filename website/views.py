@@ -31,10 +31,12 @@ class UploadFileForm(FlaskForm):
 @views.route('/home')
 @login_required
 def home():
+    followed_ids = [user.id for user in current_user.followed]  # Get IDs of users current_user is following
+
     notes = Note.query.all()
-    recommended_profiles = suggest_profiles(current_user.id)
-    # Get IDs of users current_user is following
-    followed_ids = [user.id for user in current_user.followed]
+    featured_notes = Note.query.filter(Note.publisher.in_(followed_ids)).all()  # Get posts by followed users
+
+    recommended_profiles = suggest_profiles(current_user.id)  # Function from views_utils.py
 
     # Exclude current user and followed users from random_profiles
     random_profiles = User.query.filter(
@@ -43,7 +45,7 @@ def home():
     ).all()
     
     return render_template("home.html", user=current_user, notes=notes, recommended_profiles=recommended_profiles,
-                           random_profiles=random_profiles)
+                           random_profiles=random_profiles, featured_notes=featured_notes)
 
 rooms = {}
 

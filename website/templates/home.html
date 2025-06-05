@@ -5,8 +5,7 @@
 
 <style>
   .post-section {
-    margin-left: 5%;
-    padding: 2rem;
+    padding: 1.5rem 2rem 2rem 2rem;
     font-family: 'Noto Sans', Arial, sans-serif;
     line-height: 1.5;
     color: antiquewhite;
@@ -22,7 +21,7 @@
   }
 
   .image-container {
-    width: 80%;         /* fixed width */
+    width: 85%;         /* fixed width */
     height: auto;         /* allow height to adjust */
     max-height: 450px;    /* limit max height */
     margin: 10px auto;
@@ -58,7 +57,7 @@
   }
 
   .file-container {
-    width: 80%;
+    width: 85%;
     margin: 10px auto;
     background-color: transparent;
     border-radius: 10px;
@@ -69,15 +68,16 @@
   }
 
   .title-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     overflow: hidden;
     display: flex;
     align-items: center;
+    font-size: large;
   }
 
   .username-container {
-    width: 80%;
+    width: 85%;
     margin: 10px auto;
     overflow: hidden;
     display: flex;
@@ -86,7 +86,7 @@
   }
 
   .publisher-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -111,7 +111,7 @@
   }
 
   .description-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -138,60 +138,20 @@
   }
 
   .follow-section {
-    width: 15%;
+    width: 16%;
     background-color: #1b4f83;
     padding: 1rem;
     border-radius: 12px;
     height: fit-content;
     position: sticky;
     top: 6.5rem;
-  }
-
-  .profile-suggestions h3 {
-    color: #f15c22;
-    margin-bottom: 1rem;
-  }
-
-  .profile-card {
-    background-color: #2261a9;
-    padding: 0.5rem;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-    transition: background-color 0.2s ease;
-  }
-
-  a .profile-card  {
-    color: #fff;
-    text-decoration: none;
-  }
-
-  a .profile-card:hover {
-    background-color: #f15c22;
-    text-decoration: none;
-  }
-
-  .pfp {
-    width: 40px; 
-    height: 40px; 
-    border-radius: 50%; 
-    margin-right: 10px; 
-    vertical-align: middle;
-  }
-
-  .follow-section {
-    width: 15%;
-    background-color: #1b4f83;
-    padding: 1rem;
-    border-radius: 12px;
-    height: fit-content;
-    position: sticky;
-    top: 6.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
   .home-container {
     display: flex;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0 1rem 1rem 1rem;
   }
 
   .profile-suggestions h3 {
@@ -213,7 +173,7 @@
   }
 
   a .profile-card:hover {
-    background-color: #f15c22;
+    background-color: #2a94f0;
     text-decoration: none;
   }
 
@@ -227,8 +187,9 @@
 
   .posts-container { 
     padding-left: 1rem;
-    max-width: 80%;
+    max-width: 65%;
     flex: 1;
+    margin: 0 auto;
   }
 </style>
 
@@ -258,8 +219,9 @@
 
 <div class="home-container">
   <div class="posts-container">
-  {% if notes %}
-    {% for note in notes|sort(attribute='date', reverse=true) %}
+  {% set show_notes = featured_notes if featured_notes and featured_notes|length >= 3 else notes %}
+  {% if show_notes %}
+    {% for note in show_notes|sort(attribute='date', reverse=true) %}
     <div class="post-section">
       <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
         <div class="post-content">
@@ -291,10 +253,15 @@
       </a>
     </div>
     {% endfor %}
+    {% if featured_notes %}
+    <h1 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow more users to see more notes!</h1>
+    {% elif notes %}
+    <h1 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No more notes! <a href="{{ url_for('views.post') }}">Try posting some!</a></h1>
+    {% endif %}
   {% else %}
     <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
   {% endif %}
-  </div>
+</div>
 
   <div class="follow-section mx-auto">
     <div class="profile-suggestions">

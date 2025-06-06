@@ -3,12 +3,6 @@
 
 {% block content %}
 <style>
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
   body {
     font-family: 'Baloo 2', cursive;
     background-color: #fbf3e2;
@@ -23,12 +17,12 @@
     border-bottom: 3px solid #1b4f83;
   }
 
-  .profile-pic {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: #ddd;
-    margin-right: 2rem;
+  .pfp {
+    width: 150px; 
+    height: 150px; 
+    border-radius: 50%; 
+    margin-right: 2rem; 
+    vertical-align: middle;
   }
 
   .profile-info {
@@ -47,109 +41,112 @@
     gap: 1.5rem;
   }
 
-  .stat {
-    font-size: 0.8rem;
-    display: block;
-  padding: 0.5rem 1.5rem;
-  background-color: #1b4f83;
-  color: #fdf3de;
-  border-radius: 20px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: background-color 0.2s;
-  width: 100%;
-  outline-style: solid;
-  outline-color: #f15c22;
-  }
-
   .edit-btn {
-    margin-top: 1rem;
     padding: 0.5rem 1rem;
     background-color: #173c67;
     color: #fdf3de;
     border: none;
     border-radius: 10px;
     cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .edit-btn:hover {
+    background-color: #f15c22;
   }
 
   .tabs {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-  justify-content: center;
-  gap: 2rem;
-}
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    justify-content: center;
+    gap: 2rem;
+  }
 
-.tab {
-  flex: 1;
-  text-align: center;
-}
+  .tab {
+    flex: 1;
+    text-align: center;
+  }
 
   .tab a {
-  display: block;
-  padding: 0.5rem 1.5rem;
-  background-color: #1b4f83;
-  color: #fdf3de;
-  border-radius: 20px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: background-color 0.2s;
-  width: 100%;
-}
+    display: block;
+    padding: 0.5rem 1.5rem;
+    background-color: #1b4f83;
+    color: #fdf3de;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+
+  .tab a.unactive {
+    margin: 0 auto;
+    display: block;
+    padding: 0.5rem 1.5rem;
+    background-color: #1b4f83;
+    color: #fdf3de;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 40%;
+  }
 
   .tab a:hover {
-  background-color: #f15c22;
-}
+    background-color: #f15c22;
+  }
 
-.tab a.active {
-  background-color: #f15c22;
-  color: #fff;
-}
+  .tab a.active {
+    background-color: #f15c22;
+    color: #fff;
+  }
 
   .content-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem;
-}
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+  }
 
   .post {
-  background-color: #1b4f83;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.2s;
-  min-width: 250px;
-  max-width: 300px;
-}
+    background-color: #1b4f83;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s;
+    min-width: 250px;
+    max-width: 300px;
+  }
 
   .post a {
     text-decoration: none;
     color: #f15c22;
   }
 
-.post:hover {
-  transform: translateY(-4px);
-}
+  .post:hover {
+    transform: translateY(-4px);
+    background-color: #246aa7;
+  }
 
-.post-img {
-  width: 100%;
-  aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
-  background-color: #1b4f83;
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
-  overflow: hidden;
-}
+  .post-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
+    background-color: #1b4f83;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
 
-.post-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  .post-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
   .post-title {
     font-weight: bold;
@@ -168,19 +165,19 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-  }
+    }
   .stats {
-    flex-direction: column;
-    gap: 0.5rem;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
   }
-}
+
   .tabs a.active {
-            background-color: #f15c22;
-            color: #1b4f83;
-            border-radius: 20px;
-            width: 80%;
-            margin: 0 auto;
-          }
+    background-color: #f15c22;
+    border-radius: 20px;
+    width: 100%;
+    margin: 0 auto;
+  }
 
   #username {
     color: #2a83db;
@@ -194,80 +191,102 @@
 
 </style>
 
-<div class="flash">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-          {% for category, message in messages %}
-          {% if category == 'error' %}
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% else %}
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% endif %}
-          {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-</div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash">
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
   <div class="profile-header">
-    <img class="rounded-circle account-img profile-pic" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+    <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
     
     <div class="profile-info">
-      <div class="username">@{{ user.username }}</div>
+
       <div class="stats">
-        <div class="stat">Posts: {{ notes_count }}</div>
-        <div class="stat">Followers: {{ follower_count }}</div>
-        <div class="stat">Following: {{ following_count }}</div>
-        <div class="stat">Points: {{ points }}</div>
-        <div class="stat">
-          {% if notes_count > 0 %}
-            Total Rating: {{ ((points / notes_count) | round(1)) if ratings_count != 0 else '' }}
-          {% else %}
-          Total Rating: 0
-          {% endif %}
-        </div>
-       
-      </div>
-      <div class="stats">{{user.biography}}</div>
-      {% if user.id != current_user.id %}
-        <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;">
-          {% if is_following %}
-            <button type="button" class="edit-btn" disabled>Followed</button>
-          {% else %}
+        <div class="username">@{{ user.username }}</div>
+        
+        {% if user.id != current_user.id %}
+        {% if not is_following %}
+          <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;" class="small-btn">
             <button type="submit" class="edit-btn">Follow</button>
-          {% endif %}
-        </form>
-        {% if is_following %}
-          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;">
-            <button type="submit" class="edit-btn" style="background-color: #ff0000; margin-left: 10px;">Unfollow</button>
+          </form>
+        {% else %}
+          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;" class="small-btn">
+            <button type="submit" class="edit-btn" style="background-color: #ff0000">Unfollow</button>
           </form>
         {% endif %}
-      {% else %}
-        <a href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+        {% else %}
+          <a class="small-btn" href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+        {% endif %}
+      </div>
+
+      <div class="stats">
+        <div class="stat"><i class="fa-solid fa-file-pen"></i>&nbsp {{ notes_count }} posts</div>
+        <div class="stat"><i class="fa-solid fa-user"></i>&nbsp {{ follower_count }} followers</div>
+        <div class="stat"><i class="fa-solid fa-user-plus"></i>&nbsp {{ following_count }} following</div>
+        <div class="stat">⭐ {{ points }} points</div>
+        
+        <div>
+          {% set rating = ((points / notes_count) | round(1)) if notes_count > 0 else None %}
+          {% if rating is not none %}
+            {% if rating > 4 %}
+              <span style="display: flex;" class="text-success"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_very_satisfied</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 3 %}
+              <span style="display: flex;" class="text-success"><span class="material-symbols-outlined" title="{{ rating }}">mood</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 2 %}
+              <span style="display: flex;" class="text-warning"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_satisfied</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 1 %}
+              <span style="display: flex;" class="text-danger"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_dissatisfied</span>&nbsp {{ rating }} rating</span>
+            {% else %}
+              <div style="display: flex;" class="text-danger"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_sad</span>&nbsp {{ rating }} rating</div>
+            {% endif %}
+          {% else %}
+          {% endif %}
+        </div>
+
+      </div>
+
+      {% if user.biography %}
+        <div class="stats mt-3">{{user.biography}}</div>
       {% endif %}
+
     </div>
   </div>
 
+{% if current_user.id == user.id %}
   <div class="tabs">
     <div class="tab">
-        <a href="profile" class="active">POSTED</a>
+      <a href="profile" class="active">POSTED</a>
     </div>
     <div class="tab">
-        <a href="saved">SAVED</a>
+      <a href="saved">SAVED</a>
     </div>
-</div>
-
+  </div>
+{% else %}
+  <div class="tabs">
+    <div class="tab">
+      <a class="unactive">POSTED</a>
+    </div>
+  </div>
+{% endif %}
 
 <div class="content-section">
   {% for post in posts|reverse %}

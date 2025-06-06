@@ -23,7 +23,7 @@
     }
 
     .notification {
-      margin-bottom: 10px;
+      padding-bottom: 10px;
     }
 
     .pfp {
@@ -109,7 +109,20 @@
     .notification:hover {
       background-color: #246aa7;
       border-radius: 10px;
-      transition: background-color 0.3s ease;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.5rem 1.5rem;
+      background-color: #fff;
+      color: #f15c22;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      text-align: center;
+      margin: 1.5rem auto;
+      width: 40%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
 </style>
@@ -171,6 +184,7 @@
         <a href="{{ url_for('views.go_to_notification', notification_id=n.id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
       </div>
 
   </div>
@@ -214,6 +228,7 @@
         <a href="{{ url_for('views.go_to_notification', notification_id=n.id) }}" class="go-to" style="max-width: 85%; height: auto; display: flex;">
           <h5 class="unbold">{{ n.message | safe }}</h5>
         </a>
+        <h5 class="unbold" style="margin-right: 0; margin-left: auto;"><small>{{ n.timestamp | time_ago }}</small></h5>
       </div>
       
   </div>

@@ -227,7 +227,16 @@ def user_profile(user_id):
         posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
         notes_count = len(posts)
         is_following = current_user.is_following(user)
-        return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+
+        return render_template("profile.html",
+            user=user,
+            follower_count=follower_count,
+            following_count=following_count,
+            posts=posts,
+            notes_count=notes_count,
+            points=points,
+            is_following=is_following
+        )
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
@@ -265,18 +274,21 @@ def unfollow(user_id):
 @views.route('/saved')
 @login_required
 def saved():
-        follower_count = current_user.follower_count()
-        following_count = current_user.following_count()
-        # Don't call .all() on current_user.saved since it's already a list
-        saved_posts = current_user.saved
-        # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
-        notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
-        
-        return render_template("saved.html", user=current_user, 
-                            follower_count=follower_count, 
-                            following_count=following_count, 
-                            saved_posts=saved_posts,
-                            notes_count=notes_count)
+    user = User.query.get_or_404(current_user.id)
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    saved_posts = current_user.saved
+    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+    notes_count = len(posts)
+    points = user.points
+    
+    return render_template("saved.html", 
+        user=current_user, 
+        follower_count=follower_count, 
+        following_count=following_count, 
+        saved_posts=saved_posts,
+        notes_count=notes_count, points=points
+    )
 
 
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
@@ -587,7 +599,7 @@ from PIL import Image, ImageOps
 def edit_profile():
         if request.method == "POST":
             username = request.form.get("username")
-            biography = request.form.get("biography")
+            biography = clean(request.form.get("biography"))
 
             if username:
                 current_user.username = username
@@ -635,7 +647,7 @@ def post_edit(post_id):
             post.title = request.form.get('title')
             post.code = request.form.get('code')
             post.chapter = request.form.get('chapter')
-            post.description = form.description.data
+            post.description = clean(form.description.data)
 
             db.session.commit()
 

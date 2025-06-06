@@ -219,9 +219,8 @@
 
 <div class="home-container">
   <div class="posts-container">
-  {% set show_notes = featured_notes if featured_notes and featured_notes|length >= 3 else notes %}
-  {% if show_notes %}
-    {% for note in show_notes|sort(attribute='date', reverse=true) %}
+  {% if featured_notes %}
+    {% for note in featured_notes|sort(attribute='date', reverse=true) %}
     <div class="post-section">
       <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
         <div class="post-content">
@@ -253,19 +252,16 @@
       </a>
     </div>
     {% endfor %}
-    {% if featured_notes %}
-    <h1 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow more users to see more notes!</h1>
-    {% elif notes %}
-    <h1 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No more notes! <a href="{{ url_for('views.post') }}">Try posting some!</a></h1>
-    {% endif %}
+  <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow more users to see more notes!</h1>
   {% else %}
-    <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
+  <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow other users to see their notes here! 👉</h1>
   {% endif %}
 </div>
 
-  <div class="follow-section mx-auto">
+  <div class="follow-section mx-auto mt-4">
     <div class="profile-suggestions">
-    {% if recommended_profiles %}
+    {% set other_profiles=recommended_profiles if recommended_profiles else random_profiles %}
+    {% if other_profiles %}
       <h3>Follow them!</h3>
       {% for profile in recommended_profiles %}
         <a href="{{ url_for('views.user_profile', user_id=profile.id) }}" style="text-decoration: none;">
@@ -276,19 +272,7 @@
         </a>
       {% endfor %}
     {% else %}
-      {% if random_profiles %}
-      <h3>Follow them!</h3>
-      {% for profile in random_profiles %}
-        <a href="{{ url_for('views.user_profile', user_id=profile.id) }}" style="text-decoration: none;">
-          <div class="profile-card">
-            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (profile.image_profile if profile.image_profile else 'default.jpg')) }}" alt="Profile Picture">
-            {{ profile.username }}
-          </div>
-        </a>
-      {% endfor %}
-      {% else %}
-        <h3>No more people to follow!</h3>
-      {% endif %}
+      <h3>No more people to follow!</h3>
     {% endif %}
     </div>
   </div>

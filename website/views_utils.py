@@ -8,6 +8,8 @@ from sqlalchemy import or_, func
 from pdf2image import convert_from_path
 from collections import Counter
 import random
+from .models import get_local_time
+from datetime import timedelta
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -64,27 +66,34 @@ def extract_keywords(title):
     return [word for word in words if word not in stopwords]
 
 def get_user_keywords(user_id):
-    # Get titles of highly rated notes
+    # What time ago is considered as recent
+    recently = get_local_time() - timedelta(days=7)
+
+    # Get titles of notes the user has rated 4 or 5 within recently
     rated_titles = db.session.query(Note.title).join(Rating).filter(
         Rating.rater_id == user_id,
-        Rating.value >= 4
+        Rating.value >= 4,
+        Rating.date >= recently
     ).all()
 
-    # Get titles of saved notes
+    # Same as above but for saved notes
     saved_titles = db.session.query(Note.title).join(
         saved_posts, Note.id == saved_posts.c.note_id
     ).filter(
-        saved_posts.c.user_id == user_id
+        saved_posts.c.user_id == user_id,
+        saved_posts.c.date >= recently
     ).all()
 
-    # Merge and flatten titles
+    # Flatten the list of titles from both rated and saved notes
     all_titles = [title for (title,) in rated_titles + saved_titles]
 
-    # Extract keywords
+    # Extract keywords from all titles
     keywords = [kw for title in all_titles for kw in extract_keywords(title)]
+
+    # Count the frequency of each keyword
     keyword_counts = Counter(keywords)
 
-    # Return top 3 keywords
+    # Return the top 3 most common keywords
     return [kw for kw, _ in keyword_counts.most_common(3)]
 
 def recommend_posts(user_id, limit=20):
@@ -100,16 +109,11 @@ def recommend_posts(user_id, limit=20):
     user = User.query.get(user_id)
     saved_ids = [note.id for note in user.saved]
 
-    # Get note IDs rated by user
-    rated_note_ids = db.session.query(Rating.note_id).filter_by(rater_id=user_id).all()
-    rated_ids = [r[0] for r in rated_note_ids]
-
     # Fetch posts that match keywords, not by user, and not saved or rated
     posts = Note.query.filter(
         or_(*conditions),
         Note.publisher != user_id,
         ~Note.id.in_(saved_ids),
-        ~Note.id.in_(rated_ids)
     ).order_by(func.random()).limit(limit).all()
 
     return posts

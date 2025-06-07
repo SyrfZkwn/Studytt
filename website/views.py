@@ -215,7 +215,7 @@ def profile():
     follower_count = current_user.follower_count()
     following_count = current_user.following_count()
     points = current_user.points
-    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+    posts = current_user.notes
     notes_count = len(posts)
     saved_posts = current_user.saved
     
@@ -241,7 +241,7 @@ def user_profile(user_id):
     follower_count = user.follower_count()
     following_count = user.following_count()
     points = user.points
-    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+    posts = user.notes
     notes_count = len(posts)
     is_following = current_user.is_following(user)
 
@@ -903,3 +903,32 @@ def explore():
 @views.route('/post_not_found')
 def deleted_post():
     return render_template('post_deleted.html')
+
+@views.route('/profile-followers/<int:user_id>')
+@login_required
+def profile_followers(user_id):
+    show_followers = int(request.args.get('show_followers', 1)) # will show posts by default
+    show_following = int(request.args.get('show_following', 0))
+
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes
+    followers = user.followers.all()
+    following = user.followed.all()
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+
+    return render_template("followers.html", 
+        user=user, 
+        follower_count=follower_count, 
+        following_count=following_count, 
+        notes_count=notes_count, 
+        points=points,
+        show_followers=show_followers,
+        show_following=show_following,
+        is_following=is_following,
+        followers=followers,
+        following=following
+    )

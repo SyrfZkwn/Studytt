@@ -191,6 +191,12 @@
     flex: 1;
     margin: 0 auto;
   }
+
+  #username:hover {
+    color: #f15c22;
+    text-decoration: underline;
+  }
+
 </style>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -222,13 +228,18 @@
   {% if featured_notes %}
     {% for note in featured_notes|sort(attribute='date', reverse=true) %}
     <div class="post-section">
-      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
-        <div class="post-content">
+      <div class="post-content">
 
-          <div class="username-container">
-            <img src="{{ url_for('static', filename='profile_pics/' + (note.user.image_profile if note.user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
-            {{ note.user.username }} <span class="mx-2">·</span> {{ note.date | time_ago }}
-          </div>
+        <div class="username-container">
+          <span>
+          <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (note.user.image_profile if note.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+          </a>
+          <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+        </div>
+
+        <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+
           <div class="title-container">
             {{ note.title }} {{ note.code }} | Chapter : {{ note.chapter }}
           </div>
@@ -248,8 +259,8 @@
           <div class="description-container">
             <p>{{ note.description|safe }}</p>
           </div>
-        </div>
-      </a>
+        </a>
+      </div>
     </div>
     {% endfor %}
   <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow more users to see more notes!</h1>

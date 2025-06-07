@@ -209,34 +209,53 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-        follower_count = current_user.follower_count()
-        following_count = current_user.following_count()
-        points = current_user.points
-        posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
-        notes_count = len(posts)
-        
-        return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
+    show_posts = int(request.args.get('show_posts', 1)) # will show posts by default
+    show_saved = int(request.args.get('show_saved', 0))
+
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    points = current_user.points
+    posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
+    notes_count = len(posts)
+    saved_posts = current_user.saved
+    
+    return render_template("profile.html", 
+        user=current_user, 
+        follower_count=follower_count, 
+        following_count=following_count, 
+        posts=posts, 
+        notes_count=notes_count, 
+        saved_posts=saved_posts,
+        points=points,
+        show_saved=show_saved,
+        show_posts=show_posts
+    )
 
 @views.route('/profile/<int:user_id>')
 @login_required
 def user_profile(user_id):
-        user = User.query.get_or_404(user_id)
-        follower_count = user.follower_count()
-        following_count = user.following_count()
-        points = user.points
-        posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-        notes_count = len(posts)
-        is_following = current_user.is_following(user)
+    show_posts = 1 
+    show_saved = 0
 
-        return render_template("profile.html",
-            user=user,
-            follower_count=follower_count,
-            following_count=following_count,
-            posts=posts,
-            notes_count=notes_count,
-            points=points,
-            is_following=is_following
-        )
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+
+    return render_template("profile.html",
+        user=user,
+        follower_count=follower_count,
+        following_count=following_count,
+        posts=posts,
+        notes_count=notes_count,
+        points=points,
+        is_following=is_following,
+        show_posts=show_posts,
+        show_saved=show_saved
+    )
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
@@ -270,26 +289,6 @@ def unfollow(user_id):
         db.session.commit()
         flash(f"You have unfollowed {user.username}", "success")
     return redirect(url_for('views.user_profile', user_id=user_id))
-
-@views.route('/saved')
-@login_required
-def saved():
-    user = User.query.get_or_404(current_user.id)
-    follower_count = current_user.follower_count()
-    following_count = current_user.following_count()
-    saved_posts = current_user.saved
-    posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-    notes_count = len(posts)
-    points = user.points
-    
-    return render_template("saved.html", 
-        user=current_user, 
-        follower_count=follower_count, 
-        following_count=following_count, 
-        saved_posts=saved_posts,
-        notes_count=notes_count, points=points
-    )
-
 
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
@@ -864,15 +863,23 @@ def unpin_answer(answer_id):
 @login_required
 def search():
     query = request.args.get('q', '')
+    post_search = int(request.args.get('post', 1)) # will search notes by default
+    user_search = int(request.args.get('user', 0))
 
-    users = User.query.filter(User.username.ilike(f"%{query}%")).all()
-    notes = Note.query.filter(
-        (Note.title.ilike(f"%{query}%")) | 
-        (Note.code.ilike(f"%{query}%")) |
-        (Note.chapter.ilike(f"%{query}%")) 
-    ).all()
+    users=[]
+    notes=[]
 
-    return render_template("search_results.html", users=users, notes=notes, query=query)
+    if user_search:
+        users = User.query.filter(User.username.ilike(f"%{query}%"), User.id != current_user.id).all()
+
+    if post_search:
+        notes = Note.query.filter(
+            (Note.title.ilike(f"%{query}%")) | 
+            (Note.code.ilike(f"%{query}%")) |
+            (Note.chapter.ilike(f"%{query}%")) 
+        ).all()
+
+    return render_template("search_results.html", users=users, notes=notes, query=query, post=post_search, user=user_search)
 
 @views.route('/explore')
 @login_required

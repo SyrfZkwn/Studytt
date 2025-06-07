@@ -83,11 +83,6 @@
       width: fit-content;
     }
 
-    .header {
-      color: #f15c22;
-      padding: 1rem 0 0 1rem;
-    }
-
     .follow-section {
       width: 16%;
       background-color: #1b4f83;
@@ -181,7 +176,7 @@
 <div class="explore-container">
   <div class="main-section">
   {% if recommended_notes and recommended_notes|length >= 3 %}
-    <h2 class="header tab">Recommended</h2>
+    <h2 class="tab">Recommended</h2>
     <div class="content-section mb-4">
       {% for note in recommended_notes[:9] |reverse %}
         <div class="post">
@@ -205,7 +200,7 @@
   {% endif %}
 
   {% if notes %}
-  <h2 class="header tab">Recently Posted</h2>
+  <h2 class="tab">Recently Posted</h2>
     <div class="content-section">
       {% for note in notes|reverse %}
         <div class="post">

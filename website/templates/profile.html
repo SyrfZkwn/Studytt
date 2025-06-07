@@ -81,7 +81,7 @@
     width: 100%;
   }
 
-  .tab a.unactive {
+  .tab a.inactive {
     margin: 0 auto;
     display: block;
     padding: 0.5rem 1.5rem;
@@ -274,20 +274,21 @@
 {% if current_user.id == user.id %}
   <div class="tabs">
     <div class="tab">
-      <a href="profile" class="active">POSTED</a>
+      <a href="{{ url_for('views.profile', show_saved=0, show_posts=1) }}" class="{% if show_posts == 1 %}active{% endif %}">POSTED</a>
     </div>
     <div class="tab">
-      <a href="saved">SAVED</a>
+      <a href="{{ url_for('views.profile', show_saved=1,show_posts = 0) }}" class="{% if show_saved == 1 %}active{% endif %}">SAVED</a>
     </div>
   </div>
 {% else %}
   <div class="tabs">
     <div class="tab">
-      <a class="unactive">POSTED</a>
+      <a class="inactive">POSTED</a>
     </div>
   </div>
 {% endif %}
 
+{% if show_posts == 1 %}
 <div class="content-section">
   {% for post in posts|reverse %}
   <div class="post">
@@ -306,8 +307,42 @@
       <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
     </div>
   </div>
-    {% else %}
+  {% else %}
+</div>
+  <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">
+    No notes to show. 
+    {% if current_user.id == user.id %}
+    <a href="{{ url_for('views.post') }}">Try posting some notes!</a>
+    {% endif %}
+  </h2>
+  {% endfor %}
+{% endif %}
+
+{% if show_saved == 1 and current_user.id == user.id %}
+<div class="content-section">
+  {% for post in saved_posts %}
+  <div class="post">
+    <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
+      <div class="post-img">
+        {% if post.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (post.preview_path or '') }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% else %}
+          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% endif %}
+      </div>
+      <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
+    </a>
+    <div class="post-footer">
+      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
+      <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
+    </div>
   </div>
-    <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h2>
-    {% endfor %}
+    {% else %}
+</div>
+  <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">
+    No saved notes.
+  </h2>
+  {% endfor %}
+{% endif %}
+
 {% endblock %}

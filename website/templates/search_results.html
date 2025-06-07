@@ -205,6 +205,7 @@
 
 {% if users %}
   <div class="profiles">
+  <h1 style="color: #f15c22; margin-left: 1rem;">Users :</h1>
   {% for user in users %}
     <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
       <div class="profile">

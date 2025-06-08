@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+<title>{% block title %}Report Content{% endblock %}</title>
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+  <h2>Report Content</h2>
+  <form method="POST" action="{{ url_for('views.report') }}">
+    <input type="hidden" name="note_id" value="{{ note_id }}">
+    <input type="hidden" name="comment_id" value="{{ comment_id }}">
+    <div class="form-group">
+      <label for="reason">Please explain why you are reporting this content:</label>
+      <textarea id="reason" name="reason" class="form-control" rows="6" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-danger mt-3">Submit Report</button>
+    <a href="{{ url_for('views.home') }}" class="btn btn-secondary mt-3">Cancel</a>
+  </form>
+</div>
+{% endblock %}

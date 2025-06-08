@@ -450,11 +450,21 @@
         <i class="fa-regular fa-comment comment-icon"></i>
       </button>
     </div>
-    {% if current_user.is_authenticated and current_user.id != post.user.id %}
-    <form>
-    <button type="button" onclick="openReportModal('{{ note.id }}', null)">Report Post</button>
-    </form>
-    {% endif %}
+              {% if current_user.is_authenticated and current_user.id != post.user.id %}
+              <button type="button" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="openReportModal('{{ post.id }}', '')">Report Post</button>
+              {% endif %}
+=======
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportButton = document.getElementById('reportPostButton');
+    if (reportButton) {
+        reportButton.addEventListener('click', function() {
+            const postId = this.getAttribute('data-post-id');
+            openReportModal(postId, null);
+        });
+    }
+});
+</script>
   </div>
 
   <div class="post-description">{{ post.description | safe }}</div>
@@ -509,8 +519,8 @@
 
             <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
               {% if current_user.is_authenticated and current_user.id != comment.commenter_id %}
-                <button type="button" class="btn btn-outline-warning btn-sm" onclick="openReportModal(null, '{{ comment.id }}')">
-                  Report
+                <button type="button" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="openReportModal('', '{{ comment.id }}')">
+                  Report Comment
                 </button>
               {% endif %}
 
@@ -775,15 +785,38 @@
     });
   }); // for mention //
 
-    function openReportModal(noteId, commentId) {
+function openReportModal(noteId, commentId) {
   document.getElementById('reportNoteId').value = noteId || '';
   document.getElementById('reportCommentId').value = commentId || '';
+  document.getElementById('reportModal').style.display = 'flex';
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').style.display = 'none';
 }
 
 
-  function closeReportModal() {
-    document.getElementById('reportModal').style.display = 'none';
-  }
-
 </script>
+
+<!-- Report Modal -->
+<div id="reportModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+  <div style="background: white; padding: 20px; border-radius: 10px; width: 400px;">
+    <h4>Report Content</h4>
+    <form method="POST" action="{{ url_for('views.report') }}">
+      <input type="hidden" id="reportNoteId" name="note_id" value="">
+      <input type="hidden" id="reportCommentId" name="comment_id" value="">
+      <div class="form-group">
+        <label for="reason">Reason</label>
+        <textarea name="reason" id="reason" class="form-control" required rows="4" placeholder="Describe the issue..."></textarea>
+      </div>
+      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="submit" class="btn btn-danger">Submit</button>
+        <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
+
+

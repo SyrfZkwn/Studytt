@@ -22,6 +22,8 @@ import bleach
 import re
 from pdf2image import convert_from_path
 import uuid
+from flask_mailman import Mail
+from .extensions import mail
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -104,19 +106,19 @@ def chat_home():
     chat_data = []
 
     for user in followed_users:
-     room_code = generate_room_code(current_user.id, user.id)
+        room_code = generate_room_code(current_user.id, user.id)
 
-    last_message = ChatMessage.query.filter_by(room_code=room_code) \
-        .order_by(ChatMessage.date.desc()) \
-        .first()
+        last_message = ChatMessage.query.filter_by(room_code=room_code) \
+            .order_by(ChatMessage.date.desc()) \
+            .first()
 
-    print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
+        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
 
-    chat_data.append({
-        "user": user,
-        "last_message": last_message.message if last_message else "",
-        "timestamp": last_message.date if last_message else None
-    })
+        chat_data.append({
+            "user": user,
+            "last_message": last_message.message if last_message else "",
+            "timestamp": last_message.date if last_message else None
+        })
 
 
     return render_template("chat.html", chat_data=chat_data)
@@ -605,11 +607,11 @@ def qna():
             publisher=current_user.id
         )
 
-    db.session.add(new_question)
-    db.session.commit()
+        db.session.add(new_question)
+        db.session.commit()
 
-    flash('Question posted!', category='success')
-    return redirect(url_for('views.qna'))
+        flash('Question posted!', category='success')
+        return redirect(url_for('views.qna'))
     
     questions = Question.query.all()
     return render_template("qna.html", user=current_user, questions=questions)
@@ -916,10 +918,15 @@ def explore():
 def deleted_post():
     return render_template('post_deleted.html')
 
-# User submits a report
-@views.route('/report', methods=['POST'])
+@views.route('/report', methods=['GET', 'POST'])
 @login_required
 def report():
+    if request.method == 'GET':
+        note_id = request.args.get('note_id')
+        comment_id = request.args.get('comment_id')
+        return render_template('report_form.html', note_id=note_id, comment_id=comment_id)
+
+    # POST method
     reason = request.form.get('reason')
     note_id = request.form.get('note_id')
     comment_id = request.form.get('comment_id')
@@ -939,23 +946,51 @@ def report():
         flash("You've already reported this.", "info")
         return redirect(request.referrer)
 
+    # Convert 'None' string to None for foreign keys
+    note_id_val = None if not note_id or note_id == 'None' else note_id
+    comment_id_val = None if not comment_id or comment_id == 'None' else comment_id
+
     report = Report(
         reported_by=current_user.id,
-        note_id=note_id if note_id else None,
-        comment_id=comment_id if comment_id else None,
+        note_id=note_id_val,
+        comment_id=comment_id_val,
         reason=reason
     )
     db.session.add(report)
     db.session.commit()
+
+    # Send email notification to admins
+    admin_email = "studytt518@gmail.com"
+    admin_user = User.query.filter(User.email.ilike(admin_email)).first()
+    if admin_user:
+        reporter = current_user.username
+        reported_item = ""
+        if note_id:
+            reported_item = f"Post ID: {note_id} - {url_for('views.post_detail', post_id=note_id)}"
+        elif comment_id:
+            comment = Comment.query.get(comment_id)
+            note_id_for_comment = comment.note_id if comment else None
+            reported_item = f"Comment ID: {comment_id} - {url_for('views.post_detail', post_id=note_id_for_comment)}"
+        message = f"New report submitted by {reporter}.\nReason: {reason}\nReported Content: {reported_item}"
+        new_notification = Notification(
+            notified_user_id=admin_user.id,
+            notifier_id=current_user.id,
+            type='report',
+            message=message,
+            post_id=note_id if note_id else note_id_for_comment
+        )
+        db.session.add(new_notification)
+        db.session.commit()
+
     flash("Thank you. Your report has been submitted.", "success")
-    return redirect(request.referrer)
+    return redirect(url_for('views.home'))
 
 
 # Admin: view reports
 @views.route('/admin/reports')
 @login_required
 def admin_reports():
-    if not current_user.is_admin:
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
         return "Unauthorized", 403
 
     status_filter = request.args.get('status', 'pending')
@@ -967,7 +1002,7 @@ def admin_reports():
 @views.route('/admin/report/<int:report_id>/update', methods=['POST'])
 @login_required
 def update_report_status(report_id):
-    if not current_user.is_admin:
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
         return "Unauthorized", 403
 
     report = Report.query.get_or_404(report_id)

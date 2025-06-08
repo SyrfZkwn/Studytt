@@ -1,51 +1,143 @@
 {% extends "base.html" %}
-<title>{% block title %}Admin Reports{% endblock %}</title>
+{% block title %}Admin Reports{% endblock %}
 
 {% block content %}
 
-<h1>Reported Content — {{ status_filter.title() }}</h1>
+<style>
+  .center-me {
+    color: #f15c22;
+    margin: 0 auto;
+    width: fit-content;
+  }
 
-<form method="GET">
-  <select name="status" onchange="this.form.submit()">
+  .report-section {
+    width: 85%;
+    background-color: #1b4f83;
+    color: #fff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    margin: 0 auto 40px auto;
+  }
+
+  .report {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #2d7ac0;
+    border-radius: 15px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  }
+
+  .report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .reporter {
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  .report-target a {
+    color: #f15c22;
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .report-target a:hover {
+    text-decoration: underline;
+  }
+
+  .report-reason {
+    margin: 10px 0;
+    font-style: italic;
+  }
+
+  .report-timestamp {
+    font-size: 0.9em;
+    color: #ccc;
+  }
+
+  .report-actions form {
+    display: inline-block;
+    margin-right: 10px;
+  }
+
+  .btn-review {
+    background-color: #28a745;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-review:hover {
+    background-color: #218838;
+  }
+
+  .btn-dismiss {
+    background-color: #dc3545;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-dismiss:hover {
+    background-color: #c82333;
+  }
+</style>
+
+<h1 class="center-me">Reported Content — {{ status_filter.title() }}</h1>
+
+<form method="GET" style="width: 85%; margin: 0 auto 20px auto;">
+  <select name="status" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: none; font-size: 1em;">
     <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
     <option value="reviewed" {% if status_filter == 'reviewed' %}selected{% endif %}>Reviewed</option>
     <option value="dismissed" {% if status_filter == 'dismissed' %}selected{% endif %}>Dismissed</option>
   </select>
 </form>
 
-<table>
-  <tr>
-    <th>Reporter</th>
-    <th>Target</th>
-    <th>Reason</th>
-    <th>Time</th>
-    <th>Actions</th>
-  </tr>
-  {% for report in reports %}
-  <tr>
-    <td>{{ report.reporter.username }}</td>
-    <td>
-      {% if report.post_id %}
-        <a href="{{ url_for('view_post', post_id=report.post_id) }}">Post #{{ report.post_id }}</a>
-      {% elif report.comment_id %}
-        <a href="{{ url_for('view_comment', comment_id=report.comment_id) }}">Comment #{{ report.comment_id }}</a>
-      {% endif %}
-    </td>
-    <td>{{ report.reason }}</td>
-    <td>{{ report.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-    <td>
-      <form action="{{ url_for('update_report_status', report_id=report.id) }}" method="POST" style="display:inline;">
-        <input type="hidden" name="status" value="reviewed">
-        <button type="submit">Mark Reviewed</button>
-      </form>
-      <form action="{{ url_for('update_report_status', report_id=report.id) }}" method="POST" style="display:inline;">
-        <input type="hidden" name="status" value="dismissed">
-        <button type="submit">Dismiss</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-
+<div class="report-section">
+  {% if reports %}
+    {% for report in reports %}
+      <div class="report">
+        <div class="report-header">
+          <div class="reporter">Reporter: {{ report.reporter.username }}</div>
+          <div class="report-timestamp">{{ report.timestamp.strftime('%Y-%m-%d %H:%M') }}</div>
+        </div>
+        <div class="report-target">
+          {% if report.note_id %}
+            <a href="{{ url_for('views.post_detail', post_id=report.note_id) }}">Post #{{ report.note_id }} - {{ report.note.title if report.note else '' }}</a>
+          {% elif report.comment_id %}
+            <a href="{{ url_for('views.post_detail', post_id=report.comment.note_id) }}">Comment #{{ report.comment_id }} on Post #{{ report.comment.note_id }}</a>
+            <p style="color: #f0b27a; margin-top: 5px;">"{{ report.comment.body[:100] }}{% if report.comment.body|length > 100 %}...{% endif %}"</p>
+          {% else %}
+            <span>Unknown target</span>
+          {% endif %}
+        </div>
+        <div class="report-reason">Reason: {{ report.reason }}</div>
+        <div class="report-actions">
+          <form action="{{ url_for('views.update_report_status', report_id=report.id) }}" method="POST">
+            <input type="hidden" name="status" value="reviewed">
+            <button type="submit" class="btn-review">Mark Reviewed</button>
+          </form>
+          <form action="{{ url_for('views.update_report_status', report_id=report.id) }}" method="POST">
+            <input type="hidden" name="status" value="dismissed">
+            <button type="submit" class="btn-dismiss">Dismiss</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="text-align: center; color: #ccc;">No reports found for this status.</p>
+  {% endif %}
+</div>
 
 {% endblock %}

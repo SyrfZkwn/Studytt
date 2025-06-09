@@ -299,7 +299,7 @@
             </button>
           <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
-              <a href="#">Settings</a>
+              <a href="{{ url_for('views.settings') }}">Settings</a>
               {% if current_user.is_authenticated and current_user.email.lower() == "studytt@admin" %}
               <a href="{{ url_for('admin.index') }}">Admin Area</a>
               {% endif %}

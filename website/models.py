@@ -72,8 +72,7 @@ class User(db.Model, UserMixin):
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
     verified = db.Column(db.Boolean, default=False)
-
-
+    theme_preference = db.Column(db.String(10), default='light')
 
     followed = db.relationship(
         'User', secondary=followers,

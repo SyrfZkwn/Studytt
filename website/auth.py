@@ -6,6 +6,9 @@ from sqlalchemy.sql import func
 from flask_mailman import EmailMessage
 from .extensions import db, mail
 from .email_utils import generate_verification_token, confirm_verification_token
+from flask_mailman import EmailMessage
+from .extensions import db, mail
+from .email_utils import generate_verification_token, confirm_verification_token
 
 
 auth = Blueprint('auth', __name__)
@@ -17,11 +20,11 @@ def login():
         password = request.form.get('password')
 
         # Special admin login check
-        if email == "Studytt@Admin" and password == "Studytt123":
+        if email == "studytt518@gmail.com" and password == "~Qwerty1234567":
             # Create a dummy User object for admin
             admin_user = User()
             admin_user.id = 0
-            admin_user.email = "Studytt@Admin"
+            admin_user.email = "studytt518@gmail.com"
             admin_user.username = "Admin"
             login_user(admin_user, remember=True)
             return redirect(url_for('views.home'))
@@ -35,6 +38,7 @@ def login():
                 login_user(user, remember=True)
                 return redirect(url_for('views.home'))
             else:
+                flash('Incorrect password, try again.', category='error')
                 flash('Incorrect password, try again.', category='error')
         else:
             flash('An account with that email does not exists.', category='error')

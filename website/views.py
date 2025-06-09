@@ -6,7 +6,7 @@ from flask_wtf.file import FileSize
 from werkzeug.utils import secure_filename
 import os
 from wtforms.validators import InputRequired, DataRequired
-from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote
+from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, CommentVote, Reply, Notification, ReplyVote, Report
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
@@ -76,14 +76,31 @@ def generate_unique_code(length):
 @views.route('/chat')
 @login_required
 def chat_home():
-    # Show chat list of followed users
     followed_users = current_user.followed.all()
-    return render_template("chat.html", followed_users=followed_users)
+    chat_data = []
+
+    for user in followed_users:
+        room_code = generate_room_code(current_user.id, user.id)
+
+        last_message = ChatMessage.query.filter_by(room_code=room_code) \
+            .order_by(ChatMessage.date.desc()) \
+            .first()
+
+        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
+
+        chat_data.append({
+            "user": user,
+            "last_message": last_message.message if last_message else "",
+            "timestamp": last_message.date if last_message else None
+        })
+
+
+    return render_template("chat.html", chat_data=chat_data)
+
 
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
-    # Check if user_id is followed by current_user
     user = User.query.get_or_404(user_id)
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
@@ -605,7 +622,17 @@ def edit_profile():
                 current_user.username = username
             if biography:
                 current_user.biography = biography
+            if username:
+                current_user.username = username
+            if biography:
+                current_user.biography = biography
 
+            if "image_profile" in request.files:
+                file = request.files["image_profile"]
+                if file and file.filename != "":
+                    random_hex = secrets.token_hex(8)
+                    _, f_ext = os.path.splitext(file.filename)
+                    picture_fn = random_hex + f_ext
             if "image_profile" in request.files:
                 file = request.files["image_profile"]
                 if file and file.filename != "":
@@ -616,7 +643,11 @@ def edit_profile():
                     # Make sure the directory exists
                     profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
                     os.makedirs(profile_pics_folder, exist_ok=True)
+                    # Make sure the directory exists
+                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                    os.makedirs(profile_pics_folder, exist_ok=True)
 
+                    picture_path = os.path.join(profile_pics_folder, picture_fn)
                     picture_path = os.path.join(profile_pics_folder, picture_fn)
 
                     # Resize image to 125x125 pixels
@@ -630,7 +661,12 @@ def edit_profile():
             db.session.commit()
             flash("Your profile has been updated!", "success")
             return redirect(url_for("views.profile"))
+            db.session.commit()
+            flash("Your profile has been updated!", "success")
+            return redirect(url_for("views.profile"))
 
+        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
+        return render_template('edit_profile.html', title='edit_profile')
         image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
         return render_template('edit_profile.html', title='edit_profile')
 
@@ -640,7 +676,11 @@ def post_edit(post_id):
         post = Note.query.get_or_404(post_id)
         if post.publisher != current_user.id:
             abort(403)
+        post = Note.query.get_or_404(post_id)
+        if post.publisher != current_user.id:
+            abort(403)
 
+        form = UploadFileForm()
         form = UploadFileForm()
 
         if request.method == 'POST':
@@ -650,7 +690,12 @@ def post_edit(post_id):
             post.description = clean(form.description.data)
 
             db.session.commit()
+            db.session.commit()
 
+            flash('Note Edited!', category='success')
+            return redirect(url_for('views.post_detail', post_id=post.id))
+            
+        return render_template("post_edit.html", form=form, post=post)
             flash('Note Edited!', category='success')
             return redirect(url_for('views.post_detail', post_id=post.id))
             
@@ -1006,3 +1051,102 @@ def settings():
             return redirect(url_for('views.settings'))
     
     return render_template('settings.html')
+
+@views.route('/report', methods=['GET', 'POST'])
+@login_required
+def report():
+    if request.method == 'GET':
+        note_id = request.args.get('note_id')
+        comment_id = request.args.get('comment_id')
+        return render_template('report_form.html', note_id=note_id, comment_id=comment_id)
+
+    # POST method
+    reason = request.form.get('reason')
+    note_id = request.form.get('note_id')
+    comment_id = request.form.get('comment_id')
+
+    if not reason:
+        flash("Please enter a reason for your report.", "warning")
+        return redirect(request.referrer)
+
+    # Check for duplicate reports
+    existing = Report.query.filter_by(
+        reported_by=current_user.id,
+        note_id=note_id if note_id else None,
+        comment_id=comment_id if comment_id else None
+    ).first()
+
+    if existing:
+        flash("You've already reported this.", "info")
+        return redirect(request.referrer)
+
+    # Convert 'None' string to None for foreign keys
+    note_id_val = None if not note_id or note_id == 'None' else note_id
+    comment_id_val = None if not comment_id or comment_id == 'None' else comment_id
+
+    report = Report(
+        reported_by=current_user.id,
+        note_id=note_id_val,
+        comment_id=comment_id_val,
+        reason=reason
+    )
+    db.session.add(report)
+    db.session.commit()
+
+    # Send email notification to admins
+    admin_email = "studytt518@gmail.com"
+    admin_user = User.query.filter(User.email.ilike(admin_email)).first()
+    if admin_user:
+        reporter = current_user.username
+        reported_item = ""
+        if note_id:
+            reported_item = f"Post ID: {note_id} - {url_for('views.post_detail', post_id=note_id)}"
+        elif comment_id:
+            comment = Comment.query.get(comment_id)
+            note_id_for_comment = comment.note_id if comment else None
+            reported_item = f"Comment ID: {comment_id} - {url_for('views.post_detail', post_id=note_id_for_comment)}"
+        message = f"New report submitted by {reporter}.\nReason: {reason}\nReported Content: {reported_item}"
+        new_notification = Notification(
+            notified_user_id=admin_user.id,
+            notifier_id=current_user.id,
+            type='report',
+            message=message,
+            post_id=note_id if note_id else note_id_for_comment
+        )
+        db.session.add(new_notification)
+        db.session.commit()
+
+    flash("Thank you. Your report has been submitted.", "success")
+    return redirect(url_for('views.home'))
+
+
+# Admin: view reports
+@views.route('/admin/reports')
+@login_required
+def admin_reports():
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+
+    status_filter = request.args.get('status', 'pending')
+    reports = Report.query.filter_by(status=status_filter).order_by(Report.timestamp.desc()).all()
+    return render_template('admin_reports.html', reports=reports, status_filter=status_filter)
+
+
+# Admin: update report status
+@views.route('/admin/report/<int:report_id>/update', methods=['POST'])
+@login_required
+def update_report_status(report_id):
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+
+    report = Report.query.get_or_404(report_id)
+    new_status = request.form.get('status')
+
+    if new_status in ['reviewed', 'dismissed']:
+        report.status = new_status
+        db.session.commit()
+        flash("Report status updated.", "success")
+    else:
+        flash("Invalid status.", "danger")
+
+    return redirect(url_for('admin_reports'))

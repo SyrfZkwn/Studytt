@@ -24,6 +24,7 @@ import random
 from string import ascii_uppercase
 from datetime import datetime
 from . import db, socketio
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 def clean(html):
@@ -751,17 +752,6 @@ def search():
     return render_template("search_results.html", users=users, notes=notes, query=query)
 
 
-@views.route('/settings', methods=['GET', 'POST'])
-@login_required
-def settings():
-    if request.method == 'POST':
-        theme = request.form.get('theme', 'light')
-        current_user.theme_preference = theme
-        db.session.commit()
-        flash('Settings updated successfully!', 'success')
-        return redirect(url_for('views.settings'))
-    
-    return render_template('settings.html')
 
 
 @views.route('/toggle_theme', methods=['POST'])
@@ -772,3 +762,67 @@ def toggle_theme():
     current_user.theme_preference = new_theme
     db.session.commit()
     return redirect(request.referrer or url_for('views.home'))
+
+
+@views.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        # Handle theme preference
+        if 'theme' in request.form:
+            theme = request.form.get('theme', 'light')
+            current_user.theme_preference = theme
+            db.session.commit()
+            flash('Theme updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+        
+        # Handle email change
+        elif 'new_email' in request.form:
+            new_email = request.form.get('new_email')
+            current_password = request.form.get('current_password_email')
+            
+            # Verify current password
+            if not check_password_hash(current_user.password, current_password):
+                flash('Current password is incorrect.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check if email already exists
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user and existing_user.id != current_user.id:
+                flash('Email already in use by another account.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Update email
+            current_user.email = new_email
+            db.session.commit()
+            flash('Email updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+        
+        # Handle password change
+        elif 'new_password' in request.form:
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            # Verify current password
+            if not check_password_hash(current_user.password, current_password):
+                flash('Current password is incorrect.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check password confirmation
+            if new_password != confirm_password:
+                flash('New passwords do not match.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check password length
+            if len(new_password) < 7:
+                flash('New password must be at least 7 characters long.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Update password
+            current_user.password = generate_password_hash(new_password)
+            db.session.commit()
+            flash('Password updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+    
+    return render_template('settings.html')

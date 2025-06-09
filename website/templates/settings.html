@@ -152,6 +152,37 @@
     margin-left: auto;
   }
 
+/* styling quick changes into box  */
+
+  .current-info {
+    background-color: var(--bg-tertiary);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    border-left: 4px solid var(--accent-primary);
+  }
+
+  .current-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans', Arial, sans-serif;
+  }
+
+  .current-info-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .current-info-label {
+    color: var(--text-primary);
+    font-weight: bold;
+  }
+
+  .current-info-value {
+    color: var(--text-muted);
+  }
+
   .quick-actions {
     display: flex;
     gap: 15px;
@@ -177,6 +208,129 @@
     color: white;
     text-decoration: none;
     border-color: var(--accent-primary);
+  }
+
+   .collapsible-form {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    margin-top: 0;
+  }
+
+  .collapsible-form.active {
+    max-height: 500px;
+    margin-top: 20px;
+  }
+
+  .form-container {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 25px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--text-primary);
+    font-family: 'Noto Sans', Arial, sans-serif;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 16px;
+    transition: var(--transition);
+    font-family: 'Noto Sans', Arial, sans-serif;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .cancel-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Baloo 2', cursive;
+    font-weight: bold;
+  }
+
+  .cancel-btn:hover {
+    background-color: var(--border-color);
+  }
+
+  .submit-btn {
+    background-color: var(--accent-primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Baloo 2', cursive;
+    font-weight: bold;
+  }
+
+  .submit-btn:hover {
+    background-color: var(--accent-secondary);
+  }
+
+  .danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Baloo 2', cursive;
+    font-weight: bold;
+  }
+
+  .danger-btn:hover {
+    background-color: #c82333;
+  }
+
+  @media (max-width: 600px) {
+    .theme-options {
+      grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+      flex-direction: column;
+    }
+
+    .current-info-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
   }
 
   @media (max-width: 600px) {
@@ -211,7 +365,7 @@
       Appearance
     </div>
     <div class="section-description">
-      Choose your preferred theme. Your selection will be saved and applied across all pages.
+      Choose your theme (gay or Batman). Your selection will be applied across all pages.
     </div>
 
     <form method="POST">
@@ -242,6 +396,111 @@
     </form>
   </div>
 
+  <!--so far im using it as a quick settings section, might change to just acc sets. idk yet-->
+
+    <div class="settings-section">
+    <div class="section-title">
+      <span class="material-symbols-outlined">speed</span>
+      Quick Changes
+    </div>
+    <div class="section-description">
+      Update your account information and login settings quickly.
+    </div>
+
+<!--ni to show ur current info-->
+
+<div class="current-info">
+  <strong>Account Information:</strong><br>
+      <span>Username: {{ current_user.username }}</span><br>
+      <span>Email: {{ current_user.email }}</span><br>
+    </div>
+</div>
+
+<!--buttons change email and pass-->
+ <div class="quick-actions">
+      <button class="quick-action-btn" onclick="toggleForm('email-form')">
+        <span class="material-symbols-outlined">email</span>
+        Change Email
+      </button>
+      
+      <button class="quick-action-btn" onclick="toggleForm('password-form')">
+        <span class="material-symbols-outlined">lock</span>
+        Change Password
+      </button>
+    </div>
+
+<!-- Collapsible Email Change Form (INSIDE Quick Changes) -->
+    <div id="email-form" class="collapsible-form">
+      <div class="form-container">
+        <h4 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+          <span class="material-symbols-outlined">email</span>
+          Change Email Address
+        </h4>
+        
+        <form method="POST">
+          <div class="form-group">
+            <label for="new_email" class="form-label">New Email Address:</label>
+            <input type="email" id="new_email" name="new_email" class="form-input" 
+                   placeholder="Enter your new email address" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="current_password_email" class="form-label">Current Password:</label>
+            <input type="password" id="current_password_email" name="current_password_email" class="form-input" 
+                   placeholder="Enter your current password for verification" required>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" onclick="toggleForm('email-form')">Cancel</button>
+            <button type="submit" class="submit-btn">
+              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 5px;">email</span>
+              Update Email
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Collapsible Password Change Form (INSIDE Quick Changes) -->
+    <div id="password-form" class="collapsible-form">
+      <div class="form-container">
+        <h4 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+          <span class="material-symbols-outlined">lock</span>
+          Change Password
+        </h4>
+        
+        <form method="POST">
+          <div class="form-group">
+            <label for="current_password" class="form-label">Current Password:</label>
+            <input type="password" id="current_password" name="current_password" class="form-input" 
+                   placeholder="Enter your current password" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="new_password" class="form-label">New Password:</label>
+            <input type="password" id="new_password" name="new_password" class="form-input" 
+                   placeholder="Enter your new password (minimum 7 characters)" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm_password" class="form-label">Confirm New Password:</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-input" 
+                   placeholder="Confirm your new password" required>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" onclick="toggleForm('password-form')">Cancel</button>
+            <button type="submit" class="danger-btn">
+              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 5px;">lock_reset</span>
+              Update Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+    
   
 
   
@@ -259,6 +518,40 @@ function selectTheme(theme) {
   document.getElementById(theme + '-theme').checked = true;
 }
 
+function toggleForm(formId) {
+  // Close all other forms first
+  document.querySelectorAll('.collapsible-form').forEach(form => {
+    if (form.id !== formId) {
+      form.classList.remove('active');
+    }
+  });
+  
+  // Toggle the selected form
+  const form = document.getElementById(formId);
+  form.classList.toggle('active');
+  
+  // Clear form inputs when closing
+  if (!form.classList.contains('active')) {
+    const inputs = form.querySelectorAll('input');
+    inputs.forEach(input => input.value = '');
+  }
+}
+
+// Close forms when clicking outside
+document.addEventListener('click', function(event) {
+  const isFormButton = event.target.closest('.quick-action-btn');
+  const isFormContent = event.target.closest('.collapsible-form');
+  
+  if (!isFormButton && !isFormContent) {
+    document.querySelectorAll('.collapsible-form.active').forEach(form => {
+      form.classList.remove('active');
+      // Clear inputs when closing
+      const inputs = form.querySelectorAll('input');
+      inputs.forEach(input => input.value = '');
+    });
+  }
+});
+
 // Auto-submit form when theme changes for instant feedback
 document.querySelectorAll('input[name="theme"]').forEach(input => {
   input.addEventListener('change', function() {
@@ -267,5 +560,6 @@ document.querySelectorAll('input[name="theme"]').forEach(input => {
   });
 });
 </script>
+
 
 {% endblock %}

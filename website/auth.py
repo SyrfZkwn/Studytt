@@ -6,6 +6,9 @@ from sqlalchemy.sql import func
 from flask_mailman import EmailMessage
 from .extensions import db, mail
 from .email_utils import generate_verification_token, confirm_verification_token
+from flask_mailman import EmailMessage
+from .extensions import db, mail
+from .email_utils import generate_verification_token, confirm_verification_token
 
 
 auth = Blueprint('auth', __name__)
@@ -36,8 +39,9 @@ def login():
                 return redirect(url_for('views.home'))
             else:
                 flash('Incorrect password, try again.', category='error')
+                flash('Incorrect password, try again.', category='error')
         else:
-            flash('An account with that email already exists.', category='error')
+            flash('An account with that email does not exists.', category='error')
 
     return render_template("login.html")
 

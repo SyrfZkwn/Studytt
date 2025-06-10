@@ -19,7 +19,3 @@ def init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Repl
     admin.add_view(AdminModelView(Answer, db.session))
     admin.add_view(AdminModelView(Comment, db.session))
     admin.add_view(AdminModelView(Reply, db.session))
-
-
-
-# this file is used to initialize the admin interface

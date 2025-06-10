@@ -18,50 +18,11 @@ import secrets
 import os
 from PIL import Image
 from sqlalchemy.sql import func
-import bleach
-import re
-from pdf2image import convert_from_path
 import uuid
-from flask_mailman import Mail
-from .extensions import mail
-
-def clean(html):
-    allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
-    allowed_attrs = {
-        'a': ['href', 'title', 'target']
-    }
-
-    # Clean the HTML using bleach
-    cleaned = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs, strip=True)
-
-    # Collapse any more than 2 consecutive <br> tags into just 2 <br> tags
-    cleaned = re.sub(r'(<br\s*/?>\s*){3,}', '<br><br>', cleaned)
-
-    return cleaned
-
-def super_clean(html):
-    # Strip all HTML tags and attributes
-    text_only = bleach.clean(html, tags=[], attributes={}, strip=True)
-
-    # Optionally collapse excessive whitespace or newlines
-    text_only = re.sub(r'\s+', ' ', text_only).strip()
-
-    return text_only
-
-def find_mentions(text):
-    return re.findall(r'@([\w.]+)', text) #find mentions
+from .views_utils import clean, super_clean, find_mentions, generate_pdf_preview, shorten, recommend_posts, suggest_profiles
+from werkzeug.security import check_password_hash, generate_password_hash
 
 views = Blueprint('views', __name__, template_folder='../templates')
-
-def generate_pdf_preview(pdf_rel_path, preview_rel_path):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-
-    abs_pdf_path = os.path.join(base_dir, pdf_rel_path)
-    abs_preview_path = os.path.join(base_dir, preview_rel_path)
-
-    pages = convert_from_path(abs_pdf_path, first_page=1, last_page=1)
-    os.makedirs(os.path.dirname(abs_preview_path), exist_ok=True)
-    pages[0].save(abs_preview_path, 'JPEG')
 
 class UploadFileForm(FlaskForm):
     file = FileField("File", validators=[InputRequired(), FileSize(max_size=15 * 1024 * 1024, message="File must be 15MB or less.")])
@@ -71,8 +32,21 @@ class UploadFileForm(FlaskForm):
 @views.route('/home')
 @login_required
 def home():
-        notes = Note.query.all()
-        return render_template("home.html", user=current_user, notes=notes)
+    followed_ids = [user.id for user in current_user.followed]  # Get IDs of users current_user is following
+
+    notes = Note.query.all()
+    featured_notes = Note.query.filter(Note.publisher.in_(followed_ids)).all()  # Get posts by followed users
+
+    recommended_profiles = suggest_profiles(current_user.id)  # Function from views_utils.py
+
+    # Exclude current user and followed users from random_profiles
+    random_profiles = User.query.filter(
+        User.id != current_user.id,
+        ~User.id.in_(followed_ids)
+    ).all()
+    
+    return render_template("home.html", user=current_user, notes=notes, recommended_profiles=recommended_profiles,
+                           random_profiles=random_profiles, featured_notes=featured_notes)
 
 rooms = {}
 
@@ -218,8 +192,7 @@ def post():
                 post_id = new_note.id
                 )
             db.session.add(new_notification)
-
-        db.session.commit()
+            db.session.commit()
 
         flash('Note posted!', category='success')
         return redirect(url_for('views.home'))
@@ -237,25 +210,53 @@ def post():
 @views.route('/profile')
 @login_required
 def profile():
-        follower_count = current_user.follower_count()
-        following_count = current_user.following_count()
-        points = current_user.points
-        posts = current_user.notes.all() if hasattr(current_user.notes, 'all') else current_user.notes
-        notes_count = len(posts)
-        
-        return render_template("profile.html", user=current_user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points)
+    show_posts = int(request.args.get('show_posts', 1)) # will show posts by default
+    show_saved = int(request.args.get('show_saved', 0))
+
+    follower_count = current_user.follower_count()
+    following_count = current_user.following_count()
+    points = current_user.points
+    posts = current_user.notes
+    notes_count = len(posts)
+    saved_posts = current_user.saved
+    
+    return render_template("profile.html", 
+        user=current_user, 
+        follower_count=follower_count, 
+        following_count=following_count, 
+        posts=posts, 
+        notes_count=notes_count, 
+        saved_posts=saved_posts,
+        points=points,
+        show_saved=show_saved,
+        show_posts=show_posts
+    )
 
 @views.route('/profile/<int:user_id>')
 @login_required
 def user_profile(user_id):
-        user = User.query.get_or_404(user_id)
-        follower_count = user.follower_count()
-        following_count = user.following_count()
-        points = user.points
-        posts = user.notes.all() if hasattr(user.notes, 'all') else user.notes
-        notes_count = len(posts)
-        is_following = current_user.is_following(user)
-        return render_template("profile.html", user=user, follower_count=follower_count, following_count=following_count, posts=posts, notes_count=notes_count, points=points, is_following=is_following)
+    show_posts = 1 
+    show_saved = 0
+
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+
+    return render_template("profile.html",
+        user=user,
+        follower_count=follower_count,
+        following_count=following_count,
+        posts=posts,
+        notes_count=notes_count,
+        points=points,
+        is_following=is_following,
+        show_posts=show_posts,
+        show_saved=show_saved
+    )
 
 @views.route('/follow/<int:user_id>', methods=['POST'])
 @login_required
@@ -290,23 +291,6 @@ def unfollow(user_id):
         flash(f"You have unfollowed {user.username}", "success")
     return redirect(url_for('views.user_profile', user_id=user_id))
 
-@views.route('/saved')
-@login_required
-def saved():
-        follower_count = current_user.follower_count()
-        following_count = current_user.following_count()
-        # Don't call .all() on current_user.saved since it's already a list
-        saved_posts = current_user.saved
-        # Get the notes count (be careful here - use .all() if it's a query, but not if it's already a list)
-        notes_count = len(current_user.notes.all()) if hasattr(current_user.notes, 'all') else len(current_user.notes)
-        
-        return render_template("saved.html", user=current_user, 
-                            follower_count=follower_count, 
-                            following_count=following_count, 
-                            saved_posts=saved_posts,
-                            notes_count=notes_count)
-
-
 @views.route('/post/<int:post_id>', methods=['POST', 'GET'])
 @login_required
 def post_detail(post_id):
@@ -324,7 +308,6 @@ def post_detail(post_id):
     if ratings_count == 0:
         post.rating_ratio = 0.0
     else:
-        total_points = sum(r.value for r in ratings)
         post.rating_ratio = round(total_points / ratings_count, 1)
     db.session.commit()
 
@@ -388,7 +371,7 @@ def post_detail(post_id):
 
                 if post.publisher != current_user.id:
                     super_clean_comment_body = super_clean(comment_body)
-                    short_comment = super_clean_comment_body[:20] + '...' if len(super_clean_comment_body) > 20 else super_clean_comment_body
+                    short_comment = shorten(super_clean_comment_body)
                     new_notification = Notification(
                         notified_user_id=post.publisher,
                         notifier_id = current_user.id,
@@ -443,7 +426,7 @@ def delete_comment (comment_id):
     db.session.delete(comment)
     db.session.commit()
 
-    post.total_comments -= 1
+    post.total_comments = max(post.total_comments - 1, 0)
     db.session.commit()
 
     flash('Comment deleted!', 'success')
@@ -510,11 +493,11 @@ def reply_comment(comment_id):
     db.session.add(new_reply)
 
     super_clean_reply_body = super_clean(reply_body)
-    short_reply = super_clean_reply_body[:20] + '...' if len(super_clean_reply_body) > 20 else super_clean_reply_body
+    short_reply = shorten(super_clean_reply_body)
         
     if comment.commenter_id != current_user.id:
         new_notification = Notification(
-            notified_user_id=comment.user.id,
+            notified_user_id=comment.commenter_id,
             notifier_id = current_user.id,
             type='reply',
             message=f"replied '{short_reply}' to your comment in post <b>'{comment.note.title} {comment.note.code} | {comment.note.chapter}'</b>.",
@@ -523,7 +506,7 @@ def reply_comment(comment_id):
         db.session.add(new_notification)
 
     # Detect @mentions
-    usernames = find_mentions(reply_body)
+    usernames = find_mentions(clean_reply_body)
     for username in usernames:
         user = User.query.filter(func.lower(User.username) == username.lower()).first()
         if user and user.id != current_user.id and comment.commenter_id != user.id:
@@ -555,7 +538,7 @@ def delete_reply (reply_id):
     post = Note.query.get_or_404(post_id)
 
     if reply.user_id != current_user.id:
-        flash ('You can only delete your own comments.', 'error')
+        flash ('You can only delete your own replies.', 'error')
         return redirect(url_for('views.post_detail', post_id = post_id))
     
 
@@ -574,10 +557,11 @@ def save_post(post_id):
         post = Note.query.get_or_404(post_id)
         if post not in current_user.saved:
             current_user.saved.append(post)
-            db.session.commit()
-            flash('Post saved successfully!', 'success')
+            flash('Post saved!', 'success')
         else:
-            flash('Post already saved.', 'info')
+            current_user.saved.remove(post)
+            flash('Post unsaved!', 'success')
+        db.session.commit()
         return redirect(url_for('views.post_detail', post_id=post_id))
 
 @views.route('/qna', methods=['GET', 'POST'])
@@ -605,6 +589,7 @@ def qna():
     questions = Question.query.all()
     return render_template("qna.html", user=current_user, questions=questions)
 
+
 import secrets
 from PIL import Image, ImageOps
 
@@ -614,7 +599,7 @@ from PIL import Image, ImageOps
 def edit_profile():
         if request.method == "POST":
             username = request.form.get("username")
-            biography = request.form.get("biography")
+            biography = clean(request.form.get("biography"))
 
             if username:
                 current_user.username = username
@@ -635,12 +620,12 @@ def edit_profile():
                     picture_path = os.path.join(profile_pics_folder, picture_fn)
 
                     # Resize image to 125x125 pixels
-                output_size = (125, 125)
-                i = Image.open(file)
-                i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
-                i.save(picture_path)
+                    output_size = (125, 125)
+                    i = Image.open(file)
+                    i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
+                    i.save(picture_path)
 
-                current_user.image_profile = picture_fn
+                    current_user.image_profile = picture_fn
 
             db.session.commit()
             flash("Your profile has been updated!", "success")
@@ -662,7 +647,7 @@ def post_edit(post_id):
             post.title = request.form.get('title')
             post.code = request.form.get('code')
             post.chapter = request.form.get('chapter')
-            post.description = form.description.data
+            post.description = clean(form.description.data)
 
             db.session.commit()
 
@@ -718,7 +703,7 @@ def add_answer (question_id):
         db.session.add(new_answer)
 
         super_clean_answer_body = super_clean(answer_body)
-        short_answer_body = super_clean_answer_body[:20] + '...' if len(super_clean_answer_body) > 20 else super_clean_answer_body
+        short_answer_body = shorten(super_clean_answer_body)
         if question.publisher != current_user.id:
             new_notification = Notification(
                 notified_user_id=question.user.id,
@@ -776,6 +761,8 @@ def go_to_notification(notification_id):
         return redirect(url_for('views.post_detail', post_id=notification.post_id))
     elif notification.type in ['answer', 'pin']:
         return redirect(url_for('views.notification'))  # Replace with actual route
+    elif notification.type in ['chat']:
+        return redirect(url_for('views.chat_room', user_id=notification.notifier_id))
     else:
         flash("Notification type is unknown.", "error")
         return redirect(url_for('views.home'))  # fallback
@@ -788,16 +775,6 @@ def read_notification(notification_id):
     if notification.notified_user_id != current_user.id:
         abort(403)
     notification.is_read = True
-    db.session.commit()
-    return redirect(url_for('views.notification'))
-
-@views.route('/notifications/unread/<int:notification_id>')
-@login_required
-def unread_notification(notification_id):
-    notification = Notification.query.get_or_404(notification_id)
-    if notification.notified_user_id != current_user.id:
-        abort(403)
-    notification.is_read = False
     db.session.commit()
     return redirect(url_for('views.notification'))
 
@@ -846,7 +823,7 @@ def delete_all_notification():
 
     return redirect(url_for('views.notification'))
 
-@views.route('/pin_answer<int:answer_id>', methods=['POST'])
+@views.route('/pin_answer/<int:answer_id>', methods=['POST'])
 @login_required
 def pin_answer(answer_id):
     answer = Answer.query.get_or_404(answer_id)
@@ -866,7 +843,7 @@ def pin_answer(answer_id):
     flash('Answer pinned!', 'success')
     return redirect(url_for('views.qna'))
 
-@views.route('/unpin_answer<int:answer_id>', methods=['POST'])
+@views.route('/unpin_answer/<int:answer_id>', methods=['POST'])
 @login_required
 def unpin_answer(answer_id):
     answer = Answer.query.get_or_404(answer_id)
@@ -887,25 +864,148 @@ def unpin_answer(answer_id):
 @login_required
 def search():
     query = request.args.get('q', '')
+    post_search = int(request.args.get('post', 1)) # will search notes by default
+    user_search = int(request.args.get('user', 0))
 
-    users = User.query.filter(User.username.ilike(f"%{query}%")).all()
-    notes = Note.query.filter(
-        (Note.title.ilike(f"%{query}%")) | 
-        (Note.code.ilike(f"%{query}%")) |
-        (Note.chapter.ilike(f"%{query}%")) 
-    ).all()
+    users=[]
+    notes=[]
 
-    return render_template("search_results.html", users=users, notes=notes, query=query)
+    if user_search:
+        users = User.query.filter(User.username.ilike(f"%{query}%"), User.id != current_user.id).all()
+
+    if post_search:
+        notes = Note.query.filter(
+            (Note.title.ilike(f"%{query}%")) | 
+            (Note.code.ilike(f"%{query}%")) |
+            (Note.chapter.ilike(f"%{query}%")) 
+        ).all()
+
+    return render_template("search_results.html", users=users, notes=notes, query=query, post=post_search, user=user_search)
 
 @views.route('/explore')
 @login_required
 def explore():
     notes = Note.query.all()
-    return render_template("explore.html", current_user=current_user, notes=notes)
+
+    recommended_notes = recommend_posts(current_user.id)
+    recommended_profiles = suggest_profiles(current_user.id)
+    # Get IDs of users current_user is following
+    followed_ids = [user.id for user in current_user.followed]
+
+    # Exclude current user and followed users from random_profiles
+    random_profiles = User.query.filter(
+        User.id != current_user.id,
+        ~User.id.in_(followed_ids)
+    ).all()
+
+    return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes, 
+                           recommended_profiles=recommended_profiles, random_profiles=random_profiles)
 
 @views.route('/post_not_found')
 def deleted_post():
     return render_template('post_deleted.html')
+
+@views.route('/profile-followers/<int:user_id>')
+@login_required
+def profile_followers(user_id):
+    show_followers = int(request.args.get('show_followers', 1)) # will show posts by default
+    show_following = int(request.args.get('show_following', 0))
+
+    user = User.query.get_or_404(user_id)
+    follower_count = user.follower_count()
+    following_count = user.following_count()
+    points = user.points
+    posts = user.notes
+    followers = user.followers.all()
+    following = user.followed.all()
+    notes_count = len(posts)
+    is_following = current_user.is_following(user)
+
+    return render_template("followers.html", 
+        user=user, 
+        follower_count=follower_count, 
+        following_count=following_count, 
+        notes_count=notes_count, 
+        points=points,
+        show_followers=show_followers,
+        show_following=show_following,
+        is_following=is_following,
+        followers=followers,
+        following=following
+    )
+
+@views.route('/toggle_theme', methods=['POST'])
+@login_required
+def toggle_theme():
+    current_theme = getattr(current_user, 'theme_preference', 'light')
+    new_theme = 'dark' if current_theme == 'light' else 'light'
+    current_user.theme_preference = new_theme
+    db.session.commit()
+    return redirect(request.referrer or url_for('views.home'))
+
+
+@views.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    if request.method == 'POST':
+        # Handle theme preference
+        if 'theme' in request.form:
+            theme = request.form.get('theme', 'light')
+            current_user.theme_preference = theme
+            db.session.commit()
+            flash('Theme updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+        
+        # Handle email change
+        elif 'new_email' in request.form:
+            new_email = request.form.get('new_email')
+            current_password = request.form.get('current_password_email')
+            
+            # Verify current password
+            if not check_password_hash(current_user.password, current_password):
+                flash('Current password is incorrect.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check if email already exists
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user and existing_user.id != current_user.id:
+                flash('Email already in use by another account.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Update email
+            current_user.email = new_email
+            db.session.commit()
+            flash('Email updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+        
+        # Handle password change
+        elif 'new_password' in request.form:
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            # Verify current password
+            if not check_password_hash(current_user.password, current_password):
+                flash('Current password is incorrect.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check password confirmation
+            if new_password != confirm_password:
+                flash('New passwords do not match.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Check password length
+            if len(new_password) < 7:
+                flash('New password must be at least 7 characters long.', 'error')
+                return redirect(url_for('views.settings'))
+            
+            # Update password
+            current_user.password = generate_password_hash(new_password)
+            db.session.commit()
+            flash('Password updated successfully!', 'success')
+            return redirect(url_for('views.settings'))
+    
+    return render_template('settings.html')
 
 @views.route('/report', methods=['GET', 'POST'])
 @login_required

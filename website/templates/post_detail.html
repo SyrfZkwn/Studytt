@@ -304,7 +304,15 @@
     padding: 10px 15px;
   }
 
-  .save-button:focus {
+  .save-button2 {
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 5px 15px 0 15px;
+  }
+
+  .save-button:focus,.save-button2:focus {
     outline: none;
   }
 
@@ -313,7 +321,7 @@
     font-size: 2.5rem;
   }
 
-  .save-button:hover {
+  .save-button:hover,.save-button2:hover {
     background-color: rgba(23, 23, 23, 0.1);
   }
 
@@ -422,10 +430,10 @@
             <span class="material-symbols-outlined">sentiment_dissatisfied</span>
           </button>
           <button type="submit" name="rating" value="{{ 3 }}" class="rating" title="Neutral">
-            <span class="material-symbols-outlined">mood</span>
+            <span class="material-symbols-outlined">sentiment_satisfied</span>
           </button>
           <button type="submit" name="rating" value="{{ 4 }}" class="rating" title="Satisfied">
-            <span class="material-symbols-outlined">sentiment_satisfied</span>
+            <span class="material-symbols-outlined">mood</span>
           </button>
           <button type="submit" name="rating" value="{{ 5 }}" class="rating" title="Very Satisfied">
             <span class="material-symbols-outlined">sentiment_very_satisfied</span>
@@ -441,9 +449,16 @@
 
     <div style="display: flex; height: auto; margin-left: auto;">
       <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
-        <button type="submit" class="save-button">
-          <i class="fa-regular fa-bookmark save-icon"></i>
-        </button>
+        {% if post in current_user.saved %}
+          <button type="submit" class="save-button2 save-icon">
+            <i class="fa-solid fa-bookmark"></i>
+          </button>
+        {% else %}
+          <button type="submit" class="save-button">
+            <i class="fa-regular fa-bookmark save-icon"></i>
+          </button>
+        {% endif %}
+        
       </form>
 
       <button type="button" class="comment-button">

@@ -65,6 +65,8 @@
   }
 
   .tab {
+    width: 40%;
+    margin: 1.5rem auto;
     flex: 1;
     text-align: center;
   }
@@ -189,6 +191,45 @@
     transform: translateY(-4px);
   }
 
+  .pfp-small {
+    width: 60px; 
+    height: 60px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+
+  .profiles {
+    background-color: #1b4f83;
+    margin: 2.5rem auto;
+    padding: 1rem;
+    border-radius: 20px;
+    width: 85%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: larger;
+  }
+
+  .profiles a {
+    text-decoration: none;
+  }
+
+  .profile {
+    margin: 0.5rem 0.5rem;
+    padding: 1rem 1rem;
+    border-radius: 10px;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .profile:hover {
+    background-color: #246aa7;
+  }
+  
+  .no-one {
+    margin: 3rem auto;
+    text-align: center;
+  }
+
   a.followers,
   a.following,
   a.posts {
@@ -283,78 +324,49 @@
     </div>
   </div>
 
-{% if current_user.id == user.id %}
-  <div class="tabs">
+    {% if show_followers == 1 %}
     <div class="tab">
-      <a href="{{ url_for('views.profile', show_saved=0, show_posts=1) }}" class="{% if show_posts == 1 %}active{% endif %}">POSTED</a>
+      <a>FOLLOWERS</a>
     </div>
+    {% endif %}
+    {% if show_following == 1 %} 
     <div class="tab">
-      <a href="{{ url_for('views.profile', show_saved=1,show_posts = 0) }}" class="{% if show_saved == 1 %}active{% endif %}">SAVED</a>
+      <a>FOLLOWING</a>
     </div>
+    {% endif %}
+
+{% if show_followers == 1 %}
+{% if followers %}
+  <div class="profiles">
+  {% for user in followers %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
+      <div class="profile">
+        <img class="pfp-small" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        {{ user.username }}
+      </div>
+    </a>
+  {% endfor %}
   </div>
 {% else %}
-  <div class="tabs">
-    <div class="tab">
-      <a class="inactive">POSTED</a>
-    </div>
-  </div>
+  <h2 style="color: #f15c22;" class="no-one">{{ user.username }} has no followers.</h2>
+{% endif %}
 {% endif %}
 
-{% if show_posts == 1 %}
-<div class="content-section">
-  {% for post in posts|reverse %}
-  <div class="post">
-    <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
-      <div class="post-img">
-        {% if post.file_path.endswith('.pdf') %}
-          <img src="{{ '/' ~ (post.preview_path or '') }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% else %}
-          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% endif %}
+{% if show_following == 1 %}
+{% if followers %}
+  <div class="profiles">
+  {% for user in following %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
+      <div class="profile">
+        <img class="pfp-small" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        {{ user.username }}
       </div>
-      <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
     </a>
-    <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
-      <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
-    </div>
-  </div>
-  {% else %}
-</div>
-  <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">
-    No notes to show. 
-    {% if current_user.id == user.id %}
-    <a href="{{ url_for('views.post') }}">Try posting some notes!</a>
-    {% endif %}
-  </h2>
   {% endfor %}
+  </div>
+{% else %}
+  <h2 style="color: #f15c22;" class="no-one">{{ user.username }} is not following anyone.</h2>
 {% endif %}
-
-{% if show_saved == 1 and current_user.id == user.id %}
-<div class="content-section">
-  {% for post in saved_posts %}
-  <div class="post">
-    <a href="{{ url_for('views.post_detail', post_id=post.id) }}">
-      <div class="post-img">
-        {% if post.file_path.endswith('.pdf') %}
-          <img src="{{ '/' ~ (post.preview_path or '') }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% else %}
-          <img src="{{ url_for('static', filename=post.file_path.split('static/')[-1]) }}" alt="{{ post.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
-        {% endif %}
-      </div>
-      <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
-    </a>
-    <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
-      <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
-    </div>
-  </div>
-    {% else %}
-</div>
-  <h2 class="d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">
-    No saved notes.
-  </h2>
-  {% endfor %}
 {% endif %}
 
 {% endblock %}

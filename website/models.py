@@ -15,7 +15,8 @@ followers = db.Table('followers',
 
 saved_posts = db.Table('saved_posts',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('note_id', db.Integer, db.ForeignKey('note.id'))
+    db.Column('note_id', db.Integer, db.ForeignKey('note.id')),
+    db.Column('date', db.DateTime(timezone=True), default=get_local_time)
 )
 
 class Question(db.Model):
@@ -63,7 +64,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
-    biography = db.Column(db.Text, nullable=True)       # New field for biography
+    biography = db.Column(db.Text, nullable=True, default='')
     image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
     file = db.Column(db.LargeBinary)
     points = db.Column(db.Integer, default=0)
@@ -71,8 +72,7 @@ class User(db.Model, UserMixin):
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
     questions = db.relationship('Question', backref='user', lazy=True)
     verified = db.Column(db.Boolean, default=False)
-
-
+    theme_preference = db.Column(db.String(10), default='light')
 
     followed = db.relationship(
         'User', secondary=followers,
@@ -103,6 +103,7 @@ class Rating(db.Model):
     rater_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=False)
     value = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.DateTime(timezone=True), default=get_local_time)
 
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)

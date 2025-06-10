@@ -21,10 +21,81 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
   <style>
+    :root {
+      /* Light theme colors */
+      --bg-primary: #fbf3e2;
+      --bg-secondary: #fdf3de;
+      --bg-tertiary: #ffd38a;
+      --text-primary: #1b4f83;
+      --text-secondary: #173c67;
+      --accent-primary: #f15c22;
+      --accent-secondary: #5a3e36;
+      --border-color: #1b4f83;
+      --dropdown-bg: #173c67;
+      --dropdown-text: white;
+      --search-bg: #fdf3de;
+      --search-border: #1b4f83;
+      --sidebar-bg: #fbf3e2;
+      --content-bg: #fbf3e2;
+      --shadow-color: rgba(0,0,0,0.2);
+      --text-muted: #777777;
+      --transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] {
+      /* Dark theme colors */
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2d2d2d;
+      --bg-tertiary: #404040;
+      --text-primary: #fff2f2;
+      --text-secondary: #ffffff;
+      --accent-primary: #ff6b35;
+      --accent-secondary: #4dabf7;
+      --border-color: #404040;
+      --dropdown-bg: #333333;
+      --dropdown-text: #ffffff;
+      --search-bg: #2d2d2d;
+      --search-border: #404040;
+      --sidebar-bg: #1a1a1a;
+      --content-bg: #1a1a1a;
+      --shadow-color: rgba(0,0,0,0.5);
+      --text-muted: #999999;
+
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    textarea, 
+    .form-control {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus, 
+    input[type="password"]:focus,
+    textarea:focus,
+    .form-control:focus {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--accent-primary) !important;
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25) !important;
+    }
+
+    /* Placeholder text color */
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--text-muted) !important;
+    }
+        }
+
     body {
       margin: 0;
       font-family: 'Baloo 2', cursive;
       font-weight: 700;
+      background-color: var(--content-bg);
+      color: var(--text-primary);
+      transition: var(--transition);
     }
     
     .sidebar {
@@ -59,7 +130,7 @@
 
     .button a {
       font-weight: bold;
-      background-color: #173c67;
+      background-color: #1b4f83;
       color: #f15c22;
       padding: 10px;
       text-decoration: none;
@@ -125,7 +196,6 @@
       max-height: 80px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 0 20px;
       z-index: 999;
     }
@@ -169,7 +239,7 @@
     }
 
     hr {
-      border: 2px solid #173c67;
+      border: 2px solid #1b4f83;
       width: 80%;
       margin: 10px auto;
     }
@@ -218,7 +288,7 @@
       display: none;
       position: absolute;
       left: -15px;
-      background-color: #173c67;
+      background-color: #1b4f83;
       min-width: 100px;
       box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       border-radius: 6px;
@@ -269,7 +339,7 @@
 
   </head>
 
-    <body style="background-color: #fbf3e2;">
+    <body style="background-color: var(--content-bg);">
 
       <div class="top">
         <a href="{{ url_for('views.home') }}">
@@ -297,9 +367,9 @@
             <button class="dropdown-button">
               <img src="{{ url_for('static', filename='profile_pics/' + (current_user.image_profile if current_user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
             </button>
-          <div class="dropdown-content">
+            <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
-              <a href="#">Settings</a>
+              <a href="{{ url_for('views.settings') }}">Settings</a>
               {% if current_user.is_authenticated and current_user.email.lower() == "studytt518@gmail.com" %}
               <a href="{{ url_for('admin.index') }}">Admin Area</a>
               {% endif %}

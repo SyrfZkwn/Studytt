@@ -2,32 +2,91 @@
 <title>{% block title %}Edit Profile{% endblock %}</title>
 
 {% block content %}
-<h2>Edit Profile</h2>
 
-<div class="Edit">
-    <form method="POST" action="{{ url_for('views.edit_profile') }}" enctype="multipart/form-data">
+<style>
+  .form-control {
+      padding: 15px;
+      border-radius: 20px;
+      font-size: 18px;
+      background-color: #f9f9f9;
+      margin-bottom: 1.5rem;
+      height: 50px;
+  }
+
+  .form-control:focus {
+      outline: none;
+      border-color: #f15c22;
+      box-shadow: 0 0 10px #f15c22;
+  }
+
+  .btn-orange {
+      background-color: #f15c22;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+  }
+
+  .btn-orange:hover {
+      background-color: #d94e1d;
+  }
+
+  .preview-image {
+      max-width: 125px;
+      max-height: 125px;
+      border-radius: 50%;
+      display: block;
+      margin-top: 10px;
+      object-fit: cover;
+  }
+
+  .file-upload-wrapper {
+      position: relative;
+      display: inline-block;
+      width: max-content;
+  }
+
+  input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+  }
+</style>
+
+<div class="container">
+    <form method="POST" action="{{ url_for('views.edit_profile') }}" enctype="multipart/form-data" class="mx-auto" style="max-width: 80%;">
+
+        <h1 style="color: #f15c22; margin: 1rem 0;">Edit Profile</h1>
+
         <input 
-        type="text" 
-        name="username" 
-        class="form-control" 
-        placeholder="Username" 
-        value="{{ current_user.username }}"
-        required
-      />
-      <br>
-      
-      <br>
-      <textarea
-        name="biography"
-        class="form-control"
-        placeholder="Biography"
-        rows="4"
-      >{{ current_user.biography or '' }}</textarea>
-      <br>
-      <label for="image_profile">Change Profile Picture:</label><br>
-      <input type="file" name="image_profile" id="image_profile" accept="image/*"><br><br>
-      <img id="preview" src="{{ url_for('static', filename='profile_pics/' + current_user.image_profile) }}" alt="Profile Preview" style="max-width: 125px; max-height: 125px; border-radius: 50%; display: block; margin-top: 10px;">
-      <button type="submit" class="btn btn-primary btn-block">Update Profile</button>
+            type="text" 
+            name="username" 
+            class="form-control" 
+            placeholder="Username" 
+            value="{{ current_user.username }}"
+            required
+        />
+
+        <textarea
+            name="biography"
+            class="form-control"
+            placeholder="Biography"
+            rows="4"
+        >{{ current_user.biography or '' }}</textarea>
+        
+        <div class="file-upload-wrapper">
+          <label class="file-upload-button btn btn-primary" for="fileInput">Choose Profile Picture</label>
+            <input type="file" name="image_profile" id="image_profile fileInput" accept="image/*" class="form-control">
+        </div>
+
+        <img id="preview" class="preview-image" src="{{ url_for('static', filename='profile_pics/' + current_user.image_profile) }}" alt="Profile Preview">
+
+        <button type="submit" class="btn-orange mt-3">Update Profile</button>
     </form>
 </div>
 
@@ -39,7 +98,16 @@
           preview.src = URL.createObjectURL(file);
       }
   });
+
+  const fileInput = document.getElementById('fileInput');
+    const fileLabel = document.querySelector('.file-upload-button');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+        fileLabel.textContent = fileInput.files[0].name;
+        } else {
+        fileLabel.textContent = 'Choose File';
+        }
+    });
 </script>
-
-
 {% endblock %}

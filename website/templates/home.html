@@ -5,9 +5,7 @@
 
 <style>
   .post-section {
-    max-width: 70%;
-    margin-left: 5%;
-    padding: 2rem;
+    padding: 1.5rem 2rem 2rem 2rem;
     font-family: 'Noto Sans', Arial, sans-serif;
     line-height: 1.5;
     color: antiquewhite;
@@ -23,7 +21,7 @@
   }
 
   .image-container {
-    width: 80%;         /* fixed width */
+    width: 85%;         /* fixed width */
     height: auto;         /* allow height to adjust */
     max-height: 450px;    /* limit max height */
     margin: 10px auto;
@@ -59,7 +57,7 @@
   }
 
   .file-container {
-    width: 80%;
+    width: 85%;
     margin: 10px auto;
     background-color: transparent;
     border-radius: 10px;
@@ -70,15 +68,16 @@
   }
 
   .title-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     overflow: hidden;
     display: flex;
     align-items: center;
+    font-size: large;
   }
 
   .username-container {
-    width: 80%;
+    width: 85%;
     margin: 10px auto;
     overflow: hidden;
     display: flex;
@@ -87,7 +86,7 @@
   }
 
   .publisher-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -112,7 +111,7 @@
   }
 
   .description-container {
-    width: 80%;
+    width: 85%;
     margin: 5px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -137,44 +136,110 @@
     color: #1b4f83;
     text-decoration: underline;
   }
+
+  .follow-section {
+    width: 16%;
+    background-color: #1b4f83;
+    padding: 1rem;
+    border-radius: 12px;
+    height: fit-content;
+    position: sticky;
+    top: 6.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .home-container {
+    display: flex;
+    gap: 1rem;
+    padding: 0 1rem 1rem 1rem;
+  }
+
+  .profile-suggestions h3 {
+    color: #f15c22;
+    margin-bottom: 1rem;
+  }
+
+  .profile-card {
+    background-color: #2261a9;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s ease;
+  }
+
+  a .profile-card  {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  a .profile-card:hover {
+    background-color: #2a94f0;
+    text-decoration: none;
+  }
+
+  .pfp {
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+
+  .posts-container { 
+    padding-left: 1rem;
+    max-width: 65%;
+    flex: 1;
+    margin: 0 auto;
+  }
+
+  #username:hover {
+    color: #f15c22;
+    text-decoration: underline;
+  }
+
 </style>
 
-<div class="flash">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash">
-          {% for category, message in messages %}
-          {% if category == 'error' %}
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% else %}
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="close" data-dismiss="alert">
-              <span aria-hidden="true">&times;</span>
-          </button>
-          </div>
-          {% endif %}
-          {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-</div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash">
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
-  {% if notes %}
-    {% for note in notes|sort(attribute='date', reverse=true) %}
+<div class="home-container">
+  <div class="posts-container">
+  {% if featured_notes %}
+    {% for note in featured_notes|sort(attribute='date', reverse=true) %}
     <div class="post-section">
-      <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
-        <div class="post-content">
+      <div class="post-content">
 
-          <div class="username-container">
-            <img src="{{ url_for('static', filename='profile_pics/' + (note.user.image_profile if note.user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
-            {{ note.user.username }} <span class="mx-2">·</span> {{ note.date | time_ago }}
-          </div>
+        <div class="username-container">
+          <span>
+          <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (note.user.image_profile if note.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+          </a>
+          <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+        </div>
+
+        <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+
           <div class="title-container">
             {{ note.title }} {{ note.code }} | Chapter : {{ note.chapter }}
           </div>
@@ -194,12 +259,34 @@
           <div class="description-container">
             <p>{{ note.description|safe }}</p>
           </div>
-        </div>
-      </a>
+        </a>
+      </div>
     </div>
     {% endfor %}
+  <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow more users to see more notes!</h1>
   {% else %}
-    <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
+  <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22; font-family: 'Baloo 2', cursive; font-weight: 700;">Follow other users to see their notes here! 👉</h1>
   {% endif %}
+</div>
+
+  <div class="follow-section mx-auto mt-4">
+    <div class="profile-suggestions">
+    {% set other_profiles=recommended_profiles if recommended_profiles else random_profiles %}
+    {% if other_profiles %}
+      <h3>Follow them!</h3>
+      {% for profile in recommended_profiles %}
+        <a href="{{ url_for('views.user_profile', user_id=profile.id) }}" style="text-decoration: none;">
+          <div class="profile-card">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (profile.image_profile if profile.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+            {{ profile.username }}
+          </div>
+        </a>
+      {% endfor %}
+    {% else %}
+      <h3>You've followed everybody! 🎉</h3>
+    {% endif %}
+    </div>
+  </div>
+</div>
 
 {% endblock %}

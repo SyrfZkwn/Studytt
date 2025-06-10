@@ -622,17 +622,7 @@ def edit_profile():
                 current_user.username = username
             if biography:
                 current_user.biography = biography
-            if username:
-                current_user.username = username
-            if biography:
-                current_user.biography = biography
 
-            if "image_profile" in request.files:
-                file = request.files["image_profile"]
-                if file and file.filename != "":
-                    random_hex = secrets.token_hex(8)
-                    _, f_ext = os.path.splitext(file.filename)
-                    picture_fn = random_hex + f_ext
             if "image_profile" in request.files:
                 file = request.files["image_profile"]
                 if file and file.filename != "":
@@ -643,11 +633,7 @@ def edit_profile():
                     # Make sure the directory exists
                     profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
                     os.makedirs(profile_pics_folder, exist_ok=True)
-                    # Make sure the directory exists
-                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
-                    os.makedirs(profile_pics_folder, exist_ok=True)
 
-                    picture_path = os.path.join(profile_pics_folder, picture_fn)
                     picture_path = os.path.join(profile_pics_folder, picture_fn)
 
                     # Resize image to 125x125 pixels
@@ -661,12 +647,7 @@ def edit_profile():
             db.session.commit()
             flash("Your profile has been updated!", "success")
             return redirect(url_for("views.profile"))
-            db.session.commit()
-            flash("Your profile has been updated!", "success")
-            return redirect(url_for("views.profile"))
 
-        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
-        return render_template('edit_profile.html', title='edit_profile')
         image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
         return render_template('edit_profile.html', title='edit_profile')
 
@@ -676,11 +657,7 @@ def post_edit(post_id):
         post = Note.query.get_or_404(post_id)
         if post.publisher != current_user.id:
             abort(403)
-        post = Note.query.get_or_404(post_id)
-        if post.publisher != current_user.id:
-            abort(403)
 
-        form = UploadFileForm()
         form = UploadFileForm()
 
         if request.method == 'POST':
@@ -690,12 +667,7 @@ def post_edit(post_id):
             post.description = clean(form.description.data)
 
             db.session.commit()
-            db.session.commit()
 
-            flash('Note Edited!', category='success')
-            return redirect(url_for('views.post_detail', post_id=post.id))
-            
-        return render_template("post_edit.html", form=form, post=post)
             flash('Note Edited!', category='success')
             return redirect(url_for('views.post_detail', post_id=post.id))
             

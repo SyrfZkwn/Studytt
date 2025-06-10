@@ -339,16 +339,15 @@
 
   </head>
 
-    <body style="background-color: #fbf3e2;">
+    <body style="background-color: var(--content-bg);">
 
       <div class="top">
-        <a>
-          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin-left: 50px;">
+        <a href="{{ url_for('views.home') }}">
+          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
         <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
           <input type="text" name="q" placeholder="Search..." required>
-
           <button type="submit">
             <span class="material-symbols-outlined">
               search
@@ -368,13 +367,9 @@
             <button class="dropdown-button">
               <img src="{{ url_for('static', filename='profile_pics/' + (current_user.image_profile if current_user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
             </button>
-          <div class="dropdown-content">
-          <div class="dropdown-content">
+            <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
               <a href="{{ url_for('views.settings') }}">Settings</a>
-              {% if current_user.is_authenticated and current_user.email.lower() == "studytt@admin" %}
-              <a href="{{ url_for('admin.index') }}">Admin Area</a>
-              {% endif %}
               {% if current_user.is_authenticated and current_user.email.lower() == "studytt518@gmail.com" %}
               <a href="{{ url_for('admin.index') }}">Admin Area</a>
               {% endif %}
@@ -382,6 +377,7 @@
             </div>
           </div>
         </div>
+      </div>
       
       <div class="main">
 

@@ -117,9 +117,13 @@ def create_database(app):
     else:
         print('Database already existed!')
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
+
 @event.listens_for(Engine, "connect")
-def enable_sqlite_fk_constraints(dbapi_connection, connection_record):
+def set_sqlite_pragma(dbapi_connection, connection_record):
     if isinstance(dbapi_connection, sqlite3.Connection):
         cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()

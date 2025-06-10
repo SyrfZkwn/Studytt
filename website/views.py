@@ -102,31 +102,14 @@ def generate_unique_code(length):
 @views.route('/chat')
 @login_required
 def chat_home():
+    # Show chat list of followed users
     followed_users = current_user.followed.all()
-    chat_data = []
-
-    for user in followed_users:
-        room_code = generate_room_code(current_user.id, user.id)
-
-        last_message = ChatMessage.query.filter_by(room_code=room_code) \
-            .order_by(ChatMessage.date.desc()) \
-            .first()
-
-        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.message if last_message else 'None'}")
-
-        chat_data.append({
-            "user": user,
-            "last_message": last_message.message if last_message else "",
-            "timestamp": last_message.date if last_message else None
-        })
-
-
-    return render_template("chat.html", chat_data=chat_data)
-
+    return render_template("chat.html", followed_users=followed_users)
 
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
+    # Check if user_id is followed by current_user
     user = User.query.get_or_404(user_id)
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
@@ -144,10 +127,24 @@ def handle_send_message(data):
     sender_id = current_user.id
     receiver_id = data['receiver_id']
     content = data['content']
+    clean_content = clean(content)
 
     # Save message to DB
-    message = ChatMessage(sender_id=sender_id, receiver_id=receiver_id, content=content)
+    message = ChatMessage(
+        sender_id=sender_id, 
+        receiver_id=receiver_id, 
+        content=clean_content
+    )
     db.session.add(message)
+
+    new_notification = Notification(
+        notified_user_id=receiver_id,
+        notifier_id = sender_id,
+        type='chat',
+        message=f"Messaged you '{clean_content}'",
+        )
+    db.session.add(new_notification)
+
     db.session.commit()
 
     room = f"user_{receiver_id}"
@@ -155,14 +152,6 @@ def handle_send_message(data):
         'sender_id': sender_id,
         'content': content,
         'date': message.date.strftime('%Y-%m-%d %H:%M')
-    }, room=room)
-
-    # Optional: send a notification to receiver
-    emit('notification', {
-        'notified_user_id': receiver_id,
-        'notifier_id': sender_id,
-        'type': 'chat',
-        'message': f"New message from {current_user.username}"
     }, room=room)
 
 @socketio.on('connect')
@@ -1016,3 +1005,5 @@ def update_report_status(report_id):
         flash("Invalid status.", "danger")
 
     return redirect(url_for('admin_reports'))
+
+

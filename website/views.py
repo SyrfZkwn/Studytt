@@ -1017,7 +1017,7 @@ def settings():
                 return redirect(url_for('views.settings'))
             
             # Update password
-            current_user.password = generate_password_hash(new_password)
+            current_user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
             db.session.commit()
             flash('Password updated successfully!', 'success')
             return redirect(url_for('views.settings'))

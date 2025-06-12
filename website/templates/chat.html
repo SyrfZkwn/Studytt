@@ -2,85 +2,12 @@
 {% block title %}Chat{% endblock %}
 
 {% block content %}
-<h1 class="chat-title">Chats</h1>
-
-<div class="chat-list">
-    {% for chat in chat_data %}
-        <a class="chat-item" href="{{ url_for('views.chat_room', user_id=chat.user.id) }}">
-            <div class="chat-user">{{ chat.user.username }}</div>
-            <div class="chat-preview">
-                <span class="chat-message">{{ chat.last_message[:40] if chat.last_message else 'No messages yet.' }}</span>
-                {% if chat.timestamp %}
-                    <span class="chat-time">{{ chat.timestamp.strftime('%b %d, %H:%M') }}</span>
-                {% endif %}
-            </div>
-        </a>
+<h2>Chat List</h2>
+<ul>
+    {% for user in followed_users %}
+        <li><a href="{{ url_for('views.chat_room', user_id=user.id) }}">{{ user.username }}</a></li>
     {% else %}
-        <p class="no-following">You are not following anyone yet.</p>
+        <li>You are not following anyone yet.</li>
     {% endfor %}
-</div>
-
-<style>
-.chat-title {
-    margin-bottom: 20px;
-    font-size: 50px;
-    font-weight: bold;
-    color: #f15c22;
-    position: relative;
-}
-
-.chat-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.chat-item {
-    display: block;
-    padding: 15px;
-    border: 1px solid #f15c22;
-    border-radius: 10px;
-    background-color: #173c67;
-    text-decoration: none;
-    color: #fbf3e2;
-    transition: background-color 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.chat-item:hover {
-    background-color: #f15c22;
-}
-
-.chat-user {
-    font-weight: bold;
-    margin-bottom: 5px;
-    font-size: 16px;
-}
-
-.chat-preview {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.chat-message {
-    font-size: 14px;
-    color: #fbf3e2;
-    max-width: 70%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-
-.chat-time {
-    font-size: 12px;
-    color: #fbf3e2;
-}
-
-.no-following {
-    font-size: 14px;
-    color: #fbf3e2;
-}
-</style>
+</ul>
 {% endblock %}

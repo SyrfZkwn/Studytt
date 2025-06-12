@@ -80,8 +80,8 @@
         >{{ current_user.biography or '' }}</textarea>
         
         <div class="file-upload-wrapper">
-          <label class="file-upload-button btn btn-primary" for="fileInput">Choose Profile Picture</label>
-            <input type="file" name="image_profile" id="image_profile fileInput" accept="image/*" class="form-control">
+          <label class="file-upload-button btn btn-primary" for="image_profile">Choose Profile Picture</label>
+            <input type="file" name="image_profile" id="image_profile" accept="image/*" class="form-control">
         </div>
 
         <img id="preview" class="preview-image" src="{{ url_for('static', filename='profile_pics/' + current_user.image_profile) }}" alt="Profile Preview">

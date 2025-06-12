@@ -40,7 +40,7 @@ def time_ago(value):
                 return f"{hours} hour{'s' if hours > 1 else ''} ago"
             minutes = (delta.seconds % 3600) // 60
             if minutes > 0:
-                return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                return f"{minutes} min{'s' if minutes > 1 else ''} ago"
             return "Just now"
     return value
 

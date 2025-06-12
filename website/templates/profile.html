@@ -257,7 +257,7 @@
         <div class="stat">⭐ {{ points }} points</div>
         
         <div>
-          {% set rating = ((points / notes_count) | round(1)) if notes_count > 0 else None %}
+          {% set rating = ((points_ratios / notes_count) | round(1)) if notes_count > 0 else None %}
           {% if rating is not none %}
             {% if rating > 4 %}
               <span style="display: flex;" class="text-success"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_very_satisfied</span>&nbsp {{ rating }} rating</span>

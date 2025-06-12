@@ -10,11 +10,8 @@ from .models import Note, ChatMessage, User, Question, Rating, Answer, Comment, 
 from . import db
 from wtforms.widgets import TextArea
 from flask import Flask, render_template, request, redirect, url_for
-<<<<<<< HEAD
 from flask_socketio import SocketIO, join_room, leave_room, send, emit 
-=======
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc
 from . import socketio
 from string import ascii_uppercase
 import random
@@ -22,7 +19,6 @@ import secrets
 import os
 from PIL import Image
 from sqlalchemy.sql import func
-<<<<<<< HEAD
 import bleach
 import re
 from sqlalchemy import or_, and_
@@ -55,11 +51,9 @@ def super_clean(html):
     text_only = re.sub(r'\s+', ' ', text_only).strip()
 
     return text_only
-=======
 import uuid
 from .views_utils import clean, super_clean, find_mentions, generate_pdf_preview, shorten, recommend_posts, suggest_profiles
 from werkzeug.security import check_password_hash, generate_password_hash
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc
 
 views = Blueprint('views', __name__, template_folder='../templates')
 
@@ -162,13 +156,41 @@ def handle_send_message(data):
         'message': f"New message from {current_user.username}"
     }, room=room)
 
+@socketio.on("connect")
+def connect():
+    room = session.get("room")
+    name = session.get("name")
+    
+    if not room or not name:
+        return
+    
+    if room not in rooms:
+        return
+    
+    join_room(room)
+    send({"name": "System", "message": f"{name} has joined the room"}, to=room)
+    rooms[room]["members"] += 1
+
+@socketio.on("disconnect")
+def disconnect():
+    room = session.get("room")
+    name = session.get("name")
+    leave_room(room)
+
+    if room in rooms:
+        rooms[room]["members"] -= 1
+        if rooms[room]["members"] <= 0:
+            del rooms[room]
+    
+    send({"name": name, "message": "has left the room"}, to=room)
+
+
+
 @socketio.on('connect')
 def on_connect():
     if current_user.is_authenticated:
         room = f"user_{current_user.id}"
         join_room(room)
-
-
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
@@ -198,15 +220,13 @@ def post():
         preview_path = None
         file.save(absolute_path)
 
-<<<<<<< HEAD
       
-=======
+
         # Generate preview if it's a PDF
         if unique_filename.lower().endswith('.pdf'):
             preview_filename = unique_filename.rsplit('.', 1)[0] + '_preview.jpg'
             preview_path = os.path.join(current_app.config['PDF_PREVIEW_FOLDER'], preview_filename).replace('\\', '/')
             generate_pdf_preview(file_path, preview_path)
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc
 
         new_note = Note(
             title=title,
@@ -963,12 +983,6 @@ def explore():
         ~User.id.in_(followed_ids)
     ).all()
 
-<<<<<<< HEAD
-    return render_template("search_results.html", users=users, notes=notes, query=query)
-
-
-
-=======
     return render_template("explore.html", current_user=current_user, notes=notes, recommended_notes = recommended_notes, 
                            recommended_profiles=recommended_profiles, random_profiles=random_profiles)
 
@@ -1004,7 +1018,6 @@ def profile_followers(user_id):
         followers=followers,
         following=following
     )
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc
 
 @views.route('/toggle_theme', methods=['POST'])
 @login_required
@@ -1072,18 +1085,11 @@ def settings():
                 return redirect(url_for('views.settings'))
             
             # Update password
-<<<<<<< HEAD
-            current_user.password = generate_password_hash(new_password)
-=======
             current_user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc
             db.session.commit()
             flash('Password updated successfully!', 'success')
             return redirect(url_for('views.settings'))
     
-<<<<<<< HEAD
-    return render_template('settings.html')
-=======
     return render_template('settings.html')
 
 @views.route('/report', methods=['GET', 'POST'])
@@ -1184,4 +1190,3 @@ def update_report_status(report_id):
         flash("Invalid status.", "danger")
 
     return redirect(url_for('admin_reports'))
->>>>>>> f0563e43265a425dfe332da86fdc79798465cbdc

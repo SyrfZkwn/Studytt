@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+<title>{% block title %}Admin Reports{% endblock %}</title>
+
+{% block content %}
+
+<h1>Reported Content — {{ status_filter.title() }}</h1>
+
+<form method="GET">
+  <select name="status" onchange="this.form.submit()">
+    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="reviewed" {% if status_filter == 'reviewed' %}selected{% endif %}>Reviewed</option>
+    <option value="dismissed" {% if status_filter == 'dismissed' %}selected{% endif %}>Dismissed</option>
+  </select>
+</form>
+
+<table>
+  <tr>
+    <th>Reporter</th>
+    <th>Target</th>
+    <th>Reason</th>
+    <th>Time</th>
+    <th>Actions</th>
+  </tr>
+  {% for report in reports %}
+  <tr>
+    <td>{{ report.reporter.username }}</td>
+    <td>
+      {% if report.post_id %}
+        <a href="{{ url_for('view_post', post_id=report.post_id) }}">Post #{{ report.post_id }}</a>
+      {% elif report.comment_id %}
+        <a href="{{ url_for('view_comment', comment_id=report.comment_id) }}">Comment #{{ report.comment_id }}</a>
+      {% endif %}
+    </td>
+    <td>{{ report.reason }}</td>
+    <td>{{ report.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+    <td>
+      <form action="{{ url_for('update_report_status', report_id=report.id) }}" method="POST" style="display:inline;">
+        <input type="hidden" name="status" value="reviewed">
+        <button type="submit">Mark Reviewed</button>
+      </form>
+      <form action="{{ url_for('update_report_status', report_id=report.id) }}" method="POST" style="display:inline;">
+        <input type="hidden" name="status" value="dismissed">
+        <button type="submit">Dismiss</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+
+{% endblock %}

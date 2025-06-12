@@ -293,7 +293,6 @@
   }
 
   .a-comment {
-    margin-bottom: 1.5rem;
     font-size: 1.3rem;
   }
 
@@ -305,7 +304,15 @@
     padding: 10px 15px;
   }
 
-  .save-button:focus {
+  .save-button2 {
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 5px 15px 0 15px;
+  }
+
+  .save-button:focus,.save-button2:focus {
     outline: none;
   }
 
@@ -314,7 +321,7 @@
     font-size: 2.5rem;
   }
 
-  .save-button:hover {
+  .save-button:hover,.save-button2:hover {
     background-color: rgba(23, 23, 23, 0.1);
   }
 
@@ -329,6 +336,15 @@
     border-radius: 50%; 
     margin-right: 10px; 
     vertical-align: middle;
+  }
+
+  .OP {
+    color: #0080ff;
+  }
+
+  .highlight {
+    background-color: rgba(241, 92, 34, 0.1);
+    border-left: 3px solid var(--orange);
   }
 </style>
 
@@ -375,7 +391,7 @@
 
         <div class="dots-menu" id="dots-menu">
           <a href="{{ url_for('views.post_edit', post_id=post.id) }}">Edit</a>
-          <form method="POST" action="{{ url_for('views.delete', post_id=post.id) }}" style="margin: 0;">
+          <form method="POST" action="{{ url_for('views.delete_post', post_id=post.id) }}" style="margin: 0;">
             <button type="submit" onclick="return confirm('Are you sure you want to delete this post?')">Delete</button>
         </form>        
         </div>
@@ -414,10 +430,10 @@
             <span class="material-symbols-outlined">sentiment_dissatisfied</span>
           </button>
           <button type="submit" name="rating" value="{{ 3 }}" class="rating" title="Neutral">
-            <span class="material-symbols-outlined">mood</span>
+            <span class="material-symbols-outlined">sentiment_satisfied</span>
           </button>
           <button type="submit" name="rating" value="{{ 4 }}" class="rating" title="Satisfied">
-            <span class="material-symbols-outlined">sentiment_satisfied</span>
+            <span class="material-symbols-outlined">mood</span>
           </button>
           <button type="submit" name="rating" value="{{ 5 }}" class="rating" title="Very Satisfied">
             <span class="material-symbols-outlined">sentiment_very_satisfied</span>
@@ -428,24 +444,48 @@
     </form>
 
     <div class="rating-summary ml-2">
-      <h1>{{ ((total_points / ratings_count) | round(1)) if ratings_count != 0 else 'No Rating' }}</h1>
+      <h1>{{ post.rating_ratio if ratings_count != 0 else 'No Rating' }}</h1>
     </div>
 
     <div style="display: flex; height: auto; margin-left: auto;">
       <form method="POST" action="{{ url_for('views.save_post', post_id=post.id) }}">
-        <button type="submit" class="save-button">
-          <i class="fa-regular fa-bookmark save-icon"></i>
-        </button>
+        {% if post in current_user.saved %}
+          <button type="submit" class="save-button2 save-icon">
+            <i class="fa-solid fa-bookmark"></i>
+          </button>
+        {% else %}
+          <button type="submit" class="save-button">
+            <i class="fa-regular fa-bookmark save-icon"></i>
+          </button>
+        {% endif %}
+        
       </form>
 
       <button type="button" class="comment-button">
         <i class="fa-regular fa-comment comment-icon"></i>
       </button>
     </div>
-
+              {% if current_user.is_authenticated and current_user.id != post.user.id %}
+              <button type="button" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="openReportModal('{{ post.id }}', '')">Report Post</button>
+              {% endif %}
+=======
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportButton = document.getElementById('reportPostButton');
+    if (reportButton) {
+        reportButton.addEventListener('click', function() {
+            const postId = this.getAttribute('data-post-id');
+            openReportModal(postId, null);
+        });
+    }
+});
+</script>
   </div>
 
   <div class="post-description">{{ post.description | safe }}</div>
+  
+ 
+
 
 </div>
 
@@ -470,25 +510,35 @@
   <div class="comments">
     {% if comments %}
     <h2 style="color: #f15c22;" class="mb-3">Comments</h2>
-      {% for comment in comments %}
+      {% for comment in comments|reverse %}
         <div class="a-comment" data-comment-id="{{ comment.id }}">
-          <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">
-            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (comment.user.image_profile if comment.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
-          </a>
+          <div class="{% if ('@' + current_user.username.lower()) in comment.body.lower() %}highlight{% endif %} pl-2 py-2">
+            <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">
+              <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (comment.user.image_profile if comment.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+            </a>
 
-          <span class="publisher-username">
-            <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}">{{ comment.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
-          </span>
-          
-          {% if current_user.is_authenticated and current_user.id == comment.user_id %}
-            <form action="{{ url_for('views.delete_comment', comment_id=comment.id) }}" method="post" title="Delete" style="display: inline;">
-              <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this comment?')"><i class="fa-regular fa-trash-can"></i></button>
-            </form>
-          {% endif %}
+            <span class="publisher-username">
+              <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}">{{ comment.user.username }}</a>{% if comment.user.id == comment.note.publisher %}<span class="OP"> OP</span>{% endif %}<span class="mx-2">·</span><span class="underweight">{{ comment.date_posted | time_ago }}</span>
+            </span>
+            
+            {% if current_user.is_authenticated and current_user.id == comment.commenter_id %}
+              <form action="{{ url_for('views.delete_comment', comment_id=comment.id) }}" method="post" title="Delete" style="display: inline;">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this comment?')"><i class="fa-regular fa-trash-can"></i></button>
+              </form>
+            {% endif %}
 
-          <br> <div class="comment-content mt-1">{{ comment.body | safe }}</div>
+            <br> <div class="comment-content mt-1">
+                {{ comment.body | safe }}
+            </div>
+          </div>
 
             <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
+              {% if current_user.is_authenticated and current_user.id != comment.commenter_id %}
+                <button type="button" class="btn btn-warning btn-sm" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="openReportModal('', '{{ comment.id }}')">
+                  Report Comment
+                </button>
+              {% endif %}
+
 
               <form action="{{ url_for('views.vote_comment', comment_id=comment.id) }}" method="post" style="display: inline;">
                 <input type="hidden" name="vote" value="1">
@@ -531,13 +581,13 @@
           {% if comment.replies %}
           <h5 style="color: #f15c22;">Replies</h5>
           {% for reply in comment.replies %}
-            <div class="reply ms-3">
+            <div class="reply ms-3 {% if ('@' + current_user.username.lower()) in reply.body.lower() %}highlight{% endif %} pl-2 py-2">
               <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">
                 <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (reply.user.image_profile if reply.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
               </a>
 
               <span class="publisher-username">
-                <a href="{{ url_for('views.user_profile', user_id=reply.user.id) }}">{{ reply.user.username }}</a><span class="mx-2">·</span><span class="underweight">{{ reply.date_posted | time_ago }}</span>
+                <a href="{{ url_for('views.user_profile', user_id=reply.user.id) }}">{{ reply.user.username }}</a>{% if reply.user_id == comment.note.publisher %}<span class="OP"> OP</span>{% endif %}<span class="mx-2">·</span><span class="underweight">{{ reply.date_posted | time_ago }}</span>
               </span>
 
               {% if current_user.is_authenticated and current_user.id == reply.user_id %}
@@ -546,7 +596,37 @@
                 </form>
               {% endif %}
 
-              <div class="comment-content my-2">{{ reply.body | safe }}</div>
+              <div class="comment-content my-2">
+                {{ reply.body | safe }}
+              </div>
+
+              <div class="upvote-downvote-reply-delete mt-1" style="display: flex; height: auto; gap: 8px;">
+
+                <form action="{{ url_for('views.vote_reply', reply_id=reply.id) }}" method="post" style="display: inline;">
+                  <input type="hidden" name="vote" value="1">
+                  <button type="submit" class="btn btn-outline-success btn-sm" title="Upvote">
+                    <i class="fa-solid fa-circle-up"></i>
+                  </button>
+                </form>
+                
+                {{ (reply.votes | selectattr('value', 'equalto', 1) | list | length) - (reply.votes | selectattr('value', 'equalto', -1) | list | length) }}
+                <form action="{{ url_for('views.vote_reply', reply_id=reply.id) }}" method="post" style="display: inline;">
+                  <input type="hidden" name="vote" value="-1">
+                  <button type="submit" class="btn btn-outline-danger btn-sm" title="Downvote">
+                    <i class="fa-solid fa-circle-down"></i>
+                  </button>
+                </form>
+              
+                {% if current_user.id != reply.user_id %}
+                <div class="a-comment" data-comment-id="{{ comment.id }}" data-username="{{ reply.user.username }}">
+                  <!-- Mention reply button -->
+                  <button type="button" class="btn btn-outline-primary btn-sm mention-reply-button" title="Mention Reply">
+                    <i class="fa-solid fa-at"></i> <!-- @ icon -->
+                  </button>
+                </div>
+                {% endif %}
+
+              </div>
             </div>
           {% endfor %}
           {% endif %}
@@ -700,5 +780,58 @@
         setTimeout(updateButtonStates, 100);
     });
   }); /*for reply text rich editor*/
+
+  document.querySelectorAll('.mention-reply-button').forEach(button => {
+    button.addEventListener('click', function () {
+      const commentElement = button.closest('.a-comment');
+      const commentId = commentElement.getAttribute('data-comment-id');
+      const username = commentElement.getAttribute('data-username');
+      const editorWrapper = document.getElementById(`reply-editor-wrapper-${commentId}`);
+      const editor = document.getElementById(`reply-editor-content-${commentId}`);
+
+      // Show the editor
+      editorWrapper.style.display = 'block';
+
+      // Pre-fill with @username and focus
+      if (!editor.innerHTML.includes(`@${username}`)) {
+        editor.innerHTML = `@${username} `;
+      }
+      editor.focus();
+    });
+  }); // for mention //
+
+function openReportModal(noteId, commentId) {
+  document.getElementById('reportNoteId').value = noteId || '';
+  document.getElementById('reportCommentId').value = commentId || '';
+  document.getElementById('reportModal').style.display = 'flex';
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').style.display = 'none';
+}
+
+
 </script>
+
+<!-- Report Modal -->
+<div id="reportModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+  <div style="background: white; padding: 20px; border-radius: 10px; width: 400px;">
+    <h4>Report Content</h4>
+    <form method="POST" action="{{ url_for('views.report') }}">
+      <input type="hidden" id="reportNoteId" name="note_id" value="">
+      <input type="hidden" id="reportCommentId" name="comment_id" value="">
+      <div class="form-group">
+        <label for="reason">Reason</label>
+        <textarea name="reason" id="reason" class="form-control" required rows="4" placeholder="Describe the issue..."></textarea>
+      </div>
+      <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="submit" class="btn btn-danger">Submit</button>
+        <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
+
+

@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+<title>{% block title %}Profile{% endblock %}</title>
+
+{% block content %}
+<style>
+  body {
+    font-family: 'Baloo 2', cursive;
+    background-color: #fbf3e2;
+    color: #1b4f83;
+  }
+
+  .profile-header {
+    background-color: #fdf3de;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 3px solid #1b4f83;
+  }
+
+  .pfp {
+    width: 150px; 
+    height: 150px; 
+    border-radius: 50%; 
+    margin-right: 2rem; 
+    vertical-align: middle;
+  }
+
+  .profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .username {
+    font-size: 2rem;
+    color: #f15c22;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .edit-btn {
+    padding: 0.5rem 1rem;
+    background-color: #173c67;
+    color: #fdf3de;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .edit-btn:hover {
+    background-color: #f15c22;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .tab {
+    width: 40%;
+    margin: 1.5rem auto;
+    flex: 1;
+    text-align: center;
+  }
+
+  .tab a {
+    display: block;
+    padding: 0.5rem 1.5rem;
+    background-color: #1b4f83;
+    color: #fdf3de;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+
+  .tab a.inactive {
+    margin: 0 auto;
+    display: block;
+    padding: 0.5rem 1.5rem;
+    background-color: #1b4f83;
+    color: #fdf3de;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 40%;
+  }
+
+  .tab a:hover {
+    background-color: #f15c22;
+  }
+
+  .tab a.active {
+    background-color: #f15c22;
+    color: #fff;
+  }
+
+  .content-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+
+  .post {
+    background-color: #1b4f83;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s;
+    min-width: 250px;
+    max-width: 300px;
+  }
+
+  .post a {
+    text-decoration: none;
+    color: #f15c22;
+  }
+
+  .post:hover {
+    transform: translateY(-4px);
+    background-color: #246aa7;
+  }
+
+  .post-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
+    background-color: #1b4f83;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
+
+  .post-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .post-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-footer {
+    font-size: 0.9rem;
+    color: #888;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 600px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    }
+  .stats {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  .tabs a.active {
+    background-color: #f15c22;
+    border-radius: 20px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  #username {
+    color: #2a83db;
+    transition: transform 0.2s;
+  }
+
+  #username:hover {
+    color: #1263b4;
+    transform: translateY(-4px);
+  }
+
+  .pfp-small {
+    width: 60px; 
+    height: 60px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+
+  .profiles {
+    background-color: #1b4f83;
+    margin: 2.5rem auto;
+    padding: 1rem;
+    border-radius: 20px;
+    width: 85%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: larger;
+  }
+
+  .profiles a {
+    text-decoration: none;
+  }
+
+  .profile {
+    margin: 0.5rem 0.5rem;
+    padding: 1rem 1rem;
+    border-radius: 10px;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .profile:hover {
+    background-color: #246aa7;
+  }
+  
+  .no-one {
+    margin: 3rem auto;
+    text-align: center;
+  }
+
+  a.followers,
+  a.following,
+  a.posts {
+    text-decoration: none;
+  }
+
+  a.followers:hover,
+  a.following:hover,
+  a.posts {
+    text-decoration: none;
+  }
+
+</style>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash">
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+  <div class="profile-header">
+    <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+    
+    <div class="profile-info">
+
+      <div class="stats">
+        <div class="username">@{{ user.username }}</div>
+        
+        {% if user.id != current_user.id %}
+        {% if not is_following %}
+          <form action="{{ url_for('views.follow', user_id=user.id) }}" method="POST" style="display: inline;" class="small-btn">
+            <button type="submit" class="edit-btn">Follow</button>
+          </form>
+        {% else %}
+          <form action="{{ url_for('views.unfollow', user_id=user.id) }}" method="POST" style="display: inline;" class="small-btn">
+            <button type="submit" class="edit-btn" style="background-color: #ff0000">Unfollow</button>
+          </form>
+        {% endif %}
+        {% else %}
+          <a class="small-btn" href="{{ url_for('views.edit_profile') }}"><button class="edit-btn">Edit Profile</button></a>
+        {% endif %}
+      </div>
+
+      <div class="stats">
+        <div class="stat"><a href="{{ url_for('views.user_profile', user_id=user.id) }}" class="posts"><i class="fa-solid fa-file-pen"></i>&nbsp {{ notes_count }} posts</div></a>
+        <div class="stat"><a href="{{ url_for('views.profile_followers', user_id=user.id, show_followers=1, show_following=0) }}" class="followers"><i class="fa-solid fa-user"></i>&nbsp {{ follower_count }} followers</a></div>
+        <div class="stat"><a href="{{ url_for('views.profile_followers', user_id=user.id, show_followers=0, show_following=1) }}" class="following"><i class="fa-solid fa-user-plus"></i>&nbsp {{ following_count }} following</a></div>
+        <div class="stat">⭐ {{ points }} points</div>
+        
+        <div>
+          {% set rating = ((points / notes_count) | round(1)) if notes_count > 0 else None %}
+          {% if rating is not none %}
+            {% if rating > 4 %}
+              <span style="display: flex;" class="text-success"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_very_satisfied</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 3 %}
+              <span style="display: flex;" class="text-success"><span class="material-symbols-outlined" title="{{ rating }}">mood</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 2 %}
+              <span style="display: flex;" class="text-warning"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_satisfied</span>&nbsp {{ rating }} rating</span>
+            {% elif rating > 1 %}
+              <span style="display: flex;" class="text-danger"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_dissatisfied</span>&nbsp {{ rating }} rating</span>
+            {% else %}
+              <div style="display: flex;" class="text-danger"><span class="material-symbols-outlined" title="{{ rating }}">sentiment_sad</span>&nbsp {{ rating }} rating</div>
+            {% endif %}
+          {% else %}
+          {% endif %}
+        </div>
+
+      </div>
+
+      {% if user.biography %}
+        <div class="stats mt-3">{{user.biography}}</div>
+      {% endif %}
+
+    </div>
+  </div>
+
+    {% if show_followers == 1 %}
+    <div class="tab">
+      <a>FOLLOWERS</a>
+    </div>
+    {% endif %}
+    {% if show_following == 1 %} 
+    <div class="tab">
+      <a>FOLLOWING</a>
+    </div>
+    {% endif %}
+
+{% if show_followers == 1 %}
+{% if followers %}
+  <div class="profiles">
+  {% for user in followers %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
+      <div class="profile">
+        <img class="pfp-small" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        {{ user.username }}
+      </div>
+    </a>
+  {% endfor %}
+  </div>
+{% else %}
+  <h2 style="color: #f15c22;" class="no-one">{{ user.username }} has no followers.</h2>
+{% endif %}
+{% endif %}
+
+{% if show_following == 1 %}
+{% if followers %}
+  <div class="profiles">
+  {% for user in following %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
+      <div class="profile">
+        <img class="pfp-small" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        {{ user.username }}
+      </div>
+    </a>
+  {% endfor %}
+  </div>
+{% else %}
+  <h2 style="color: #f15c22;" class="no-one">{{ user.username }} is not following anyone.</h2>
+{% endif %}
+{% endif %}
+
+{% endblock %}

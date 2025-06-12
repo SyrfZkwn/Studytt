@@ -2,24 +2,226 @@
 {% block title %}Search{% endblock %}
 
 {% block content %}
-<h2>Search Results for "{{ query }}"</h2>
 
-{% if users %}
-  <h3>Users:</h3>
-  {% for user in users %}
-    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">{{ user.username }}</a><br>
-  {% endfor %}
-{% endif %}
+<style>
+
+  .content-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+      padding: 1rem;
+  }
+
+  .post {
+      background-color: #1b4f83;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+      min-width: 250px;
+      max-width: 300px;
+  }
+
+  .post a {
+      text-decoration: none;
+      color: #f15c22;
+  }
+
+  .post:hover {
+      transform: translateY(-4px);
+  }
+
+  .post-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
+      background-color: #1b4f83;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+  }
+
+  .post-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+  }
+
+  .post-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+  }
+
+  .post-footer {
+      font-size: 0.9rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+  }
+
+  #username {
+      color: #2a83db;
+      transition: transform 0.2s;
+  }
+
+  #username:hover {
+      color: #1263b4;
+      transform: translateY(-4px);
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+  }
+
+  .tab a {
+    display: block;
+    padding: 0.5rem 1.5rem;
+    background-color: #1b4f83;
+    color: #fdf3de;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    width: 100%;
+  }
+
+  .tab a:hover {
+    background-color: #f15c22;
+  }
+
+  .tab a.active {
+    background-color: #f15c22;
+    color: #fff;
+  }
+  
+  .pfp {
+    width: 60px; 
+    height: 60px; 
+    border-radius: 50%; 
+    margin-right: 10px; 
+    vertical-align: middle;
+  }
+
+  .profiles {
+    background-color: #1b4f83;
+    margin: 2.5rem auto;
+    padding: 1rem;
+    border-radius: 20px;
+    width: 85%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-size: larger;
+  }
+
+  .profiles a {
+    text-decoration: none;
+  }
+
+  .profile {
+    margin: 0.5rem 0.5rem;
+    padding: 1rem 1rem;
+    border-radius: 10px;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .profile:hover {
+    background-color: #246aa7;
+  }
+
+</style>
+
+<div class="flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash">
+          {% for category, message in messages %}
+          {% if category == 'error' %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% else %}
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert">
+              <span aria-hidden="true">&times;</span>
+          </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+
+<h2 style="color: #f15c22;">Search Results for "{{ query }}"</h2>
+
+<div class="tabs">
+  <div class="tab">
+    <a href="{{ url_for('views.search', q=query, post=1, user=0) }}" class="{% if post == 1 %}active{% endif %}">NOTES</a>
+  </div>
+
+  <div class="tab">
+    <a href="{{ url_for('views.search', q=query, post=0, user=1) }}" class="{% if user == 1 %}active{% endif %}">USERS</a>
+  </div>
+</div>
 
 {% if notes %}
-  <h3>Notes:</h3>
+<div class="content-section">
   {% for note in notes %}
-    <a href="{{ url_for('views.post_detail', post_id=note.id) }}">{{ note.title }} {{ note.code }} | {{ note.chapter }}</a><br>
+  <div class="post">
+    <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+      <div class="post-img">
+        {% if note.file_path.endswith('.pdf') %}
+          <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% else %}
+          <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+        {% endif %}
+      </div>
+      <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+    </a>
+    <div class="post-footer">
+      <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+      <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
+    </div>
+  </div>
   {% endfor %}
+</div>  
+{% endif %}
+
+{% if users %}
+  <div class="profiles">
+  <h1 style="color: #f15c22; margin-left: 1rem;">Users :</h1>
+  {% for user in users %}
+    <a href="{{ url_for('views.user_profile', user_id=user.id) }}">
+      <div class="profile">
+        <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (user.image_profile if user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        {{ user.username }}
+      </div>
+    </a>
+  {% endfor %}
+  </div>
 {% endif %}
 
 {% if not users and not notes %}
-  <p>No results found.</p>
+  <div class="d-flex justify-content-center align-items-center flex-column text-center" style="height: 65vh;">
+    <h1 style="color: #f15c22;">No results found.</h1>
+    <img src="{{ url_for('static', filename='image/404.png') }}" alt="404" style="max-width: 30%;">
+  </div>
 {% endif %}
 
 {% endblock %}

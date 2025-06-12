@@ -2,109 +2,148 @@
 {% block title %}Chat with {{ chat_with.username }}{% endblock %}
 
 {% block content %}
-<h2>Chat with {{ chat_with.username }}</h2>
+  <style>
+    .chat-container {
+      max-width: 700px;
+      margin: 40px auto;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #fdfdfd;
+    }
 
-<div id="messages" style="height: 300px; overflow-y: scroll; border: 1px solid #ccc; margin-bottom: 10px; padding: 10px;">
-    {% for msg in messages %}
-        <p><strong>{{ msg.name }}</strong>: {{ msg.message }}</p>
-    {% endfor %}
-</div>
+    .chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-<input type="text" id="message-input" placeholder="Type a message...">
-<button id="send-button">Send</button>
+    .message {
+      padding: 10px 16px;
+      border-radius: 16px;
+      max-width: 75%;
+      font-size: 15px;
+      line-height: 1.4;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-<script>
+    .sent {
+      background-color: #dcf8c6;
+      align-self: flex-end;
+    }
+
+    .received {
+      background-color: #e6e6e6;
+      align-self: flex-start;
+    }
+
+    .message small {
+      display: block;
+      font-size: 11px;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 16px;
+      border-top: 1px solid #eee;
+      gap: 10px;
+      background-color: #fafafa;
+    }
+
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 12px 15px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      outline: none;
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: 20px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+  <div id="chatContainer" data-receiver-id="{{ chat_with.id }}">
+    <div class="chat-container">
+      <div class="chat-messages" id="chat">
+        {% for msg in messages %}
+          <div class="message {{ 'sent' if msg.sender_id == current_user.id else 'received' }}">
+            {{ msg.content }}
+            <small>{{ msg.date.strftime('%Y-%m-%d %H:%M') }}</small>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
     const socket = io();
-    const messagesDiv = document.getElementById('messages');
-    const messageInput = document.getElementById('message-input');
-    const sendButton = document.getElementById('send-button');
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('messageInput');
+    const chatContainer = document.getElementById('chatContainer');
+    const receiverId = parseInt(chatContainer.dataset.receiverId);
 
-    // Debug connection
-    socket.on('connect', () => {
-        console.log('Connected to Socket.IO');
-        messagesDiv.innerHTML += '<p><em>Connected to chat</em></p>';
-    });
-
-    // Send message when button is clicked
-    sendButton.addEventListener('click', () => {
-        const message = messageInput.value.trim();
-        if (message) {
-            console.log('Sending message:', message);
-            socket.emit('message', { data: message });
-            messageInput.value = '';
+    socket.on('receive_message', (data) => {
+        if (parseInt(data.sender_id) === receiverId) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', 'received');
+        msgDiv.innerHTML = `${data.content}<br><small>${data.date}</small>`;
+        chat.appendChild(msgDiv);
+        chat.scrollTop = chat.scrollHeight;
         }
     });
 
-    // Handle enter key
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendButton.click();
+    function sendMessage() {
+        const content = input.value.trim();
+        if (content !== '') {
+        socket.emit('send_message', {
+            receiver_id: receiverId,
+            content: content
+        });
+
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', 'sent');
+        const now = new Date();
+        const formatted = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        msgDiv.innerHTML = `${content}<br><small>${formatted}</small>`;
+        chat.appendChild(msgDiv);
+        chat.scrollTop = chat.scrollHeight;
+        input.value = '';
         }
+    }
+
+        input.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault(); // prevent newline if shift+enter isn't pressed
+        sendMessage();
+    }
     });
-
-    // Receive messages
-    socket.on('message', (data) => {
-        console.log('Received message:', data);
-        messagesDiv.innerHTML += <p><strong>${data.name}</strong>: ${data.message}</p>;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    });
-</script>
-<style>
-    #chat-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        font-family: Arial, sans-serif;
-    }
-
-    #messages {
-        height: 300px;
-        overflow-y: scroll;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        padding: 10px;
-        background-color: #f9f9f9;
-    }
-
-    #messages p {
-        margin: 8px 0;
-        padding: 6px 10px;
-        background-color: #e6f3ff;
-        border-radius: 6px;
-    }
-
-    #messages p strong {
-        color: #2c3e50;
-    }
-
-    #input-area {
-        display: flex;
-        gap: 10px;
-    }
-
-    #message-input {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-
-    #send-button {
-        padding: 10px 20px;
-        background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.2s;
-    }
-
-    #send-button:hover {
-        background-color: #2980b9;
-    }
-</style>
+    </script>
 {% endblock %}

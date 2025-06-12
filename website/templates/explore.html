@@ -1,0 +1,261 @@
+{% extends "base.html" %} 
+<title>{% block title %}Explore{% endblock %}</title>
+
+{% block content %}
+
+<style>
+
+    .main-section {
+      padding-left: 1rem;
+      max-width: 85%;
+      flex: 1;
+    }
+
+    .content-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 2rem;
+    }
+
+    .post {
+      background-color: #1b4f83;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+      min-width: 250px;
+      max-width: 300px;
+    }
+
+    .post a {
+      text-decoration: none;
+      color: #f15c22;
+    }
+
+    .post:hover {
+      transform: translateY(-4px);
+      background-color: #246aa7;
+    }
+
+    .post-img {
+      width: 100%;
+      aspect-ratio: 4 / 3;  /* or try 16 / 9 for a widescreen look */
+      background-color: #1b4f83;
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+
+    .post-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .post-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .post-footer {
+      font-size: 0.9rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #username {
+      color: #2a83db;
+      transition: transform 0.2s;
+    }
+
+    #username:hover {
+      color: #1263b4;
+      transform: translateY(-4px);
+    }
+
+    .center-me {
+      color: #f15c22;
+      margin: 0 auto;
+      width: fit-content;
+    }
+
+    .follow-section {
+      width: 16%;
+      background-color: #1b4f83;
+      padding: 1rem;
+      border-radius: 12px;
+      height: fit-content;
+      position: sticky;
+      top: 6.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .explore-container {
+      display: flex;
+      gap: 1rem;
+      padding: 0rem 1rem 1rem 1rem;
+    }
+
+    .profile-suggestions h3 {
+      color: #f15c22;
+      margin-bottom: 1rem;
+    }
+
+    .profile-card {
+      background-color: #2261a9;
+      padding: 0.5rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      transition: background-color 0.2s ease;
+    }
+
+    a .profile-card  {
+      color: #fff;
+      text-decoration: none;
+    }
+
+    a .profile-card:hover {
+      background-color: #2a94f0;
+      text-decoration: none;
+    }
+
+    .pfp {
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      margin-right: 10px; 
+      vertical-align: middle;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.5rem 1.5rem;
+      background-color: #1b4f83;
+      color: #f15c22;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      text-align: center;
+      margin: 1.5rem auto;
+      width: 40%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+</style>
+
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash">
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% else %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+            <span aria-hidden="true">&times;</span>
+        </button>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="explore-container">
+  <div class="main-section">
+  {% if recommended_notes and recommended_notes|length >= 3 %}
+    <h2 class="tab">Recommended</h2>
+    <div class="content-section mb-4">
+      {% for note in recommended_notes[:9] |reverse %}
+        <div class="post">
+          <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+            <div class="post-img">
+              {% if note.file_path.endswith('.pdf') %}
+                <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+              {% else %}
+                <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+              {% endif %}
+            </div>
+            <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+          </a>
+          <div class="post-footer">
+            <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+            <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if notes %}
+  <h2 class="tab">Recently Posted</h2>
+    <div class="content-section">
+      {% for note in notes|reverse %}
+        <div class="post">
+          <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
+            <div class="post-img">
+              {% if note.file_path.endswith('.pdf') %}
+                <img src="{{ '/' ~ (note.preview_path or '') }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+              {% else %}
+                <img src="{{ url_for('static', filename=note.file_path.split('static/')[-1]) }}" alt="{{ note.title }}" style="width:100%; height: 200px; object-fit: cover; border-radius: 10px;">
+              {% endif %}
+            </div>
+            <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
+          </a>
+          <div class="post-footer">
+            <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+            <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+      <h1 class="mt-5 d-flex justify-content-center align-items-center flex-column text-center" style="color: #f15c22;">No notes to show. <a href="{{ url_for('views.post') }}">Try posting some notes!</a></h1>
+  {% endif %}
+  </div>
+
+  
+  <div class="follow-section mx-auto">
+    <div class="profile-suggestions">
+    {% if recommended_profiles %}
+      <h3>Follow them!</h3>
+      {% for profile in recommended_profiles %}
+        <a href="{{ url_for('views.user_profile', user_id=profile.id) }}" style="text-decoration: none;">
+          <div class="profile-card">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (profile.image_profile if profile.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+            {{ profile.username }}
+          </div>
+        </a>
+      {% endfor %}
+    {% else %}
+      {% if random_profiles %}
+      <h3>Follow them!</h3>
+      {% for profile in random_profiles %}
+        <a href="{{ url_for('views.user_profile', user_id=profile.id) }}" style="text-decoration: none;">
+          <div class="profile-card">
+            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (profile.image_profile if profile.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+            {{ profile.username }}
+          </div>
+        </a>
+      {% endfor %}
+      {% else %}
+        <h3>You've followed everybody! 🎉</h3>
+      {% endif %}
+    {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

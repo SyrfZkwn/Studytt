@@ -61,33 +61,34 @@
       --shadow-color: rgba(0,0,0,0.5);
       --text-muted: #999999;
 
-      input[type="text"], 
-input[type="email"], 
-input[type="password"], 
-textarea, 
-.form-control {
-  background-color: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-color) !important;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus, 
-input[type="password"]:focus,
-textarea:focus,
-.form-control:focus {
-  background-color: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25) !important;
-}
-
-/* Placeholder text color */
-input::placeholder,
-textarea::placeholder {
-  color: var(--text-muted) !important;
-}
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    textarea, 
+    .form-control {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color) !important;
     }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus, 
+    input[type="password"]:focus,
+    textarea:focus,
+    .form-control:focus {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--accent-primary) !important;
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25) !important;
+    }
+
+    /* Placeholder text color */
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--text-muted) !important;
+    }
+        }
+
     body {
       margin: 0;
       font-family: 'Baloo 2', cursive;
@@ -129,7 +130,7 @@ textarea::placeholder {
 
     .button a {
       font-weight: bold;
-      background-color: #173c67;
+      background-color: #1b4f83;
       color: #f15c22;
       padding: 10px;
       text-decoration: none;
@@ -195,7 +196,6 @@ textarea::placeholder {
       max-height: 80px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 0 20px;
       z-index: 999;
     }
@@ -239,7 +239,7 @@ textarea::placeholder {
     }
 
     hr {
-      border: 2px solid #173c67;
+      border: 2px solid #1b4f83;
       width: 80%;
       margin: 10px auto;
     }
@@ -288,7 +288,7 @@ textarea::placeholder {
       display: none;
       position: absolute;
       left: -15px;
-      background-color: #173c67;
+      background-color: #1b4f83;
       min-width: 100px;
       box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       border-radius: 6px;
@@ -399,7 +399,7 @@ textarea::placeholder {
 
       <div class="top">
         <a href="{{ url_for('views.home') }}">
-          <img src="{{ url_for('static', filename='image/logo.jpg') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
+          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
         </a>
       
         <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
@@ -426,6 +426,9 @@ textarea::placeholder {
             <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
               <a href="{{ url_for('views.settings') }}">Settings</a>
+              {% if current_user.is_authenticated and current_user.email.lower() == "studytt518@gmail.com" %}
+              <a href="{{ url_for('admin.index') }}">Admin Area</a>
+              {% endif %}
               <a href="{{ url_for('auth.logout') }}" class="logout">Logout</a>
             </div>
           </div>
@@ -436,7 +439,7 @@ textarea::placeholder {
 
         <div class="sidebar">
           <div class="sidebar-btn">
-            <a href="#">EXPLORE</a>
+            <a class="{% if request.endpoint == 'views.explore' %}active{% endif %}" href="{{ url_for('views.explore') }}">EXPLORE</a>
             <a class="{% if request.endpoint == 'views.home' %}active{% endif %}" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
             <a class="{% if request.endpoint == 'views.qna' %}active{% endif %}" href="{{ url_for('views.qna') }}">DISCUSSION</a>
@@ -446,13 +449,13 @@ textarea::placeholder {
               style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
 
               {% if total_unread_notifications > 0 %}
-                <span>NOTIFY</span>
+                <span>INBOX</span>
                 <span style="color: #fff; background-color: #dc3545; padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center;" class="badge">
                   <span class="material-symbols-outlined" style="margin-right: 4px;">notifications</span>
                   {{ total_unread_notifications }}
                 </span>
               {% else %}
-                NOTIFICATION
+                INBOX
               {% endif %}
             </a>
           </div>

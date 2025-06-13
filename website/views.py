@@ -769,42 +769,51 @@ from PIL import Image, ImageOps
 @views.route("/edit_profile", methods=["GET", "POST"])
 @login_required
 def edit_profile():
-        if request.method == "POST":
-            username = request.form.get("username")
-            biography = clean(request.form.get("biography"))
+    if request.method == "POST":
+        username = request.form.get("username")
+        biography = clean(request.form.get("biography"))
 
-            if username:
-                current_user.username = username
-            if biography:
-                current_user.biography = biography
+        if username:
+            current_user.username = username
+        if biography:
+            current_user.biography = biography
 
-            if "image_profile" in request.files:
-                file = request.files["image_profile"]
-                if file and file.filename != "":
-                    random_hex = secrets.token_hex(8)
-                    _, f_ext = os.path.splitext(file.filename)
-                    picture_fn = random_hex + f_ext
+        if "image_profile" in request.files:
+            file = request.files["image_profile"]
+            if file and file.filename != "":
+                random_hex = secrets.token_hex(8)
+                _, f_ext = os.path.splitext(file.filename)
+                picture_fn = random_hex + f_ext
 
-                    # Make sure the directory exists
-                    profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
-                    os.makedirs(profile_pics_folder, exist_ok=True)
+                profile_pics_folder = os.path.join(current_app.root_path, "static", "profile_pics")
+                os.makedirs(profile_pics_folder, exist_ok=True)
 
-                    picture_path = os.path.join(profile_pics_folder, picture_fn)
+                picture_path = os.path.join(profile_pics_folder, picture_fn)
 
-                    # Resize image to 125x125 pixels
-                    output_size = (125, 125)
-                    i = Image.open(file)
-                    i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
-                    i.save(picture_path)
+                # DELETE OLD PROFILE PICTURE IF IT'S NOT THE DEFAULT ONE
+                old_picture = current_user.image_profile
+                if old_picture != "default.jpg":
+                    old_picture_path = os.path.join(profile_pics_folder, old_picture)
+                    if os.path.exists(old_picture_path):
+                        try:
+                            os.remove(old_picture_path)
+                        except Exception as e:
+                            print(f"Error deleting old profile picture: {e}")
 
-                    current_user.image_profile = picture_fn
+                # RESIZE & SAVE NEW PICTURE
+                output_size = (125, 125)
+                i = Image.open(file)
+                i = ImageOps.fit(i, output_size, Image.Resampling.LANCZOS)
+                i.save(picture_path)
 
-            db.session.commit()
-            flash("Your profile has been updated!", "success")
-            return redirect(url_for("views.profile"))
+                current_user.image_profile = picture_fn
 
-        image_file = url_for('static', filename='profile_pics/' + current_user.image_profile)
-        return render_template('edit_profile.html', title='edit_profile')
+        db.session.commit()
+        flash("Your profile has been updated!", "success")
+        return redirect(url_for("views.profile"))
+
+    image_file = url_for('static', filename='profile_pics/' + (current_user.image_profile if current_user.image_profile else 'default.jpg'))
+    return render_template('edit_profile.html', title='edit_profile')
 
 @views.route('/edit/<int:post_id>', methods=['GET', 'POST'])
 @login_required

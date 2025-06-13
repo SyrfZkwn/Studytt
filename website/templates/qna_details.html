@@ -1,8 +1,364 @@
 {% extends "base.html" %}
 
-{% block title %}QnA{% endblock %}
+{% block title %}QnA Details{% endblock %}
 
 {% block content %}
+
+<style>
+  /* Main colors from qna page */
+  :root {
+    --orange: #f15c22;
+    --navy: #173c67;
+    --light-gray: #f9f9f9;
+    --border-color: #ced4da;
+    --shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  /* Container styling to match qna page */
+  .question-details {
+    max-width: 70%;
+    margin: 2rem auto;
+    background-color: var(--qna-bg);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  
+  /* Question author styling */
+  .question-author {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .author-pfp {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 15px;
+  }
+  
+  .author-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .author-name {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--navy);
+    text-decoration: none;
+    margin-bottom: 4px;
+  }
+  
+  .author-name:hover {
+    color: var(--orange);
+    text-decoration: underline;
+  }
+  
+  .question-date {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 400;
+  }
+  
+  /* Question styling */
+  .question-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--orange);
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+  
+  .question-body {
+    font-family: 'Noto Sans', Arial, sans-serif;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 400;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: var(--light-gray);
+    border-radius: 10px;
+    border-left: 4px solid var(--orange);
+  }
+  
+  /* Comment form styling */
+  .comment-form {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: var(--qna-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+  }
+  
+  .comment-form .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .comment-form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: 'Noto Sans', Arial, sans-serif;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.3s ease;
+  }
+  
+  .comment-form textarea:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 5px rgba(241, 92, 34, 0.3);
+    outline: none;
+  }
+  
+  /* Comments section styling */
+  .comments-section {
+    background-color: var(--qna-bg);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    box-shadow: var(--shadow);
+  }
+  
+  .comments-section h5 {
+    color: var(--orange);
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+  }
+  
+  .comment {
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+    border-bottom: 1px solid #f0f0f0;
+    background-color: var(--qna-bg);
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+  }
+  
+  .comment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .comment:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .comment p {
+    margin: 0.8rem 0 0.5rem 0;
+    font-family: 'Noto Sans', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  .pinned-comment {
+    background-color: rgba(241, 92, 34, 0.1);
+    border-left: 4px solid var(--orange);
+    border-radius: 8px;
+    position: relative;
+  }
+  
+  .pinned-comment::before {
+    content: "📌";
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.2rem;
+  }
+  
+  /* User info styling */
+  .publisher-username {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .publisher-username a {
+    color: var(--navy);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .publisher-username a:hover {
+    text-decoration: underline;
+    color: var(--orange);
+  }
+  
+  .publisher-username .mx-2 {
+    margin: 0 8px;
+    color: #999;
+  }
+  
+  .underweight {
+    font-weight: 400;
+    color: var(--orange);
+    font-style: italic;
+  }
+  
+  .pfp {
+    width: 45px; 
+    height: 45px; 
+    border-radius: 50%; 
+    margin-right: 12px; 
+    vertical-align: middle;
+    border: 2px solid var(--border-color);
+  }
+  
+  /* Button styling */
+  .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.875rem;
+  }
+  
+  .btn-primary {
+    background-color: var(--orange);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: #d94500;
+    transform: translateY(-1px);
+  }
+  
+  .btn-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+  
+  .btn-info {
+    background-color: var(--navy);
+    color: white;
+  }
+  
+  .btn-info:hover {
+    background-color: #0f2a4d;
+  }
+  
+  .btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .btn-warning:hover {
+    background-color: #e0a800;
+  }
+  
+  .btn-outline-danger {
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    background-color: transparent;
+  }
+  
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  /* Action buttons */
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  /* Flash messages */
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+  }
+  
+  .alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+  }
+  
+  .alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+  
+  /* Login prompt styling */
+  .login-prompt {
+    text-align: center;
+    padding: 2rem;
+    background-color: var(--light-gray);
+    border-radius: 10px;
+    margin: 2rem 0;
+  }
+  
+  .login-prompt a {
+    color: var(--orange);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .login-prompt a:hover {
+    text-decoration: underline;
+  }
+  
+  /* No answers message */
+  .no-answers {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 2rem;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .question-details {
+      max-width: 95%;
+      margin: 1rem auto;
+      padding: 1.5rem;
+    }
+    
+    .question-title {
+      font-size: 1.5rem;
+    }
+    
+    .question-body {
+      padding: 1rem;
+    }
+    
+    .comment {
+      padding: 1rem;
+    }
+    
+    .question-author {
+      margin-bottom: 1rem;
+      padding-bottom: 0.8rem;
+    }
+    
+    .author-pfp {
+      width: 50px;
+      height: 50px;
+      margin-right: 12px;
+    }
+    
+    .author-name {
+      font-size: 1.1rem;
+    }
+    
+    .question-date {
+      font-size: 0.85rem;
+    }
+  }
+</style>
 
 <div class="flash">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -32,6 +388,17 @@
 
 <div class="question-details">
     
+    <!-- Question author info -->
+    <div class="question-author">
+        <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}" style="text-decoration: none;">
+            <img class="author-pfp" src="{{ url_for('static', filename='profile_pics/' + (question.user.image_profile if question.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+        </a>
+        <div class="author-info">
+            <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}" class="author-name">{{ question.user.username }}</a>
+            <span class="question-date">{{ question.date | time_ago }}</span>
+        </div>
+    </div>
+    
     <div class="question-title">{{ question.title }}</div>
     <div class="question-body">{{ question.body | safe }}</div>
     
@@ -40,37 +407,43 @@
     <div class="comment-form">
         <form action="{{ url_for('views.add_answer', question_id=question.id) }}" method="post">
             <div class="form-group">
-                <textarea name="answer_body" class="form-control" rows="2" placeholder="Answer the question!"></textarea>
+                <textarea name="answer_body" class="form-control" rows="4" style="background-color: #fff;" placeholder="Write your answer here..."></textarea>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+            <button type="submit" class="btn btn-primary">Submit Answer</button>
         </form>
     </div>
     {% else %}
-        <p>Please <a href="{{ url_for('login') }}" style="color: var(--orange);">login</a> to comment.</p>
+        <div class="login-prompt">
+            <p>Please <a href="{{ url_for('login') }}">login</a> to answer this question.</p>
+        </div>
     {% endif %}
 
     <!-- Display comments -->
     <div class="comments-section">
         {% if question.answers %}
-        <h5>Answers</h5>
+        <h5>💬 Answers ({{ question.answers|length }})</h5>
             {# Show pinned answer first, if any #}
             {% set pinned = question.answers | selectattr('is_pinned') | first %}
             {% if pinned %}
                 <div class="comment pinned-comment">
-                    <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}" style="text-decoration: none;">
-                        <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (pinned.user.image_profile if pinned.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
-                    </a>
-                    <span class="publisher-username">
-                        <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}">{{ pinned.user.username }}</a>
-                        <span class="mx-2">·</span>
-                        <span class="underweight">Pinned</span>
-                    </span>
+                    <div class="publisher-username">
+                        <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}" style="text-decoration: none;">
+                            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (pinned.user.image_profile if pinned.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+                        </a>
+                        <div>
+                            <a href="{{ url_for('views.user_profile', user_id=pinned.user.id) }}">{{ pinned.user.username }}</a>
+                            <span class="mx-2">·</span>
+                            <span class="underweight">Pinned Answer</span>
+                        </div>
+                    </div>
                     <p>{{ pinned.body }}</p>
                     
                     {% if current_user.is_authenticated and current_user.id == question.publisher %}
-                        <form action="{{ url_for('views.unpin_answer', answer_id=pinned.id) }}" method="post" style="display:inline;">
-                            <button class="btn btn-warning btn-sm">Unpin</button>
-                        </form>
+                        <div class="action-buttons">
+                            <form action="{{ url_for('views.unpin_answer', answer_id=pinned.id) }}" method="post" style="display:inline;">
+                                <button class="btn btn-warning btn-sm">📌 Unpin</button>
+                            </form>
+                        </div>
                     {% endif %}
                 </div>
             {% endif %}
@@ -79,24 +452,28 @@
             {% for answer in question.answers %}
                 {% if not answer.is_pinned %}
                     <div class="comment">
-                        <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}" style="text-decoration: none;">
-                            <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (answer.user.image_profile if answer.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
-                        </a>
-                        <span class="publisher-username">
-                            <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}">{{ answer.user.username }}</a>
-                        </span>
+                        <div class="publisher-username">
+                            <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}" style="text-decoration: none;">
+                                <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (answer.user.image_profile if answer.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+                            </a>
+                            <div>
+                                <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}">{{ answer.user.username }}</a>
+                            </div>
+                        </div>
                         <p>{{ answer.body }}</p>
 
                         <div class="action-buttons">
                             {% if current_user.is_authenticated and current_user.id == question.publisher %}
                                 <form action="{{ url_for('views.pin_answer', answer_id=answer.id) }}" method="post" style="display:inline;">
-                                    <button class="btn btn-info btn-sm">Pin</button>
+                                    <button class="btn btn-info btn-sm">📌 Pin</button>
                                 </form>
                             {% endif %}
 
                             {% if current_user.is_authenticated and current_user.id == answer.user_id %}
                                 <form action="{{ url_for('views.delete_answer', answer_id=answer.id) }}" method="post" style="display: inline;">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this comment?')"><i class="fa-regular fa-trash-can"></i></button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this answer?')">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
                                 </form>
                             {% endif %}
                         </div>
@@ -104,7 +481,10 @@
                 {% endif %}
             {% endfor %}
         {% else %}
-            <h5>No answers yet.</h5>
+            <div class="no-answers">
+                <h5>💭 No answers yet.</h5>
+                <p>Be the first to answer this question!</p>
+            </div>
         {% endif %}
     </div>
 

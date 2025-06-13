@@ -215,7 +215,7 @@
             <div class="post-title">{{ note.title }} {{ note.code }} | {{ note.chapter }}</div>
           </a>
           <div class="post-footer">
-            <span>by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
+            <span style="max-width: 60%;">by <a href="{{ url_for('views.user_profile', user_id=note.user.id) }}" id="username">{{ note.user.username }}</a> · {{ note.date | time_ago }}</span>
             <span>⭐ {{ note.rating_ratio }} 💬 {{ note.total_comments }}</span>
           </div>
         </div>

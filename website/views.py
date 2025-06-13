@@ -647,6 +647,20 @@ def qna():
         db.session.add(new_question)
         db.session.commit()
 
+        usernames = find_mentions(clean_body) #mention user
+        for username in usernames:
+            user = User.query.filter(func.lower(User.username) == username.lower()).first()
+            if user and user.id != current_user.id:
+                new_notification = Notification(
+                notified_user_id=user.id,
+                notifier_id = current_user.id,
+                type='mention_question',
+                message=f"You were mentioned in question <b>'{title}'</b>.",
+                post_id = new_question.id
+                )
+                db.session.add(new_notification)
+            db.session.commit()
+
         flash('Question posted!', category='success')
         return redirect(url_for('views.qna'))
     
@@ -668,9 +682,10 @@ def add_answer (question_id):
     
     if request.method == 'POST':
         answer_body = request.form.get('answer_body')
+        clean_answer_body = clean(answer_body)
 
         new_answer= Answer(
-            body=answer_body,
+            body=clean_answer_body,
             question_id=question.id,
             user_id=current_user.id
         )
@@ -691,6 +706,21 @@ def add_answer (question_id):
 
         db.session.commit()
         flash('Answer added!', 'success')
+
+        usernames = find_mentions(clean_answer_body) #mention user
+        for username in usernames:
+            user = User.query.filter(func.lower(User.username) == username.lower()).first()
+            if user and user.id != current_user.id:
+                new_notification = Notification(
+                notified_user_id=user.id,
+                notifier_id = current_user.id,
+                type='mention_answer',
+                message=f"You were mentioned in an answer in <b>'{question.title}'</b>.",
+                post_id = question.id
+                )
+                db.session.add(new_notification)
+            db.session.commit()
+
     else:
         flash('Please enter a comment.', 'error')
 
@@ -890,7 +920,7 @@ def go_to_notification(notification_id):
         return redirect(url_for('views.user_profile', user_id=notification.notifier_id))
     elif notification.type in ['mention', 'rating', 'comment', 'reply']:
         return redirect(url_for('views.post_detail', post_id=notification.post_id))
-    elif notification.type in ['answer', 'pin']:
+    elif notification.type in ['answer', 'pin', 'mention_question', 'mention_answer']:
         return redirect(url_for('views.qna_details', question_id = notification.post_id))
     elif notification.type in ['chat']:
         return redirect(url_for('views.chat_room', user_id=notification.notifier_id))
@@ -1048,28 +1078,6 @@ def settings():
             current_user.theme_preference = theme
             db.session.commit()
             flash('Theme updated successfully!', 'success')
-            return redirect(url_for('views.settings'))
-        
-        # Handle email change
-        elif 'new_email' in request.form:
-            new_email = request.form.get('new_email')
-            current_password = request.form.get('current_password_email')
-            
-            # Verify current password
-            if not check_password_hash(current_user.password, current_password):
-                flash('Current password is incorrect.', 'error')
-                return redirect(url_for('views.settings'))
-            
-            # Check if email already exists
-            existing_user = User.query.filter_by(email=new_email).first()
-            if existing_user and existing_user.id != current_user.id:
-                flash('Email already in use by another account.', 'error')
-                return redirect(url_for('views.settings'))
-            
-            # Update email
-            current_user.email = new_email
-            db.session.commit()
-            flash('Email updated successfully!', 'success')
             return redirect(url_for('views.settings'))
         
         # Handle password change

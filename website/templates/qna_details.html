@@ -28,9 +28,7 @@
   .question-author {
     display: flex;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
   }
   
   .author-pfp {
@@ -133,17 +131,12 @@
   }
   
   .comment {
-    padding: 1.2rem;
+    padding: 0.8rem;
     margin-bottom: 1.2rem;
     border-bottom: 1px solid #f0f0f0;
     background-color: var(--qna-bg);
     border-radius: 8px;
     transition: transform 0.2s ease;
-  }
-  
-  .comment:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   }
   
   .comment:last-child {
@@ -208,7 +201,6 @@
     border-radius: 50%; 
     margin-right: 12px; 
     vertical-align: middle;
-    border: 2px solid var(--border-color);
   }
   
   /* Button styling */
@@ -319,44 +311,13 @@
     padding: 2rem;
   }
   
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .question-details {
-      max-width: 95%;
-      margin: 1rem auto;
-      padding: 1.5rem;
-    }
-    
-    .question-title {
-      font-size: 1.5rem;
-    }
-    
-    .question-body {
-      padding: 1rem;
-    }
-    
-    .comment {
-      padding: 1rem;
-    }
-    
-    .question-author {
-      margin-bottom: 1rem;
-      padding-bottom: 0.8rem;
-    }
-    
-    .author-pfp {
-      width: 50px;
-      height: 50px;
-      margin-right: 12px;
-    }
-    
-    .author-name {
-      font-size: 1.1rem;
-    }
-    
-    .question-date {
-      font-size: 0.85rem;
-    }
+  .highlight {
+      background-color: rgba(241, 92, 34, 0.1);
+      border-left: 3px solid var(--orange);
+  }
+
+  .comment-content {
+      padding: 0.4rem;
   }
 </style>
 
@@ -394,8 +355,9 @@
             <img class="author-pfp" src="{{ url_for('static', filename='profile_pics/' + (question.user.image_profile if question.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
         </a>
         <div class="author-info">
-            <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}" class="author-name">{{ question.user.username }}</a>
-            <span class="question-date">{{ question.date | time_ago }}</span>
+            <span>
+                <a href="{{ url_for('views.user_profile', user_id=question.user.id) }}" class="author-name">{{ question.user.username }}</a><span class="mx-2">·</span>{{ question.date | time_ago }}
+            </span>
         </div>
     </div>
     
@@ -436,7 +398,7 @@
                             <span class="underweight">Pinned Answer</span>
                         </div>
                     </div>
-                    <p>{{ pinned.body }}</p>
+                    <p>{{ pinned.body | safe }}</p>
                     
                     {% if current_user.is_authenticated and current_user.id == question.publisher %}
                         <div class="action-buttons">
@@ -452,16 +414,17 @@
             {% for answer in question.answers %}
                 {% if not answer.is_pinned %}
                     <div class="comment">
-                        <div class="publisher-username">
-                            <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}" style="text-decoration: none;">
-                                <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (answer.user.image_profile if answer.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
-                            </a>
-                            <div>
-                                <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}">{{ answer.user.username }}</a>
+                        <div class="comment-content {% if ('@' + current_user.username.lower()) in answer.body.lower() %}highlight{% endif %}">
+                            <div class="publisher-username">
+                                <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}" style="text-decoration: none;">
+                                    <img class="pfp" src="{{ url_for('static', filename='profile_pics/' + (answer.user.image_profile if answer.user.image_profile else 'default.jpg')) }}" alt="Profile Picture">
+                                </a>
+                                <div>
+                                    <a href="{{ url_for('views.user_profile', user_id=answer.user.id) }}">{{ answer.user.username }}</a>
+                                </div>
                             </div>
+                            <p>{{ answer.body | safe }}</p>
                         </div>
-                        <p>{{ answer.body }}</p>
-
                         <div class="action-buttons">
                             {% if current_user.is_authenticated and current_user.id == question.publisher %}
                                 <form action="{{ url_for('views.pin_answer', answer_id=answer.id) }}" method="post" style="display:inline;">

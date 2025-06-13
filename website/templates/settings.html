@@ -283,6 +283,7 @@
 
   .cancel-btn:hover {
     background-color: var(--border-color);
+    color: #fff;
   }
 
   .submit-btn {
@@ -302,7 +303,7 @@
   }
 
   .danger-btn {
-    background-color: #dc3545;
+    background-color: #1b4f83;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -314,7 +315,25 @@
   }
 
   .danger-btn:hover {
+    background-color: #007efc;
+  }
+
+  .forgot-password {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Baloo 2', cursive;
+    font-weight: bold;
+  }
+
+  .forgot-password:hover {
     background-color: #c82333;
+    text-decoration: none;
+    color: #fff;
   }
 
   @media (max-width: 600px) {
@@ -442,48 +461,11 @@
 </div>
 
 <!--buttons change email and pass-->
- <div class="quick-actions">
-      <button class="quick-action-btn" onclick="toggleForm('email-form')">
-        <span class="material-symbols-outlined">email</span>
-        Change Email
-      </button>
-      
+    <div class="quick-actions">
       <button class="quick-action-btn" onclick="toggleForm('password-form')">
         <span class="material-symbols-outlined">lock</span>
         Change Password
       </button>
-    </div>
-
-<!-- Collapsible Email Change Form (INSIDE Quick Changes) -->
-    <div id="email-form" class="collapsible-form">
-      <div class="form-container">
-        <h4 style="color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-          <span class="material-symbols-outlined">email</span>
-          Change Email Address
-        </h4>
-        
-        <form method="POST">
-          <div class="form-group">
-            <label for="new_email" class="form-label">New Email Address:</label>
-            <input type="email" id="new_email" name="new_email" class="form-input" 
-                   placeholder="Enter your new email address" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="current_password_email" class="form-label">Current Password:</label>
-            <input type="password" id="current_password_email" name="current_password_email" class="form-input" 
-                   placeholder="Enter your current password for verification" required>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" onclick="toggleForm('email-form')">Cancel</button>
-            <button type="submit" class="submit-btn">
-              <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 5px;">email</span>
-              Update Email
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
 
     <!-- Collapsible Password Change Form (INSIDE Quick Changes) -->
@@ -519,9 +501,11 @@
               <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 5px;">lock_reset</span>
               Update Password
             </button>
+            <a class="forgot-password" href="{{ url_for('auth.forgot_password') }}">
+              Forgot Password
+            </a>
           </div>
         </form>
-        <p><a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a></p>
       </div>
     </div>
   </div>

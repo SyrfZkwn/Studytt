@@ -315,7 +315,7 @@
       <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
     </a>
     <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
+      <span style="max-width: 60%;">by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
       <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
     </div>
   </div>
@@ -345,7 +345,7 @@
       <div class="post-title">{{ post.title }} {{ post.code }} | {{ post.chapter }}</div>
     </a>
     <div class="post-footer">
-      <span>by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
+      <span style="max-width: 60%;">by <a href="{{ url_for('views.user_profile', user_id=post.user.id) }}" id="username">{{ post.user.username }}</a> · {{ post.date | time_ago }}</span>
       <span>⭐ {{ post.rating_ratio }} 💬 {{ post.total_comments }}</span>
     </div>
   </div>

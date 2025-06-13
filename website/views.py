@@ -76,14 +76,30 @@ def generate_unique_code(length):
 @views.route('/chat')
 @login_required
 def chat_home():
-    # Show chat list of followed users
     followed_users = current_user.followed.all()
-    return render_template("chat.html", followed_users=followed_users)
+    chat_data = []
+
+    for user in followed_users:
+        last_message = ChatMessage.query.filter(
+            ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user.id)) |
+            ((ChatMessage.sender_id == user.id) & (ChatMessage.receiver_id == current_user.id))
+        ).order_by(ChatMessage.date.desc()).first()
+
+        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.content if last_message else 'None'}")
+
+        chat_data.append({
+            "user": user,
+            "last_message": last_message.content if last_message else "",
+            "timestamp": last_message.date if last_message else None
+        })
+
+
+    return render_template("chat.html", chat_data=chat_data)
+
 
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
-    # Check if user_id is followed by current_user
     user = User.query.get_or_404(user_id)
     if not current_user.is_following(user):
         flash("You can only chat with users you follow.", "error")
@@ -1105,5 +1121,3 @@ def update_report_status(report_id):
         flash("Invalid status.", "danger")
 
     return redirect(url_for('admin_reports'))
-
-

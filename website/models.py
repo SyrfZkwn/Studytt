@@ -57,7 +57,7 @@ class Note(db.Model):
     total_points = db.Column(db.Integer, default=0)
     rating_ratio = db.Column(db.Float, default=0.0)
     total_comments = db.Column(db.Integer, default=0)
-    comments = db.relationship('Comment', backref='user', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
+    comments = db.relationship('Comment', backref='note', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
 class User(db.Model, UserMixin):
@@ -112,7 +112,8 @@ class Comment(db.Model):
     body = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
-    commenter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    commenter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user = db.relationship('User', backref='comments', lazy=True)
     votes = db.relationship('CommentVote', backref='comment', lazy=True, cascade="all, delete-orphan")
     replies = db.relationship('Reply',backref='comment',lazy=True,cascade='all, delete-orphan',passive_deletes=True)
 

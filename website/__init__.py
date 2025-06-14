@@ -64,7 +64,7 @@ def create_app():
 
     from .views import views
     from .auth import auth
-    from .models import User, Note, ChatMessage, Question, Answer, Comment, Reply
+    from .models import User, Note, ChatMessage, Question, Answer, Comment, Reply, Report
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
@@ -109,7 +109,7 @@ def create_app():
     mail.init_app(app)
 
     # Initialize flask-admin
-    init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply)
+    init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply, Report)
 
     return app
 

@@ -12,6 +12,10 @@ import pytz
 from website.admin import init_admin
 from itsdangerous import URLSafeTimedSerializer
 from .extensions import db, mail, migrate, socketio
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load variables from .env
 
 DB_NAME = "database.db"
 
@@ -40,7 +44,7 @@ def time_ago(value):
                 return f"{hours} hour{'s' if hours > 1 else ''} ago"
             minutes = (delta.seconds % 3600) // 60
             if minutes > 0:
-                return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                return f"{minutes} min{'s' if minutes > 1 else ''} ago"
             return "Just now"
     return value
 
@@ -49,7 +53,7 @@ def time_ago(value):
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['UPLOAD_FOLDER'] = 'static/notes'
     app.config['PDF_PREVIEW_FOLDER'] = 'static/pdf_preview'
     app.jinja_env.filters['time_ago'] = time_ago
@@ -93,7 +97,7 @@ def create_app():
     
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_USERNAME'] = 'studytt518@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'rsmt lbnf okul pnhi'
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
@@ -110,20 +114,6 @@ def create_app():
     return app
 
 def create_database(app):
-    if not path.exists('website/' + DB_NAME):
-        with app.app_context():
-            db.create_all()
-        print('Created Database!')
-    else:
-        print('Database already existed!')
-
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import sqlite3
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, sqlite3.Connection):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
+    with app.app_context():
+        db.create_all()
+    print('Database checked/created!')

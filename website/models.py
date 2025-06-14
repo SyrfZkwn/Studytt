@@ -9,13 +9,13 @@ def get_local_time():
     return datetime.now(local_tz)
 
 followers = db.Table('followers',
-    db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
+    db.Column('follower_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
+    db.Column('followed_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
 )
 
 saved_posts = db.Table('saved_posts',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('note_id', db.Integer, db.ForeignKey('note.id')),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')),
+    db.Column('note_id', db.Integer, db.ForeignKey('note.id', ondelete='CASCADE')),
     db.Column('date', db.DateTime(timezone=True), default=get_local_time)
 )
 
@@ -25,22 +25,23 @@ class Question(db.Model):
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
-    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
-    answers = db.relationship('Answer', backref='question', lazy=True)
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"))
+    answers = db.relationship('Answer', backref='question', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     
 
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     content = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
-    sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_messages')
-    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+    sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', cascade="all, delete-orphan", passive_deletes=True))
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', cascade="all, delete-orphan", passive_deletes=True))
 
-    sender = db.relationship('User', foreign_keys=[sender_id])
-    receiver = db.relationship('User', foreign_keys=[receiver_id])
+
+
+
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,7 +53,8 @@ class Note(db.Model):
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
     preview_path = db.Column(db.String(255), default=None)
-    publisher = db.Column(db.Integer, db.ForeignKey('user.id'))
+    publisher = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"))
+    total_points = db.Column(db.Integer, default=0)
     rating_ratio = db.Column(db.Float, default=0.0)
     total_comments = db.Column(db.Integer, default=0)
     comments = db.relationship('Comment', backref='commenter', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
@@ -68,9 +70,9 @@ class User(db.Model, UserMixin):
     image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
     file = db.Column(db.LargeBinary)
     points = db.Column(db.Integer, default=0)
-    notes = db.relationship('Note', backref='user', lazy=True)
+    notes = db.relationship('Note', backref='user', lazy=True, cascade="all, delete", passive_deletes=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
-    questions = db.relationship('Question', backref='user', lazy=True)
+    questions = db.relationship('Question', backref='user', lazy=True, cascade="all, delete", passive_deletes=True)
     verified = db.Column(db.Boolean, default=False)
     theme_preference = db.Column(db.String(10), default='light')
 
@@ -100,7 +102,7 @@ class User(db.Model, UserMixin):
 
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    rater_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    rater_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=False)
     value = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
@@ -145,22 +147,22 @@ class Answer(db.Model):
     body = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime(timezone=True), default=get_local_time)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     is_pinned = db.Column(db.Boolean, default=False)
     user = db.relationship('User', backref=db.backref('user_answers', lazy=True))
 
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    notified_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    notifier_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    notified_user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    notifier_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     post_id = db.Column(db.Integer)
     type = db.Column(db.String(20))
     message = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime(timezone=True), default=get_local_time)
 
-    notifier = db.relationship('User', foreign_keys=[notifier_id], backref='notifications_sent')
-    notified_user = db.relationship('User', foreign_keys=[notified_user_id], backref='notifications_received')
+    notifier = db.relationship('User', foreign_keys=[notifier_id], backref=db.backref('notifications_sent', cascade="all, delete-orphan", passive_deletes=True))
+    notified_user = db.relationship('User', foreign_keys=[notified_user_id], backref=db.backref('notifications_received', cascade="all, delete-orphan", passive_deletes=True))
 
 class Report(db.Model):
     __tablename__ = 'report'
@@ -171,6 +173,6 @@ class Report(db.Model):
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
     reason = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default="pending")
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime(timezone=True), default=get_local_time)
 
-    reporter = db.relationship('User', backref='reports_made')
+    reporter = db.relationship('User', backref=db.backref('reports_made', cascade="all, delete-orphan", passive_deletes=True))

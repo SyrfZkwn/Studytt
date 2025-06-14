@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <div class="comments">
     {% if comments %}
-    <h2 style="color: #f15c22;" class="mb-3">Comments</h2>
+    <h2 style="color: #f15c22;" class="mb-3">Comments ({{ comments|length }})</h2>
       {% for comment in comments|reverse %}
         <div class="a-comment" data-comment-id="{{ comment.id }}">
           <div class="{% if ('@' + current_user.username.lower()) in comment.body.lower() %}highlight{% endif %} pl-2 py-2">
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div class="a-reply">
           {% if comment.replies %}
-          <h5 style="color: #f15c22;">Replies</h5>
+          <h5 style="color: #f15c22;">Replies ({{ comment.replies|length }})</h5>
           {% for reply in comment.replies %}
             <div class="reply ms-3 {% if ('@' + current_user.username.lower()) in reply.body.lower() %}highlight{% endif %} pl-2 py-2">
               <a href="{{ url_for('views.user_profile', user_id=comment.user.id) }}" style="text-decoration: none;">

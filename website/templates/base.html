@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-</html>
+<html data-theme="{{ current_user.theme_preference if current_user.is_authenticated else 'light' }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width">
@@ -39,6 +39,9 @@
       --content-bg: #fbf3e2;
       --shadow-color: rgba(0,0,0,0.2);
       --text-muted: #777777;
+      --qna-bg: #fff;
+      --question-item-bg: #fff;
+      --question-title: #1b4f83;
       --transition: all 0.3s ease;
     }
 
@@ -60,6 +63,9 @@
       --content-bg: #1a1a1a;
       --shadow-color: rgba(0,0,0,0.5);
       --text-muted: #999999;
+      --qna-bg: #2d2d2d;
+      --question-item-bg: #393939;
+      --question-title: #0080ff;
 
     input[type="text"], 
     input[type="email"], 
@@ -101,7 +107,7 @@
     .sidebar {
       padding: 0;
       width: 200px;
-      background-color: #fbf3e2;
+      background-color:var(--bg-primary);;
       position: fixed;
       height: 100%;
       overflow: auto;
@@ -189,7 +195,7 @@
     }
 
     div.top {
-      background-color: #fbf3e2;
+      background-color:var(--bg-primary);
       position: sticky;
       top: 0;
       border-bottom: #1b4f83 4px solid;
@@ -332,6 +338,62 @@
       line-height: 1.5;
       font-weight: 400;
       color: #777777;
+    }
+
+     /* Theme toggle button in dropdown */
+    .theme-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--dropdown-text);
+      padding: 10px 16px;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: var(--accent-primary);
+    }
+
+    /* Cards and content styling for dark theme */
+    .card, .post-card, .note-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+
+    .card:hover, .post-card:hover, .note-card:hover {
+      border-color: var(--accent-primary);
+    }
+
+    /* Form styling for dark theme */
+    .form-control {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .form-control:focus {
+      background-color: var(--bg-secondary);
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+    }
+
+    /* Button styling for dark theme */
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-secondary);
+      border-color: var(--accent-secondary);
     }
   </style>
 

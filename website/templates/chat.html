@@ -7,14 +7,20 @@
 <div class="chat-list">
     {% for chat in chat_data %}
         <a class="chat-item" href="{{ url_for('views.chat_room', user_id=chat.user.id) }}">
-            <div class="chat-user">{{ chat.user.username }}</div>
-            <div class="chat-preview">
-                <span class="chat-message">{{ chat.last_message[:40] if chat.last_message else 'No messages yet.' }}</span>
-                {% if chat.timestamp %}
-                    <span class="chat-time">{{ chat.timestamp.strftime('%b %d, %H:%M') }}</span>
-                {% endif %}
-            </div>
-        </a>
+    <!-- Add profile picture here -->
+    <img class="chat-pfp" 
+         src="{{ url_for('static', filename='profile_pics/' + (chat.user.image_profile if chat.user.image_profile else 'default.jpg')) }}" 
+         alt="Profile Picture">
+
+    <div class="chat-user">{{ chat.user.username }}</div>
+    <div class="chat-preview">
+        <span class="chat-message">{{ chat.last_message[:40] if chat.last_message else 'No messages yet.' }}</span>
+        {% if chat.timestamp %}
+            <span class="chat-time">{{ chat.timestamp.strftime('%b %d, %H:%M') }}</span>
+        {% endif %}
+    </div>
+</a>
+
     {% else %}
         <p class="no-following">You are not following anyone yet.</p>
     {% endfor %}
@@ -55,6 +61,14 @@
     font-weight: bold;
     margin-bottom: 5px;
     font-size: 16px;
+}
+
+.chat-pfp {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
 }
 
 .chat-preview {

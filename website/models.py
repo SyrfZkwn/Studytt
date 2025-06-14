@@ -57,7 +57,7 @@ class Note(db.Model):
     total_points = db.Column(db.Integer, default=0)
     rating_ratio = db.Column(db.Float, default=0.0)
     total_comments = db.Column(db.Integer, default=0)
-    comments = db.relationship('Comment', backref='commenter', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
+    comments = db.relationship('Comment', backref='note', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     ratings = db.relationship('Rating', backref='note', cascade='all, delete', passive_deletes=True)
 
 class User(db.Model, UserMixin):

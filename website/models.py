@@ -28,12 +28,15 @@ class Question(db.Model):
     publisher = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"))
     answers = db.relationship('Answer', backref='question', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
 
+# Update your ChatMessage model in models.py
+
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     content = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)  # Add this field
     sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', cascade="all, delete-orphan", passive_deletes=True))
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', cascade="all, delete-orphan", passive_deletes=True))
 

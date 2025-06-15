@@ -12,6 +12,10 @@ import pytz
 from website.admin import init_admin
 from itsdangerous import URLSafeTimedSerializer
 from .extensions import db, mail, migrate, socketio
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Load variables from .env
 
 DB_NAME = "database.db"
 
@@ -40,7 +44,7 @@ def time_ago(value):
                 return f"{hours} hour{'s' if hours > 1 else ''} ago"
             minutes = (delta.seconds % 3600) // 60
             if minutes > 0:
-                return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                return f"{minutes} min{'s' if minutes > 1 else ''} ago"
             return "Just now"
     return value
 
@@ -49,7 +53,7 @@ def time_ago(value):
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL') #change this to railway url when publish
     app.config['UPLOAD_FOLDER'] = 'static/notes'
     app.config['PDF_PREVIEW_FOLDER'] = 'static/pdf_preview'
     app.jinja_env.filters['time_ago'] = time_ago
@@ -60,7 +64,7 @@ def create_app():
 
     from .views import views
     from .auth import auth
-    from .models import User, Note, ChatMessage, Question, Answer, Comment, Reply
+    from .models import User, Note, ChatMessage, Question, Answer, Comment, Reply, Report
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
@@ -85,15 +89,39 @@ def create_app():
     
     @app.context_processor
     def inject_unread_notifications():
-        from .models import Notification
+        from .models import Notification, ChatMessage
         if current_user.is_authenticated:
-            count = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).count()
-            return dict(total_unread_notifications=count)
-        return dict(total_unread_notifications=0)
+            try:
+                # Count unread notifications (your existing logic)
+                notification_count = Notification.query.filter_by(
+                    notified_user_id=current_user.id, 
+                    is_read=False
+                ).count()
+                
+                # Count unread chat messages
+                chat_count = ChatMessage.query.filter(
+                    ChatMessage.receiver_id == current_user.id,
+                    ChatMessage.is_read == False
+                ).count()
+                
+                return dict(
+                    total_unread_notifications=notification_count,
+                    total_unread_chat_messages=chat_count
+                )
+            except Exception as e:
+                print(f"Error in context processor: {e}")
+                return dict(
+                    total_unread_notifications=0,
+                    total_unread_chat_messages=0
+                )
+        return dict(
+            total_unread_notifications=0,
+            total_unread_chat_messages=0
+        )
     
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_USERNAME'] = 'studytt518@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'rsmt lbnf okul pnhi'
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
@@ -105,21 +133,11 @@ def create_app():
     mail.init_app(app)
 
     # Initialize flask-admin
-    init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply)
+    init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply, Report)
 
     return app
 
 def create_database(app):
-    if not path.exists('website/' + DB_NAME):
-        with app.app_context():
-            db.create_all()
-        print('Created Database!')
-    else:
-        print('Database already existed!')
-
-@event.listens_for(Engine, "connect")
-def enable_sqlite_fk_constraints(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, sqlite3.Connection):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON;")
-        cursor.close()
+    with app.app_context():
+        db.create_all()
+    print('Database checked/created!')

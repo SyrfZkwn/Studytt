@@ -1,0 +1,375 @@
+{% extends 'admin/base.html' %}
+
+{% block head_css %}
+    {{ super() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* StudyTT Admin Custom Styling */
+        
+        /* Navbar styling */
+        .navbar-inverse {
+            background: linear-gradient(135deg, #f15c22, #ff7c4a) !important;
+            border: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-inverse .navbar-brand {
+            color: #ffffff !important;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        
+        .navbar-inverse .navbar-brand:hover {
+            color: #f0f0f0 !important;
+        }
+        
+        .navbar-inverse .navbar-nav > li > a {
+            color: #ffffff !important;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-inverse .navbar-nav > li > a:hover {
+            color: #f0f0f0 !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Sidebar navigation */
+        .nav-sidebar {
+            background-color: #173c67 !important;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-sidebar > li > a {
+            color: #fbf3e2 !important;
+            border-bottom: 1px solid rgba(42, 84, 144, 0.3);
+            padding: 12px 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-sidebar > li > a:hover {
+            background-color: #2a5490 !important;
+            color: #ffffff !important;
+            transform: translateX(5px);
+        }
+        
+        .nav-sidebar > li.active > a,
+        .nav-sidebar > li.active > a:hover {
+            background-color: #f15c22 !important;
+            color: #ffffff !important;
+            border-left: 4px solid #ffffff;
+        }
+        
+        /* Main content area */
+        .admin-content {
+            background-color: #fbf3e2;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Page headers */
+        .page-header {
+            border-bottom: 2px solid #f15c22;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .page-header h1 {
+            color: #173c67;
+            margin: 0;
+        }
+        
+        /* Tables */
+        .table {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #173c67, #2a5490);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.001);
+        }
+        
+        .table tbody td {
+            border-color: #e9ecef;
+            vertical-align: middle;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #f15c22, #ff7c4a);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #d9451c, #f15c22);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(241, 92, 34, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #34ce57);
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #218838, #28a745);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #c82333, #dc3545);
+            transform: translateY(-2px);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #20c997);
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ffdb4d);
+            border: none;
+            border-radius: 6px;
+            color: #212529;
+        }
+        
+        /* Forms */
+        .form-control {
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #f15c22;
+            box-shadow: 0 0 0 0.2rem rgba(241, 92, 34, 0.25);
+        }
+        
+        .form-group label {
+            color: #173c67;
+            font-weight: 600;
+        }
+        
+        /* Panels and cards */
+        .panel {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .panel-default > .panel-heading {
+            background: linear-gradient(135deg, #173c67, #2a5490);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .panel-body {
+            background-color: #ffffff;
+        }
+        
+        /* Dashboard cards */
+        .dashboard-card {
+            background: linear-gradient(135deg, #173c67, #2a5490);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+        }
+        
+        .dashboard-card h3 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        
+        .dashboard-card p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .dashboard-card i {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+        
+        /* Status labels */
+        .label {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .label-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .label-success {
+            background-color: #28a745;
+        }
+        
+        .label-danger {
+            background-color: #dc3545;
+        }
+        
+        /* Pagination */
+        .pagination > li > a {
+            color: #f15c22;
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+        
+        .pagination > li.active > a {
+            background-color: #f15c22;
+            border-color: #f15c22;
+        }
+        
+        .pagination > li > a:hover {
+            background-color: #f15c22;
+            border-color: #f15c22;
+            color: white;
+        }
+        
+        /* Search and filters */
+        .search-form {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Action buttons in list view */
+        .list-buttons .btn {
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+        }
+        
+        /* Alerts */
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .nav-sidebar {
+                display: none;
+            }
+            
+            .admin-content {
+                margin-left: 0 !important;
+                padding: 10px;
+            }
+            
+            .dashboard-card {
+                margin-bottom: 15px;
+                padding: 20px;
+            }
+            
+            .dashboard-card h3 {
+                font-size: 2em;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #f15c22;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d9451c;
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+{% endblock %}
+
+{% block brand %}
+    <a class="navbar-brand" href="{{ admin_view.admin.url }}">
+        <i class="fas fa-graduation-cap"></i> StudyTT Admin
+    </a>
+{% endblock %}
+
+{% block main_menu %}
+    {{ super() }}
+{% endblock %}

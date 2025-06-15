@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-</html>
+<html data-theme="{{ current_user.theme_preference if current_user.is_authenticated else 'light' }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width">
@@ -21,16 +21,93 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
   <style>
+    :root {
+      /* Light theme colors */
+      --bg-primary: #fbf3e2;
+      --bg-secondary: #fdf3de;
+      --bg-tertiary: #ffd38a;
+      --text-primary: #1b4f83;
+      --text-secondary: #173c67;
+      --accent-primary: #f15c22;
+      --accent-secondary: #5a3e36;
+      --border-color: #1b4f83;
+      --dropdown-bg: #173c67;
+      --dropdown-text: white;
+      --search-bg: #fdf3de;
+      --search-border: #1b4f83;
+      --sidebar-bg: #fbf3e2;
+      --content-bg: #fbf3e2;
+      --shadow-color: rgba(0,0,0,0.2);
+      --text-muted: #777777;
+      --qna-bg: #fff;
+      --question-item-bg: #fff;
+      --question-title: #1b4f83;
+      --transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] {
+      /* Dark theme colors */
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2d2d2d;
+      --bg-tertiary: #404040;
+      --text-primary: #fff2f2;
+      --text-secondary: #ffffff;
+      --accent-primary: #ff6b35;
+      --accent-secondary: #4dabf7;
+      --border-color: #404040;
+      --dropdown-bg: #333333;
+      --dropdown-text: #ffffff;
+      --search-bg: #2d2d2d;
+      --search-border: #404040;
+      --sidebar-bg: #1a1a1a;
+      --content-bg: #1a1a1a;
+      --shadow-color: rgba(0,0,0,0.5);
+      --text-muted: #999999;
+      --qna-bg: #2d2d2d;
+      --question-item-bg: #393939;
+      --question-title: #0080ff;
+
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    textarea, 
+    .form-control {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus, 
+    input[type="password"]:focus,
+    textarea:focus,
+    .form-control:focus {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--accent-primary) !important;
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25) !important;
+    }
+
+    /* Placeholder text color */
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--text-muted) !important;
+    }
+        }
+
     body {
       margin: 0;
       font-family: 'Baloo 2', cursive;
       font-weight: 700;
+      background-color: var(--content-bg);
+      color: var(--text-primary);
+      transition: var(--transition);
     }
     
     .sidebar {
       padding: 0;
       width: 200px;
-      background-color: #fbf3e2;
+      background-color:var(--bg-primary);;
       position: fixed;
       height: 100%;
       overflow: auto;
@@ -59,7 +136,7 @@
 
     .button a {
       font-weight: bold;
-      background-color: #173c67;
+      background-color: #1b4f83;
       color: #f15c22;
       padding: 10px;
       text-decoration: none;
@@ -118,14 +195,13 @@
     }
 
     div.top {
-      background-color: #fbf3e2;
+      background-color:var(--bg-primary);
       position: sticky;
       top: 0;
       border-bottom: #1b4f83 4px solid;
       max-height: 80px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 0 20px;
       z-index: 999;
     }
@@ -169,7 +245,7 @@
     }
 
     hr {
-      border: 2px solid #173c67;
+      border: 2px solid #1b4f83;
       width: 80%;
       margin: 10px auto;
     }
@@ -218,7 +294,7 @@
       display: none;
       position: absolute;
       left: -15px;
-      background-color: #173c67;
+      background-color: #1b4f83;
       min-width: 100px;
       box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
       border-radius: 6px;
@@ -263,17 +339,73 @@
       font-weight: 400;
       color: #777777;
     }
+
+     /* Theme toggle button in dropdown */
+    .theme-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--dropdown-text);
+      padding: 10px 16px;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: var(--accent-primary);
+    }
+
+    /* Cards and content styling for dark theme */
+    .card, .post-card, .note-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+
+    .card:hover, .post-card:hover, .note-card:hover {
+      border-color: var(--accent-primary);
+    }
+
+    /* Form styling for dark theme */
+    .form-control {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .form-control:focus {
+      background-color: var(--bg-secondary);
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+      box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+    }
+
+    /* Button styling for dark theme */
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-secondary);
+      border-color: var(--accent-secondary);
+    }
   </style>
 
 <title>{% block title %}Home{% endblock %}</title>
 
   </head>
 
-    <body style="background-color: #fbf3e2;">
+    <body style="background-color: var(--content-bg);">
 
       <div class="top">
-        <a href="{{ url_for('views.home') }}">
-          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
+        <a href="{{ url_for('views.home') }}" style="max-width: 70px; top: -60px; margin-left: 50px; margin-right: 50px;">
+          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid">
         </a>
       
         <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
@@ -297,9 +429,9 @@
             <button class="dropdown-button">
               <img src="{{ url_for('static', filename='profile_pics/' + (current_user.image_profile if current_user.image_profile else 'default.jpg')) }}" alt="Profile Picture" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
             </button>
-          <div class="dropdown-content">
+            <div class="dropdown-content">
               <a href="{{ url_for('views.profile') }}">Profile</a>
-              <a href="#">Settings</a>
+              <a href="{{ url_for('views.settings') }}">Settings</a>
               {% if current_user.is_authenticated and current_user.email.lower() == "studytt518@gmail.com" %}
               <a href="{{ url_for('admin.index') }}">Admin Area</a>
               {% endif %}
@@ -317,7 +449,23 @@
             <a class="{% if request.endpoint == 'views.home' %}active{% endif %}" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
             <a class="{% if request.endpoint == 'views.qna' %}active{% endif %}" href="{{ url_for('views.qna') }}">DISCUSSION</a>
-            <a class="{% if request.endpoint == 'views.chat_home' %}active{% endif %}" href="{{ url_for('views.chat_home') }}">CHATS</a>
+            
+            <!-- Updated CHATS link with notification badge -->
+            <a class="{% if request.endpoint == 'views.chat_home' %}active{% endif %}" 
+              href="{{ url_for('views.chat_home') }}" 
+              style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
+
+              {% if total_unread_chat_messages > 0 %}
+                <span>CHATS</span>
+                <span style="color: #fff; background-color: #dc3545; padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center;" class="badge">
+                  <span class="material-symbols-outlined" style="margin-right: 4px;">chat</span>
+                  {{ total_unread_chat_messages }}
+                </span>
+              {% else %}
+                CHATS
+              {% endif %}
+            </a>
+            
             <a class="{% if request.endpoint == 'views.notification' %}active{% endif %}" 
               href="{{ url_for('views.notification') }}" 
               style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
@@ -363,5 +511,4 @@
 
     </body>
 
-
-</html?
+</html>

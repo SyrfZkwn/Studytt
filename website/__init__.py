@@ -53,7 +53,7 @@ def time_ago(value):
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config['SECRET_KEY'] = 'dua tiga kucing berlari'
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}' #change this to railway url when publish
     app.config['UPLOAD_FOLDER'] = 'static/notes'
     app.config['PDF_PREVIEW_FOLDER'] = 'static/pdf_preview'
     app.jinja_env.filters['time_ago'] = time_ago
@@ -89,11 +89,35 @@ def create_app():
     
     @app.context_processor
     def inject_unread_notifications():
-        from .models import Notification
+        from .models import Notification, ChatMessage
         if current_user.is_authenticated:
-            count = Notification.query.filter_by(notified_user_id=current_user.id, is_read=False).count()
-            return dict(total_unread_notifications=count)
-        return dict(total_unread_notifications=0)
+            try:
+                # Count unread notifications (your existing logic)
+                notification_count = Notification.query.filter_by(
+                    notified_user_id=current_user.id, 
+                    is_read=False
+                ).count()
+                
+                # Count unread chat messages
+                chat_count = ChatMessage.query.filter(
+                    ChatMessage.receiver_id == current_user.id,
+                    ChatMessage.is_read == False
+                ).count()
+                
+                return dict(
+                    total_unread_notifications=notification_count,
+                    total_unread_chat_messages=chat_count
+                )
+            except Exception as e:
+                print(f"Error in context processor: {e}")
+                return dict(
+                    total_unread_notifications=0,
+                    total_unread_chat_messages=0
+                )
+        return dict(
+            total_unread_notifications=0,
+            total_unread_chat_messages=0
+        )
     
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_USERNAME'] = 'studytt518@gmail.com'
@@ -114,6 +138,16 @@ def create_app():
     return app
 
 def create_database(app):
-    with app.app_context():
-        db.create_all()
-    print('Database checked/created!')
+    if not path.exists('website/' + DB_NAME):
+        with app.app_context():
+            db.create_all()
+        print('Created Database!')
+    else:
+        print('Database already existed!')
+
+@event.listens_for(Engine, "connect")
+def enable_sqlite_fk_constraints(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()

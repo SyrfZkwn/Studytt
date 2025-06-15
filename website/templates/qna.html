@@ -392,6 +392,7 @@
                 <a href="{{ url_for('views.qna_details', question_id=question.id) }}">
                 <div class="question-title">{{ question.title }}</div>
                 <div class="question-body">{{ question.body | safe }}</div>
+                <h5>💬 Answers ({{ question.answers|length }})</h5>
                 </a>
             </li>
             {% endfor %}

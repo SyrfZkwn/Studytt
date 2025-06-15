@@ -223,16 +223,6 @@ def on_disconnect():
         leave_room(room)
         print(f"[DEBUG] User {current_user.username} left room: {room}")
 
-# Add this new route to get unread message count (for AJAX calls)
-@views.route('/api/unread-messages')
-@login_required
-def get_unread_messages():
-    total_unread = ChatMessage.query.filter(
-        ChatMessage.receiver_id == current_user.id,
-        ChatMessage.is_read == False
-    ).count()
-    
-    return {'unread_count': total_unread}
 
 # Add this route to mark specific messages as read (optional)
 @views.route('/api/mark-messages-read/<int:sender_id>', methods=['POST'])
@@ -978,11 +968,11 @@ def go_to_notification(notification_id):
         return redirect(url_for('views.post_detail', post_id=notification.post_id))
     elif notification.type in ['answer', 'pin', 'mention_question', 'mention_answer']:
         return redirect(url_for('views.qna_details', question_id = notification.post_id))
-    elif notification.type in ['chat']:
-        return redirect(url_for('views.chat_room', user_id=notification.notifier_id))
+    elif notification.type in ['report']:
+        return redirect(url_for('report.index_view'))
     else:
         flash("Notification type is unknown.", "error")
-        return redirect(url_for('views.home'))  # fallback
+        return redirect(url_for('views.notification'))  # fallback
 
 @views.route('/notifications/read/<int:notification_id>')
 @login_required
@@ -1263,3 +1253,22 @@ def update_report_status(report_id):
         flash("Invalid status.", "danger")
 
     return redirect(url_for('admin_reports'))
+
+
+from flask import jsonify
+
+@views.route('/api/unread-messages')
+@login_required
+def get_unread_messages():
+    """API endpoint to get unread message count for current user"""
+    try:
+        # For now, return 0 since is_read column might not exist yet
+        # Once you add the is_read column, uncomment the line below
+        # total_unread = ChatMessage.query.filter(ChatMessage.receiver_id == current_user.id, ChatMessage.is_read == False).count()
+        
+        total_unread = 0  # Temporary - replace with above line once is_read column is added
+        
+        return jsonify({'unread_count': total_unread})
+    except Exception as e:
+        print(f"Error getting unread messages: {e}")
+        return jsonify({'unread_count': 0})

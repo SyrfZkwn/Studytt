@@ -27,7 +27,8 @@ from string import ascii_uppercase
 from datetime import datetime
 from . import db, socketio
 from werkzeug.security import check_password_hash, generate_password_hash
-
+import pytz
+from .models import get_local_time
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -241,6 +242,12 @@ def mark_messages_read(sender_id):
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
 def post():
+
+    if current_user.banned:
+            flash('Your account is suspended. You cannot create posts.', 'error')
+            return redirect(url_for('views.home'))
+
+
     form = UploadFileForm()
 
     if request.method == 'POST' and form.validate_on_submit():
@@ -1272,3 +1279,47 @@ def get_unread_messages():
     except Exception as e:
         print(f"Error getting unread messages: {e}")
         return jsonify({'unread_count': 0})
+    
+
+# Add these routes after the existing admin routes (around line with other @views.route('/admin/') routes)
+
+@views.route('/admin/ban_user/<int:user_id>', methods=['POST'])
+@login_required
+def ban_user(user_id):
+    # Use the same admin check pattern as your existing admin routes
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+    
+    user = User.query.get_or_404(user_id)
+    ban_reason = request.form.get('ban_reason', 'No reason provided')
+    
+    if user.banned:
+        flash('User is already banned.', 'warning')
+    else:
+        user.banned = True
+        user.ban_reason = ban_reason
+        user.banned_at = get_local_time()  # This function exists in your codebase
+        db.session.commit()
+        flash(f'User {user.username} has been banned.', 'success')
+    
+    # Use your existing admin pattern
+    return redirect('/admin')
+
+@views.route('/admin/unban_user/<int:user_id>', methods=['POST'])
+@login_required
+def unban_user(user_id):
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+    
+    user = User.query.get_or_404(user_id)
+    
+    if not user.banned:
+        flash('User is not banned.', 'warning')
+    else:
+        user.banned = False
+        user.ban_reason = None
+        user.banned_at = None
+        db.session.commit()
+        flash(f'User {user.username} has been unbanned.', 'success')
+    
+    return redirect('/admin')

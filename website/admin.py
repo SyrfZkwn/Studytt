@@ -1,7 +1,9 @@
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.actions import action
 from flask_login import current_user
-from flask import redirect, url_for
+from flask import redirect, url_for, flash
+from markupsafe import Markup
 
 class CustomAdminIndexView(AdminIndexView):
     @expose('/')
@@ -47,13 +49,98 @@ class AdminModelView(ModelView):
         return redirect(url_for('auth.login'))
 
 class UserAdmin(AdminModelView):
-    column_list = ('id', 'username', 'email', 'verified', 'points', 'theme_preference')
+    column_list = ('id', 'username', 'email', 'verified', 'banned', 'ban_actions', 'points', 'theme_preference')
     column_searchable_list = ('username', 'email')
-    column_filters = ('verified', 'theme_preference')
-    form_columns = ('username', 'email', 'biography', 'verified', 'points', 'theme_preference')
+    column_filters = ('verified', 'banned', 'theme_preference')
+    form_columns = ('username', 'email', 'biography', 'verified', 'banned', 'ban_reason', 'points', 'theme_preference')
     column_sortable_list = ('id', 'username', 'email', 'points')
+    form_excluded_columns = ['notes', 'saved', 'questions', 'user_comments', 'user_ratings', 
+                           'followed', 'followers', 'sent_messages', 'received_messages',
+                           'notifications_sent', 'notifications_received', 'user_replies',
+                           'user_answers', 'reports_made', 'file', 'password']
     page_size = 50
 
+    can_create = False
+    can_edit = False
+    can_delete = True
+    
+    def _ban_actions_formatter(self, context, model, name):
+        if model.banned:
+            return Markup(f'''
+                <span class="label label-danger">BANNED</span><br>
+                <small>{model.ban_reason or "No reason"}</small><br>
+                <form method="post" action="/admin/unban_user/{model.id}" style="display:inline; margin-top:5px;">
+                    <button type="submit" class="btn btn-xs btn-success">Unban</button>
+                </form> 
+            ''')
+        else:
+            return Markup(f'''
+                <span class="label label-success">Active</span><br>
+                <form method="post" action="/admin/ban_user/{model.id}" style="display:inline;">
+                    <input type="text" name="ban_reason" placeholder="Ban reason" style="width:100px; margin-bottom:2px;"><br>
+                    <button type="submit" class="btn btn-xs btn-danger">Ban</button>
+                </form>
+            ''')
+    
+    column_formatters = {
+        'ban_actions': _ban_actions_formatter
+    }
+
+
+    
+    
+
+    # Store db reference - we'll set this in init_admin
+    _db = None
+    
+    @action('ban', 'Ban Selected Users', 'Are you sure you want to ban selected users?')
+    def action_ban(self, ids):
+        try:
+            from .models import get_local_time
+            # Import User model here to avoid circular imports
+            from .models import User
+            
+            query = User.query.filter(User.id.in_(ids))
+            count = 0
+            for user in query.all():
+                if not user.banned:
+                    user.banned = True
+                    user.ban_reason = "Banned by admin (bulk action)"
+                    user.banned_at = get_local_time()
+                    count += 1
+            
+            # Use the db session that's available to the model
+            User.query.session.commit()
+            flash(f'Successfully banned {count} users.', 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+            flash('Failed to ban users. {}'.format(str(ex)), 'error')
+
+    @action('unban', 'Unban Selected Users', 'Are you sure you want to unban selected users?')
+    def action_unban(self, ids):
+        try:
+            # Import User model here to avoid circular imports
+            from .models import User
+            
+            query = User.query.filter(User.id.in_(ids))
+            count = 0
+            for user in query.all():
+                if user.banned:
+                    user.banned = False
+                    user.ban_reason = None
+                    user.banned_at = None
+                    count += 1
+            
+            # Use the db session that's available to the model
+            User.query.session.commit()
+            flash(f'Successfully unbanned {count} users.', 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+            flash('Failed to unban users. {}'.format(str(ex)), 'error')
+
+# Keep all your existing admin classes unchanged
 class NoteAdmin(AdminModelView):
     column_list = ('id', 'title', 'code', 'chapter', 'publisher', 'date', 'total_points', 'rating_ratio')
     column_searchable_list = ('title', 'code', 'chapter')
@@ -62,12 +149,11 @@ class NoteAdmin(AdminModelView):
     column_sortable_list = ('id', 'title', 'date', 'total_points', 'rating_ratio')
     page_size = 50
 
-# In your admin.py, temporarily update the ChatMessageAdmin class:
 class ChatMessageAdmin(AdminModelView):
-    column_list = ('id', 'sender_id', 'receiver_id', 'content', 'date')  # Remove 'is_read'
+    column_list = ('id', 'sender_id', 'receiver_id', 'content', 'date')
     column_searchable_list = ('content',)
-    column_filters = ('date',)  # Remove 'is_read' from filters
-    form_columns = ('sender_id', 'receiver_id', 'content')  # Remove 'is_read'
+    column_filters = ('date',)
+    form_columns = ('sender_id', 'receiver_id', 'content')
     column_sortable_list = ('id', 'date')
     page_size = 50
 
@@ -111,14 +197,13 @@ class ReportAdmin(AdminModelView):
     column_sortable_list = ('id', 'timestamp', 'status')
     page_size = 50
     
-    # Custom actions for reports
     def _status_formatter(view, context, model, name):
         if model.status == 'pending':
-            return f'<span class="label label-warning">{model.status}</span>'
+            return Markup(f'<span class="label label-warning">{model.status}</span>')
         elif model.status == 'reviewed':
-            return f'<span class="label label-success">{model.status}</span>'
+            return Markup(f'<span class="label label-success">{model.status}</span>')
         elif model.status == 'dismissed':
-            return f'<span class="label label-danger">{model.status}</span>'
+            return Markup(f'<span class="label label-danger">{model.status}</span>')
         return model.status
     
     column_formatters = {
@@ -126,16 +211,14 @@ class ReportAdmin(AdminModelView):
     }
 
 def init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Reply, Report):
-    # Initialize admin with custom index view and styling
     admin = Admin(
         app, 
         name='StudyTT Admin',
         template_mode='bootstrap3',
         index_view=CustomAdminIndexView(),
-        base_template='admin/my_master.html'  # This will use our custom template
+        base_template='admin/my_master.html'
     )
     
-    # Add views with custom admin classes
     admin.add_view(UserAdmin(User, db.session, name='Users'))
     admin.add_view(NoteAdmin(Note, db.session, name='Notes'))
     admin.add_view(ChatMessageAdmin(ChatMessage, db.session, name='Chat Messages'))
@@ -145,7 +228,6 @@ def init_admin(app, db, User, Note, ChatMessage, Question, Answer, Comment, Repl
     admin.add_view(ReplyAdmin(Reply, db.session, name='Replies'))
     admin.add_view(ReportAdmin(Report, db.session, name='Reports'))
     
-    # Add external links
     from flask_admin.base import MenuLink
     admin.add_link(MenuLink(name='Back to Site', url='/home'))
     admin.add_link(MenuLink(name='Logout', url='/logout'))

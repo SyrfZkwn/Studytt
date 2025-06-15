@@ -21,7 +21,7 @@ saved_posts = db.Table('saved_posts',
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
+    __tablename__ = 'question' 
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
@@ -42,7 +42,7 @@ class ChatMessage(db.Model):
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
+    __tablename__ = 'note'
     title = db.Column(db.String(50))
     code = db.Column(db.String(10))
     chapter = db.Column(db.String(30))
@@ -58,8 +58,8 @@ class Note(db.Model):
     ratings = db.relationship('Rating', backref='note', cascade='all, delete-orphan', passive_deletes=True)
 
 class User(db.Model, UserMixin):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
@@ -74,6 +74,9 @@ class User(db.Model, UserMixin):
     user_ratings = db.relationship('Rating', backref='user', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     verified = db.Column(db.Boolean, default=False)
     theme_preference = db.Column(db.String(10), default='light')
+    banned = db.Column(db.Boolean, default=False, nullable=False)
+    ban_reason = db.Column(db.Text, nullable=True)
+    banned_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     followed = db.relationship(
         'User', secondary=followers,

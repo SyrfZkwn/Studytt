@@ -56,7 +56,7 @@
     margin-bottom: 0.5rem;
     border-radius: 20px;
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: 1px solid #ced4da;
     position: relative;
     font-family: 'Noto Sans', Arial, sans-serif;
     font-size: 1rem;
@@ -65,14 +65,15 @@
   }
   
   .toolbar {
-    background-color:var(--bg-primary);
+    background-color: var(--toolbar);
     padding: 8px;
     border-bottom: 1px solid #ddd;
     border-radius: 20px 20px 0 0;
+    font-family: 'Baloo 2', cursive;
   }
   
   .toolbar button {
-    background: #fff;
+    background: var(--toolbar-button);
     border: 1px solid #ddd;
     border-radius: 3px;
     padding: 5px 10px;
@@ -80,21 +81,22 @@
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s ease;
+    color: var(--black-white);
   }
   
   .toolbar button:hover {
-    background-color: #f8d7c9;
+    background-color: var(--toolbar-hover);
     color: #333;
   }
   
   .toolbar button.active {
-    background-color: var(--orange);
+    background-color: #f15c22;
     color: white;
   }
   
   .editor-content {
     padding: 15px;
-    background-color: var(--bg-primary);
+    background-color: var(--editor-content);
     min-height: 100px;
     border-radius: 0 0 20px 20px;
     overflow-y: auto;
@@ -143,7 +145,7 @@
   }
   
   .question-item {
-    background-color: var(--question-item-bg);
+    background-color: var(--item-bg);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     border-radius: 12px;
@@ -309,7 +311,7 @@
   }
 
   .question-title-input {
-    background-color: var(--bg-primary);
+    background-color: var(--bg-secondary);
     text-emphasis-color: var(white);
   }
 

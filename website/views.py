@@ -461,11 +461,13 @@ def post_detail(post_id):
                         post_id = post_id
                         )
                         db.session.add(new_notification)
+                db.session.commit()
 
                 comments = Comment.query.filter_by(note_id=post_id).all()
 
                 if comments:
-                    post.total_comments += 1
+                    total_replies = sum(len(comment.replies) for comment in post.comments)
+                    post.total_comments = len(post.comments) + total_replies
                 else:
                     post.total_comments = 0
 
@@ -509,7 +511,8 @@ def delete_comment (comment_id):
     db.session.delete(comment)
     db.session.commit()
 
-    post.total_comments = max(post.total_comments - 1, 0)
+    total_replies = sum(len(comment.replies) for comment in post.comments)
+    post.total_comments = len(post.comments) + total_replies
     db.session.commit()
 
     flash('Comment deleted!', 'success')
@@ -605,7 +608,8 @@ def reply_comment(comment_id):
     replies = Reply.query.filter_by(comment_id=comment_id).all()
 
     if comment:
-        post.total_comments += 1
+        total_replies = sum(len(comment.replies) for comment in post.comments)
+        post.total_comments = len(post.comments) + total_replies
     else:
         post.total_comments = 0
 
@@ -629,7 +633,8 @@ def delete_reply (reply_id):
     db.session.commit()
     flash('Reply deleted!', 'success')
 
-    post.total_comments -= 1
+    total_replies = sum(len(comment.replies) for comment in post.comments)
+    post.total_comments = len(post.comments) + total_replies
     db.session.commit()
 
     return redirect(url_for('views.post_detail', post_id = post_id))

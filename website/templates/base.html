@@ -23,9 +23,9 @@
   <style>
     :root {
       /* Light theme colors */
-      --bg-primary: #fbf3e2;
-      --bg-secondary: #fdf3de;
-      --bg-tertiary: #ffd38a;
+      --bg-primary: #fdf3de;
+      --bg-secondary: #fff;
+      --bg-tertiary: #f2f2f2;
       --text-primary: #1b4f83;
       --text-secondary: #173c67;
       --accent-primary: #f15c22;
@@ -40,9 +40,12 @@
       --shadow-color: rgba(0,0,0,0.2);
       --text-muted: #777777;
       --qna-bg: #fff;
-      --question-item-bg: #fff;
+      --item-bg: #fff;
       --question-title: #1b4f83;
       --transition: all 0.3s ease;
+      --toolbar: #f0f0f0;
+      --toolbar-button: #fff;
+      --editor-content :#f9f9f9;
     }
 
     [data-theme="dark"] {
@@ -64,8 +67,12 @@
       --shadow-color: rgba(0,0,0,0.5);
       --text-muted: #999999;
       --qna-bg: #2d2d2d;
-      --question-item-bg: #393939;
+      --item-bg: #393939;
       --question-title: #0080ff;
+      --toolbar: #1a1a1a;
+      --toolbar-button: #2d2d2d;
+      --editor-content :#1a1a1a;
+
 
     input[type="text"], 
     input[type="email"], 
@@ -93,7 +100,7 @@
     textarea::placeholder {
       color: var(--text-muted) !important;
     }
-        }
+    }
 
     body {
       margin: 0;

@@ -471,6 +471,7 @@ def post_detail(post_id):
                     note_id=post_id  # Make sure you're associating with the correct post
                 )
                 db.session.add(new_comment)
+                db.session.commit()
 
                 if post.publisher != current_user.id:
                     super_clean_comment_body = super_clean(comment_body)
@@ -500,7 +501,7 @@ def post_detail(post_id):
                 comments = Comment.query.filter_by(note_id=post_id).all()
 
                 if comments:
-                    post.total_comments += 1
+                    post.total_comments = len(post.comments)
                 else:
                     post.total_comments = 0
 
@@ -544,7 +545,7 @@ def delete_comment (comment_id):
     db.session.delete(comment)
     db.session.commit()
 
-    post.total_comments = max(post.total_comments - 1, 0)
+    post.total_comments = len(post.comments)
     db.session.commit()
 
     flash('Comment deleted!', 'success')
@@ -636,11 +637,12 @@ def reply_comment(comment_id):
             post_id = comment.note.id
             )
             db.session.add(new_notification)
+    db.session.commit()
 
     replies = Reply.query.filter_by(comment_id=comment_id).all()
 
     if comment:
-        post.total_comments += 1
+        post.total_comments = len(post.comments)
     else:
         post.total_comments = 0
 
@@ -664,7 +666,7 @@ def delete_reply (reply_id):
     db.session.commit()
     flash('Reply deleted!', 'success')
 
-    post.total_comments -= 1
+    post.total_comments = len(post.comments)
     db.session.commit()
 
     return redirect(url_for('views.post_detail', post_id = post_id))

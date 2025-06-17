@@ -21,12 +21,14 @@ saved_posts = db.Table('saved_posts',
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
+    __tablename__ = 'question' 
     title = db.Column(db.Text)
     body = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     publisher = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"))
     answers = db.relationship('Answer', backref='question', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
+
+# Update your ChatMessage model in models.py
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,15 +36,16 @@ class ChatMessage(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     content = db.Column(db.Text, nullable=False)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
+    is_read = db.Column(db.Boolean, default=False, nullable=False)  # Add this field
     sender = db.relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', cascade="all, delete-orphan", passive_deletes=True))
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref=db.backref('received_messages', cascade="all, delete-orphan", passive_deletes=True))
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
+    __tablename__ = 'note'
     title = db.Column(db.String(50))
     code = db.Column(db.String(10))
-    chapter = db.Column(db.String(30))
+    chapter = db.Column(db.String(100))
     description = db.Column(db.Text)
     date = db.Column(db.DateTime(timezone=True), default=get_local_time)
     file_path = db.Column(db.String(255))
@@ -55,14 +58,13 @@ class Note(db.Model):
     ratings = db.relationship('Rating', backref='note', cascade='all, delete-orphan', passive_deletes=True)
 
 class User(db.Model, UserMixin):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
-    _table_args_ = {'sqlite_autoincrement': True}
     email = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
     username = db.Column(db.String(150))
     biography = db.Column(db.Text, nullable=True, default='')
-    image_profile = db.Column(db.String(20), nullable=False, default='default.jpg')
-    file = db.Column(db.LargeBinary)
+    image_profile = db.Column(db.String(255), nullable=False, default='default.jpg')
     points = db.Column(db.Integer, default=0)
     notes = db.relationship('Note', backref='user', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     saved = db.relationship('Note', secondary=saved_posts, backref='saved_by')
@@ -70,7 +72,10 @@ class User(db.Model, UserMixin):
     user_comments = db.relationship('Comment', backref='user', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     user_ratings = db.relationship('Rating', backref='user', lazy=True, cascade="all, delete-orphan", passive_deletes=True)
     verified = db.Column(db.Boolean, default=False)
-    theme_preference = db.Column(db.String(10), default='light')
+    theme_preference = db.Column(db.String(50), default='light')
+    banned = db.Column(db.Boolean, default=False, nullable=False)
+    ban_reason = db.Column(db.Text, nullable=True)
+    banned_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     followed = db.relationship(
         'User', secondary=followers,
@@ -151,7 +156,7 @@ class Notification(db.Model):
     notified_user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     notifier_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     post_id = db.Column(db.Integer)
-    type = db.Column(db.String(20))
+    type = db.Column(db.String(100))
     message = db.Column(db.Text)
     is_read = db.Column(db.Boolean, default=False)
     timestamp = db.Column(db.DateTime(timezone=True), default=get_local_time)
@@ -167,7 +172,7 @@ class Report(db.Model):
     note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete='CASCADE'), nullable=True)
     comment_id = db.Column(db.Integer, db.ForeignKey('comment.id', ondelete='CASCADE'), nullable=True)
     reason = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), default="pending")
+    status = db.Column(db.String(100), default="pending")
     timestamp = db.Column(db.DateTime(timezone=True), default=get_local_time)
 
     reporter = db.relationship('User', backref=db.backref('reports_made', cascade="all, delete-orphan", passive_deletes=True))

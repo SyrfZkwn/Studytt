@@ -27,7 +27,8 @@ from string import ascii_uppercase
 from datetime import datetime
 from . import db, socketio
 from werkzeug.security import check_password_hash, generate_password_hash
-
+import pytz
+from .models import get_local_time
 
 def clean(html):
     allowed_tags = ['b', 'i', 'u', 'em', 'strong', 'strike', 'strikethrough', 'p', 'br', 'ul', 'ol', 'li', 'a']
@@ -107,6 +108,9 @@ def generate_unique_code(length):
     
     return code
 
+from sqlalchemy import desc
+
+# Update your chat_home route
 @views.route('/chat')
 @login_required
 def chat_home():
@@ -115,23 +119,36 @@ def chat_home():
     chat_data = []
 
     for user in followed_users:
+        # Get the latest message between current_user and this user
         last_message = ChatMessage.query.filter(
-            ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user.id)) |
-            ((ChatMessage.sender_id == user.id) & (ChatMessage.receiver_id == current_user.id))
-        ).order_by(ChatMessage.date.desc()).first()
+            or_(
+                and_(ChatMessage.sender_id == current_user.id, ChatMessage.receiver_id == user.id),
+                and_(ChatMessage.sender_id == user.id, ChatMessage.receiver_id == current_user.id)
+            )
+        ).order_by(desc(ChatMessage.date)).first()
 
-        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.content if last_message else 'None'}")
+        # Count unread messages from this user to current_user
+        unread_count = ChatMessage.query.filter(
+            ChatMessage.sender_id == user.id,
+            ChatMessage.receiver_id == current_user.id,
+            ChatMessage.is_read == False
+        ).count()
+
+        print(f"[DEBUG] User: {user.username}, Last Message: {last_message.content if last_message else 'None'}, Unread: {unread_count}")
 
         chat_data.append({
             "user": user,
             "last_message": last_message.content if last_message else "",
-            "timestamp": last_message.date if last_message else None
+            "timestamp": last_message.date if last_message else None,
+            "unread_count": unread_count
         })
 
+    # Sort by latest message timestamp, putting chats with unread messages first
+    chat_data.sort(key=lambda x: (x['unread_count'] == 0, -(x['timestamp'].timestamp() if x['timestamp'] else 0)))
 
     return render_template("chat.html", chat_data=chat_data)
 
-
+# Update your chat_room route
 @views.route('/chat/<int:user_id>')
 @login_required
 def chat_room(user_id):
@@ -141,78 +158,96 @@ def chat_room(user_id):
         flash("You can only chat with users you follow.", "error")
         return redirect(url_for('views.chat_home'))
     
+    # Mark all messages from this user as read
+    unread_messages = ChatMessage.query.filter(
+        ChatMessage.sender_id == user_id,
+        ChatMessage.receiver_id == current_user.id,
+        ChatMessage.is_read == False
+    ).all()
+    
+    for message in unread_messages:
+        message.is_read = True
+    
+    db.session.commit()
+    
+    # Get messages between users
     messages = ChatMessage.query.filter(
-        ((ChatMessage.sender_id == current_user.id) & (ChatMessage.receiver_id == user_id)) |
-        ((ChatMessage.sender_id == user_id) & (ChatMessage.receiver_id == current_user.id))
+        or_(
+            and_(ChatMessage.sender_id == current_user.id, ChatMessage.receiver_id == user_id),
+            and_(ChatMessage.sender_id == user_id, ChatMessage.receiver_id == current_user.id)
+        )
     ).order_by(ChatMessage.date.asc()).all()
 
     return render_template("room.html", messages=messages, chat_with=user)
 
+# Update your socket handlers
 @socketio.on('send_message')
 def handle_send_message(data):
     sender_id = current_user.id
     receiver_id = data['receiver_id']
     content = data['content']
 
-    # Save message to DB
-    message = ChatMessage(sender_id=sender_id, receiver_id=receiver_id, content=content)
+    # Save message to DB with is_read=False (new messages start as unread)
+    message = ChatMessage(
+        sender_id=sender_id, 
+        receiver_id=receiver_id, 
+        content=content,
+        is_read=False  # Important: new messages are unread
+    )
     db.session.add(message)
     db.session.commit()
 
-    room = f"user_{receiver_id}"
+    # Send to the specific receiver's room
+    receiver_room = f"user_{receiver_id}"
     emit('receive_message', {
         'sender_id': sender_id,
+        'sender_name': current_user.username,  # Add sender name for notifications
+        'receiver_id': receiver_id,
         'content': content,
         'date': message.date.strftime('%Y-%m-%d %H:%M')
-    }, room=room)
+    }, room=receiver_room)
 
-    # Optional: send a notification to receiver
-    emit('notification', {
-        'notified_user_id': receiver_id,
-        'notifier_id': sender_id,
-        'type': 'chat',
-        'message': f"New message from {current_user.username}"
-    }, room=room)
+    print(f"[DEBUG] Message sent from {current_user.username} to user_{receiver_id}")
 
-@socketio.on("connect")
-def connect():
-    room = session.get("room")
-    name = session.get("name")
-    
-    if not room or not name:
-        return
-    
-    if room not in rooms:
-        return
-    
-    join_room(room)
-    send({"name": "System", "message": f"{name} has joined the room"}, to=room)
-    rooms[room]["members"] += 1
-
-@socketio.on("disconnect")
-def disconnect():
-    room = session.get("room")
-    name = session.get("name")
-    leave_room(room)
-
-    if room in rooms:
-        rooms[room]["members"] -= 1
-        if rooms[room]["members"] <= 0:
-            del rooms[room]
-    
-    send({"name": name, "message": "has left the room"}, to=room)
-
-
-
+# Update your connect handler
 @socketio.on('connect')
 def on_connect():
     if current_user.is_authenticated:
         room = f"user_{current_user.id}"
         join_room(room)
+        print(f"[DEBUG] User {current_user.username} joined room: {room}")
+
+@socketio.on('disconnect')
+def on_disconnect():
+    if current_user.is_authenticated:
+        room = f"user_{current_user.id}"
+        leave_room(room)
+        print(f"[DEBUG] User {current_user.username} left room: {room}")
+
+
+# Add this route to mark specific messages as read (optional)
+@views.route('/api/mark-messages-read/<int:sender_id>', methods=['POST'])
+@login_required
+def mark_messages_read(sender_id):
+    ChatMessage.query.filter(
+        ChatMessage.sender_id == sender_id,
+        ChatMessage.receiver_id == current_user.id,
+        ChatMessage.is_read == False
+    ).update({'is_read': True})
+    
+    db.session.commit()
+    
+    return {'success': True}
 
 @views.route('/post', methods=['GET', 'POST'])
 @login_required
 def post():
+
+    if current_user.banned:
+            flash('Your account is suspended. You cannot create posts.', 'error')
+            return redirect(url_for('views.home'))
+
+
     form = UploadFileForm()
 
     if request.method == 'POST' and form.validate_on_submit():
@@ -436,6 +471,7 @@ def post_detail(post_id):
                     note_id=post_id  # Make sure you're associating with the correct post
                 )
                 db.session.add(new_comment)
+                db.session.commit()
 
                 if post.publisher != current_user.id:
                     super_clean_comment_body = super_clean(comment_body)
@@ -604,6 +640,7 @@ def reply_comment(comment_id):
             post_id = comment.note.id
             )
             db.session.add(new_notification)
+    db.session.commit()
 
     replies = Reply.query.filter_by(comment_id=comment_id).all()
 
@@ -945,11 +982,11 @@ def go_to_notification(notification_id):
         return redirect(url_for('views.post_detail', post_id=notification.post_id))
     elif notification.type in ['answer', 'pin', 'mention_question', 'mention_answer']:
         return redirect(url_for('views.qna_details', question_id = notification.post_id))
-    elif notification.type in ['chat']:
-        return redirect(url_for('views.chat_room', user_id=notification.notifier_id))
+    elif notification.type in ['report']:
+        return redirect(url_for('report.index_view'))
     else:
         flash("Notification type is unknown.", "error")
-        return redirect(url_for('views.home'))  # fallback
+        return redirect(url_for('views.notification'))  # fallback
 
 @views.route('/notifications/read/<int:notification_id>')
 @login_required
@@ -1230,3 +1267,66 @@ def update_report_status(report_id):
         flash("Invalid status.", "danger")
 
     return redirect(url_for('admin_reports'))
+
+
+from flask import jsonify
+
+@views.route('/api/unread-messages')
+@login_required
+def get_unread_messages():
+    """API endpoint to get unread message count for current user"""
+    try:
+        # For now, return 0 since is_read column might not exist yet
+        # Once you add the is_read column, uncomment the line below
+        # total_unread = ChatMessage.query.filter(ChatMessage.receiver_id == current_user.id, ChatMessage.is_read == False).count()
+        
+        total_unread = 0  # Temporary - replace with above line once is_read column is added
+        
+        return jsonify({'unread_count': total_unread})
+    except Exception as e:
+        print(f"Error getting unread messages: {e}")
+        return jsonify({'unread_count': 0})
+    
+
+# Add these routes after the existing admin routes (around line with other @views.route('/admin/') routes)
+
+@views.route('/admin/ban_user/<int:user_id>', methods=['POST'])
+@login_required
+def ban_user(user_id):
+    # Use the same admin check pattern as your existing admin routes
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+    
+    user = User.query.get_or_404(user_id)
+    ban_reason = request.form.get('ban_reason', 'No reason provided')
+    
+    if user.banned:
+        flash('User is already banned.', 'warning')
+    else:
+        user.banned = True
+        user.ban_reason = ban_reason
+        user.banned_at = get_local_time()  # This function exists in your codebase
+        db.session.commit()
+        flash(f'User {user.username} has been banned.', 'success')
+    
+    # Use your existing admin pattern
+    return redirect('/admin')
+
+@views.route('/admin/unban_user/<int:user_id>', methods=['POST'])
+@login_required
+def unban_user(user_id):
+    if not (current_user.is_authenticated and current_user.email and current_user.email.lower() == "studytt518@gmail.com"):
+        return "Unauthorized", 403
+    
+    user = User.query.get_or_404(user_id)
+    
+    if not user.banned:
+        flash('User is not banned.', 'warning')
+    else:
+        user.banned = False
+        user.ban_reason = None
+        user.banned_at = None
+        db.session.commit()
+        flash(f'User {user.username} has been unbanned.', 'success')
+    
+    return redirect('/admin')

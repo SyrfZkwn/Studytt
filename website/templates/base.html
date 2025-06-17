@@ -414,8 +414,8 @@
     <body style="background-color: var(--content-bg);">
 
       <div class="top">
-        <a href="{{ url_for('views.home') }}">
-          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid" style="max-width: 70px; top: -60px; margin: 65px;">
+        <a href="{{ url_for('views.home') }}" style="max-width: 70px; top: -60px; margin-left: 50px; margin-right: 50px;">
+          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="Studytt" class="img-fluid">
         </a>
       
         <form method="GET" action="{{ url_for('views.search') }}" class="search-bar">
@@ -459,7 +459,23 @@
             <a class="{% if request.endpoint == 'views.home' %}active{% endif %}" href="{{ url_for('views.home') }}">HOME</a>
             <hr>
             <a class="{% if request.endpoint == 'views.qna' %}active{% endif %}" href="{{ url_for('views.qna') }}">DISCUSSION</a>
-            <a class="{% if request.endpoint == 'views.chat_home' %}active{% endif %}" href="{{ url_for('views.chat_home') }}">CHATS</a>
+            
+            <!-- Updated CHATS link with notification badge -->
+            <a class="{% if request.endpoint == 'views.chat_home' %}active{% endif %}" 
+              href="{{ url_for('views.chat_home') }}" 
+              style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
+
+              {% if total_unread_chat_messages > 0 %}
+                <span>CHATS</span>
+                <span style="color: #fff; background-color: #dc3545; padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center;" class="badge">
+                  <span class="material-symbols-outlined" style="margin-right: 4px;">chat</span>
+                  {{ total_unread_chat_messages }}
+                </span>
+              {% else %}
+                CHATS
+              {% endif %}
+            </a>
+            
             <a class="{% if request.endpoint == 'views.notification' %}active{% endif %}" 
               href="{{ url_for('views.notification') }}" 
               style="width: 90%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center;">
@@ -505,5 +521,4 @@
 
     </body>
 
-
-</html?
+</html>

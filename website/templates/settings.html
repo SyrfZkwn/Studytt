@@ -409,7 +409,7 @@
       Appearance
     </div>
     <div class="section-description">
-      Choose your theme (gay or Batman). Your selection will be applied across all pages.
+      Choose your theme (Light or Dark). Your selection will be applied across all pages.
     </div>
 
     <form method="POST">
@@ -420,7 +420,7 @@
                  {% if current_user.theme_preference == 'light' %}checked{% endif %}>
           <div class="theme-preview light"></div>
           <div class="theme-name">Light Mode</div>
-          <div class="theme-description">nah you're just gay twin</div>
+          <div class="theme-description">Bright and clean interface</div>
         </div>
 
         <div class="theme-option {{ 'active' if current_user.theme_preference == 'dark' else '' }}" 
@@ -429,7 +429,7 @@
                  {% if current_user.theme_preference == 'dark' %}checked{% endif %}>
           <div class="theme-preview dark"></div>
           <div class="theme-name">Dark Mode</div>
-          <div class="theme-description">You're cool, like super cool. Like Batman</div>
+          <div class="theme-description">Mordern appearance to reduce eye strain</div>
         </div>
       </div>
 

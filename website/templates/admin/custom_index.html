@@ -1,0 +1,231 @@
+{% extends 'admin/my_master.html' %}
+
+{% block body %}
+<div class="admin-content">
+    <div class="page-header">
+        <h1><i class="fas fa-tachometer-alt"></i> StudyTT Admin Dashboard</h1>
+        <p class="lead">Welcome to the administration panel - Manage your platform efficiently</p>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ user_count }}</h3>
+                <p><i class="fas fa-users"></i> Total Users</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ note_count }}</h3>
+                <p><i class="fas fa-file-alt"></i> Total Notes</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ comment_count }}</h3>
+                <p><i class="fas fa-comments"></i> Total Comments</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ chat_count }}</h3>
+                <p><i class="fas fa-envelope"></i> Chat Messages</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Secondary Statistics -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ question_count }}</h3>
+                <p><i class="fas fa-question-circle"></i> Questions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ answer_count }}</h3>
+                <p><i class="fas fa-check-circle"></i> Answers</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <h3>{{ reply_count }}</h3>
+                <p><i class="fas fa-reply"></i> Replies</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="dashboard-card" style="background: linear-gradient(135deg, #dc3545, #e74c3c);">
+                <h3>{{ report_count }}</h3>
+                <p><i class="fas fa-exclamation-triangle"></i> Pending Reports</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('user.index_view') }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-users"></i> Manage Users
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('note.index_view') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-file-alt"></i> Manage Notes
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 10px;">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('comment.index_view') }}" class="btn btn-info btn-block">
+                                <i class="fas fa-comments"></i> Manage Comments
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('report.index_view') }}" class="btn btn-warning btn-block">
+                                <i class="fas fa-flag"></i> View Reports
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 10px;">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('chatmessage.index_view') }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-envelope"></i> Chat Messages
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('question.index_view') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-question-circle"></i> Q&A Section
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fas fa-clock"></i> Recent Activity</h3>
+                </div>
+                <div class="panel-body">
+                    <h5><i class="fas fa-user-plus"></i> Recent Users</h5>
+                    {% if recent_users %}
+                        <ul class="list-unstyled">
+                            {% for user in recent_users %}
+                            <li style="margin-bottom: 5px;">
+                                <i class="fas fa-user"></i> {{ user.username }}
+                                {% if user.verified %}
+                                    <span class="label label-success">Verified</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent users</p>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <h5><i class="fas fa-file-alt"></i> Recent Notes</h5>
+                    {% if recent_notes %}
+                        <ul class="list-unstyled">
+                            {% for note in recent_notes[:3] %}
+                            <li style="margin-bottom: 5px;">
+                                <i class="fas fa-file"></i> {{ note.title[:30] }}...
+                                <small class="text-muted">({{ note.code }})</small>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No recent notes</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Reports Alert -->
+    {% if report_count > 0 %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-warning">
+                <h4><i class="fas fa-exclamation-triangle"></i> Attention Required</h4>
+                <p>You have <strong>{{ report_count }}</strong> pending reports that need review.</p>
+                <a href="{{ url_for('report.index_view') }}" class="btn btn-warning">
+                    <i class="fas fa-eye"></i> Review Reports
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- System Status -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"><i class="fas fa-server"></i> System Status</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><i class="fas fa-check-circle text-success"></i> Database: <strong>Connected</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><i class="fas fa-check-circle text-success"></i> Server: <strong>Running</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><i class="fas fa-check-circle text-success"></i> Admin Panel: <strong>Active</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add some interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to dashboard cards
+    const cards = document.querySelectorAll('.dashboard-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add loading animation to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (!this.querySelector('.loading-spinner')) {
+                const spinner = document.createElement('span');
+                spinner.className = 'loading-spinner';
+                spinner.style.marginLeft = '5px';
+                this.appendChild(spinner);
+                
+                setTimeout(() => {
+                    if (this.contains(spinner)) {
+                        this.removeChild(spinner);
+                    }
+                }, 2000);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

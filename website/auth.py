@@ -34,6 +34,11 @@ def login():
             if not user.verified:
                 flash('Please verify your email before logging in.', category='error')
                 return render_template("signup.html", show_resend_link=True)
+            
+            if user.banned:
+                flash('Your account has been suspended. Please contact support.', category='error')
+                return render_template("login.html")
+
             if check_password_hash(user.password, password):
                 login_user(user, remember=True)
                 return redirect(url_for('views.home'))
@@ -78,10 +83,17 @@ def sign_up():
         if existing_user:
             flash('Username is unavailable. Choose another one.', category='error')
             return render_template("signup.html")
+        
+        banned_user = User.query.filter(func.lower(User.email) == email.lower(), User.banned == True).first()
+        if banned_user:
+            flash('Cannot create account with this email address.', category='error')
+            return render_template("signup.html")
 
         # Check for existing verified email
         existing_email = User.query.filter(func.lower(User.email) == email).first()
         if existing_email:
+
+            
             if existing_email.verified:
                 flash('An account with that email already exists.', category='error')
                 return render_template("signup.html", show_resend_link=False)
@@ -195,9 +207,12 @@ def forgot_password():
         user = User.query.filter_by(email=email).first()
 
         if user:
+            
+
             if not user.verified:
                 flash('Your email is not verified.', category='error')
                 return render_template("signup.html", show_resend_link=True)
+            
             else:
                 token = generate_reset_token(user.email)
                 reset_url = url_for('auth.reset_password', token=token, _external=True)
@@ -213,6 +228,9 @@ def forgot_password():
                 msg.content_subtype = 'html'
                 msg.send()
                 flash('A password reset link has been sent to your email.', 'success')
+
+            
+            
         else:
             flash('No account found with that email.', category='error')
         return redirect(url_for('auth.forgot_password'))

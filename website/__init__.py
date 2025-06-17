@@ -138,6 +138,16 @@ def create_app():
     return app
 
 def create_database(app):
-    with app.app_context():
-        db.create_all()
-    print('Database checked/created!')
+    if not path.exists('website/' + DB_NAME):
+        with app.app_context():
+            db.create_all()
+        print('Created Database!')
+    else:
+        print('Database already existed!')
+
+@event.listens_for(Engine, "connect")
+def enable_sqlite_fk_constraints(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()

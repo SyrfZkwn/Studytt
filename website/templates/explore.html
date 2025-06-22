@@ -202,7 +202,7 @@
   {% if notes %}
   <h2 class="tab">Recently Posted</h2>
     <div class="content-section">
-      {% for note in notes|reverse %}
+      {% for note in notes|sort(attribute='date', reverse=true) %}
         <div class="post">
           <a href="{{ url_for('views.post_detail', post_id=note.id) }}">
             <div class="post-img">
